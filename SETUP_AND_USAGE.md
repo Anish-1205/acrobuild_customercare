@@ -67,16 +67,16 @@ customer-support-agent/
 │   ├── ai_agent_service.py            # Core chatbot logic ⭐
 │   ├── database_service.py             # SQLite backend
 │   ├── llm_service.py                  # LLM provider helpers
-│   ├── rag_service.py                  # Knowledge base
+│   ├── knowledge_index_service.py     # Workspace knowledge index (RAG)
+│   ├── acrobuild_company_service.py   # AcroBuild CS API client (live property data)
 │   ├── indic_translation_service.py   # AI4Bharat integration
-│   ├── nufoodz_service.py             # NuFoodz API client
 │   └── ... (other services)
 ├── graph/
 │   └── workflow.py                     # Ticket routing & classification
 ├── qwen.py                             # Local Qwen + LLM_PROVIDER facade
 ├── sarvam_client.py                    # RunPod Sarvam client
 ├── CHAT_FLOW.md                        # Assist flow diagram
-├── webapp/                             # React admin dashboard
+├── src/                                # React admin dashboard (Vite, run from root)
 ├── support_system.db                   # SQLite database
 └── requirements.txt
 ```

@@ -19,14 +19,14 @@ Chat routing is documented in [CHAT_FLOW.md](CHAT_FLOW.md).
 - `graph/workflow.py` - orchestrates ticket classification, priority, agent assignment, and ticket persistence
 - `graph/main_orchestrator.py` - support chat orchestration (general LLM vs property/RAG)
 - `services/database_service.py` - initializes SQLite `support_system.db` and stores tickets/messages
-- `services/rag_service.py` - in-memory knowledge base powered by `sentence-transformers` and `faiss`
+- `services/knowledge_index_service.py` - workspace knowledge index (articles + knowledge docs) used by the assist flow
 - `services/llm_service.py` - LLM provider helpers (`LLM_PROVIDER`)
-- `services/nufoodz_service.py` - NuFoodz API client for customer data
+- `services/acrobuild_company_service.py` - AcroBuild CS API client for live property data
 - `services/indic_translation_service.py` - AI4Bharat IndicTrans2 for Indian language translation
 - `services/indic_tts_service.py` - AI4Bharat Indic-Parler-TTS for Indian language speech synthesis
 - `qwen.py` - Qwen local runtime + provider facade for Sarvam
 - `sarvam_client.py` - RunPod OpenAI-compatible Sarvam client
-- `webapp/` - active React admin workspace
+- `src/` - React admin workspace (Vite); run from repo root with `npm run dev`
 
 ## Important conventions
 - Use `snake_case` for Python functions and variables
@@ -55,9 +55,9 @@ Chat routing is documented in [CHAT_FLOW.md](CHAT_FLOW.md).
 - **Requires**: HF_TOKEN (for model access, one-time setup)
 
 ### 4. Sentence Transformers (Semantic Search)
-- **File**: `services/rag_service.py`
+- **File**: `services/knowledge_index_service.py`
 - **Model**: `all-MiniLM-L6-v2`
-- **Purpose**: Knowledge base retrieval via semantic search
+- **Purpose**: Workspace knowledge retrieval (articles + knowledge docs) via semantic + lexical search
 - **No API key required**
 
 ## Intelligent ticket routing
@@ -83,7 +83,6 @@ MODEL_NAME=sarvamai/sarvam-30b-gguf:Q4_K_M
 
 ## Known caveats
 - The main backend path uses `services/database_service.py` and `support_system.db`
-- `services/rag_service.py` uses a hard-coded knowledge base and does not persist documents
 - Local Qwen may require significant GPU/CPU resources; Sarvam needs a live RunPod endpoint
 
 ## Best next customizations

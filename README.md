@@ -37,10 +37,9 @@ The API will be available at `http://127.0.0.1:8000`
 
 ## React Frontend
 
-The project now also includes a React migration workspace in `webapp/`.
+The React admin workspace lives in `src/` and runs from the repo root.
 
 ```bash
-cd webapp
 npm install
 npm run dev
 ```

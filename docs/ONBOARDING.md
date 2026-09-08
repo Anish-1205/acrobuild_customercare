@@ -213,8 +213,7 @@ Use these exact words when asking for changes.
 |--------|------|
 | `services/database_service.py` | SQLite: tickets, messages, notes, users, articles, knowledge docs |
 | `services/ai_agent_service.py` | Property-support answer engine (loads a compiled `.pyc` runtime) |
-| `services/knowledge_index_service.py` | The real RAG: chunk + search articles & knowledge docs ("workspace index") |
-| `services/rag_service.py` | Legacy hard-coded 6-doc FAISS KB (mostly unused) |
+| `services/knowledge_index_service.py` | The RAG: chunk + search articles & knowledge docs ("workspace index") |
 | `services/knowledge_ingestion_service.py` | Import knowledge from uploaded files / URLs |
 | `services/acrobuild_company_service.py` | HTTP client for the external AcroBuild CS API (+ snapshot fallback + TTL cache) |
 | `services/internal_api_log_service.py` | Per-request trace of CS API calls for the UI |
@@ -517,9 +516,6 @@ flowchart TD
 - `services/knowledge_ingestion_service.py` → `ingest_url_knowledge_source`,
   `ingest_uploaded_knowledge_files` — turn a URL or uploaded file into knowledge
   docs.
-- `services/rag_service.py` — **legacy**, separate, hard-coded 6-sentence FAISS
-  KB with `search_knowledge_base()`. Not part of the workspace index path.
-
 **Narrative.** "RAG" here = the **workspace index**: help articles + imported
 knowledge docs, chunked and scored with a hybrid lexical + embedding approach.
 It's rebuilt whenever staff edit content. `is_semantic_search_enabled()` gates
@@ -818,10 +814,11 @@ happens and which component enforces it?
 6. **OTP state is in-memory** — not restart-safe, not multi-worker-safe.
 7. **Hard-coded secret.** `cs-api.md` contains a literal `api-key` value. Treat
    as compromised; do not reuse.
-8. **Two knowledge systems.** `rag_service.py` (legacy, hard-coded, FAISS) is
-   separate from the real `knowledge_index_service.py` workspace index.
-9. **Backup files in `src/pages/`:** `CustomerHomePage.pre-ui-restore.tsx`,
-   `CustomerHomePage.recovered.tsx` are not routed — ignore them.
+8. **Dead-code cleanup (done).** A duplicate `webapp/` frontend, the unused
+   legacy `services/rag_service.py`, backup `CustomerHomePage.*` variants, the
+   compiled `vite.config.js`, and stray log/preview artifacts were removed. The
+   canonical frontend is the repo-root `src/` (`npm run dev` from root). Older
+   docs still mentioning `webapp/` or `rag_service` are stale.
 
 ---
 
