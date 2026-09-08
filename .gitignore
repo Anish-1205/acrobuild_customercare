@@ -1,0 +1,14 @@
+node_modules/
+__pycache__/
+*.pyc
+dist/
+.venv/
+venv/
+*.tsbuildinfo
+.env
+support_system.db
+data/
+*.db
+
+# keep compiled runtime blobs that app loads at import time
+!*_runtime.pyc
