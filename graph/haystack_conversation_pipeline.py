@@ -8,6 +8,11 @@ with _runtime_path.open("rb") as _runtime_file:
     _runtime_file.read(16)
     _runtime_code = _marshal.load(_runtime_file)
 exec(_runtime_code, globals(), globals())
+build_deterministic_conversation_answer = globals()["build_deterministic_conversation_answer"]
+is_small_talk_message = globals()["is_small_talk_message"]
+normalize_text = globals()["normalize_text"]
+resolve_contextual_support_issue = globals()["resolve_contextual_support_issue"]
+validate_support_node = globals()["validate_support_node"]
 
 _legacy_build_deterministic_conversation_answer = build_deterministic_conversation_answer
 _legacy_is_small_talk_message = is_small_talk_message

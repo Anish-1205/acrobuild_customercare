@@ -1,0 +1,36 @@
+name: Verify
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    env:
+      LLM_PROVIDER: qwen
+      HF_HUB_OFFLINE: "1"
+      ACROBUILD_REFRESH_INDEX_ON_STARTUP: "false"
+      ACROBUILD_WARM_LOCAL_AI_MODELS: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt -r requirements/dev.txt
+      - run: python -m pytest -q -p no:cacheprovider
+      - run: ruff check .
+      - run: mypy
+      - run: pip-audit -r requirements.txt
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm audit --omit=dev

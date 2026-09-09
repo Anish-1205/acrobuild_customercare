@@ -30,6 +30,7 @@ type ImportMetaWithOptionalEnv = ImportMeta & {
 
 const configuredBackendUrl = String((import.meta as ImportMetaWithOptionalEnv).env?.VITE_BACKEND_URL ?? "").trim().replace(/\/+$/, "");
 const DEFAULT_STREAM_ACTIVITY_TIMEOUT_MS = 120000;
+let refreshRequest: Promise<Response> | null = null;
 const backendPorts = ["8000", "8001"];
 
 type ApiAttemptError = Error & {
@@ -61,36 +62,8 @@ function addUniqueApiBase(candidates: string[], value: string) {
 }
 
 function buildApiBaseCandidates() {
-  const candidates: string[] = [];
-
-  addUniqueApiBase(candidates, configuredBackendUrl);
-
-  if (typeof window !== "undefined") {
-    const { hostname, origin, port, protocol } = window.location;
-
-    if (port && port !== "5173") {
-      addUniqueApiBase(candidates, origin);
-    }
-
-    for (const backendPort of backendPorts) {
-      addUniqueApiBase(candidates, `${protocol}//${hostname}:${backendPort}`);
-    }
-
-    if (hostname === "localhost") {
-      for (const backendPort of backendPorts) {
-        addUniqueApiBase(candidates, `${protocol}//127.0.0.1:${backendPort}`);
-      }
-    }
-
-    if (hostname === "127.0.0.1") {
-      for (const backendPort of backendPorts) {
-        addUniqueApiBase(candidates, `${protocol}//localhost:${backendPort}`);
-      }
-    }
-  }
-
-  addUniqueApiBase(candidates, "");
-  return candidates;
+  // One configured origin: never replay a mutation against another backend.
+  return [configuredBackendUrl];
 }
 
 function buildApiUrl(path: string, baseUrl: string) {
@@ -98,12 +71,15 @@ function buildApiUrl(path: string, baseUrl: string) {
 }
 
 function buildRequestInit(init?: RequestInit, signal?: AbortSignal): RequestInit {
+  const csrf = typeof document === "undefined" ? "" : document.cookie.split("; ").find(value => value.startsWith("workspace_csrf="))?.split("=")[1] ?? "";
   return {
+    ...init,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
+      ...(csrf ? { "X-CSRF-Token": decodeURIComponent(csrf) } : {}),
       ...(init?.headers ?? {})
     },
-    ...init,
     ...(signal ? { signal } : {})
   };
 }
@@ -151,6 +127,11 @@ async function requestJsonFromUrl<T>(
 
   try {
     response = await fetch(requestUrl, buildRequestInit(init));
+    if (response.status === 401 && !["/auth/login", "/auth/refresh", "/auth/logout"].includes(path)) {
+      refreshRequest ??= fetch(buildApiUrl("/auth/refresh", baseUrl), buildRequestInit({ method: "POST" })).finally(() => { refreshRequest = null; });
+      const refreshed = await refreshRequest;
+      if (refreshed.ok) response = await fetch(requestUrl, buildRequestInit(init));
+    }
   } catch {
     throw createRecoverableApiError(
       `Could not reach the backend at ${requestUrl}.`
@@ -207,6 +188,30 @@ async function apiRequest<T>(
   }
 
   throw new Error("Unable to reach the backend.");
+}
+
+export type WorkspaceSessionUser = {
+  id: number;
+  email: string;
+  name: string;
+  role: "admin" | "owner" | "agent";
+  status: string;
+  team: string;
+};
+
+export function loginWorkspace(email: string, password: string) {
+  return apiRequest<{ user: WorkspaceSessionUser }>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password })
+  });
+}
+
+export function logoutWorkspace() {
+  return apiRequest("/auth/logout", { method: "POST" });
+}
+
+export function getWorkspaceSession() {
+  return apiRequest<{ user: WorkspaceSessionUser }>("/auth/me");
 }
 
 async function apiRequestWithFallback<T>(
@@ -328,8 +333,19 @@ async function readStreamChunk(
   }
 }
 
-export function getAdminTickets() {
-  return apiRequest<{ tickets: Ticket[] }>("/api/admin/tickets");
+export function getTicketPage(limit = 100, offset = 0, status = "", search = "") {
+  const query = new URLSearchParams({ limit: String(limit), offset: String(offset), status, search });
+  return apiRequest<{ tickets: Ticket[]; total: number; limit: number; offset: number }>(`/api/admin/tickets?${query}`);
+}
+
+export async function getAdminTickets() {
+  // Compatibility for aggregate dashboards; individual inboxes can use getTicketPage.
+  const first = await getTicketPage(500);
+  const tickets = [...first.tickets];
+  for (let offset = 500; offset < first.total; offset += 500) {
+    tickets.push(...(await getTicketPage(500, offset)).tickets);
+  }
+  return { tickets };
 }
 
 type PropertyFlowResponse<T> = {
@@ -501,22 +517,27 @@ export async function streamSupportAssist(
         if (!trimmedLine) continue;
         const event = JSON.parse(trimmedLine) as
           | { type: "delta"; text: string }
-          | { type: "done"; response: SupportAssistResponse };
+          | { type: "done" | "error"; response: SupportAssistResponse }
+          | { type: string; [key: string]: unknown };
         if (event.type === "delta") {
-          handlers.onDelta?.(event.text);
-        } else {
-          finishApiActivity(activityId, event.response);
-          handlers.onDone(event.response);
+          handlers.onDelta?.((event as { text?: string }).text ?? "");
+        } else if ((event.type === "done" || event.type === "error") && (event as { response?: unknown }).response) {
+          const finalResponse = (event as { response: SupportAssistResponse }).response;
+          finishApiActivity(activityId, finalResponse);
+          handlers.onDone(finalResponse);
           return;
         }
+        // Other event types (e.g. "progress") are informational — keep reading.
       }
     }
 
     if (buffer.trim()) {
-      const event = JSON.parse(buffer.trim()) as { response: SupportAssistResponse; type: "done" };
-      finishApiActivity(activityId, event.response);
-      handlers.onDone(event.response);
-      return;
+      const event = JSON.parse(buffer.trim()) as { response?: SupportAssistResponse; type: string };
+      if (event.response) {
+        finishApiActivity(activityId, event.response);
+        handlers.onDone(event.response);
+        return;
+      }
     }
     throw new Error("The support stream ended before a final response arrived.");
   } catch (error) {
@@ -554,7 +575,6 @@ export function verifyEmailOtp(email: string, code: string) {
 
 export function getVerifiedCustomerByEmail(email: string, accessToken: string, apiBaseUrl?: string) {
   const params = new URLSearchParams({
-    access_token: accessToken,
     email
   });
 
@@ -562,7 +582,7 @@ export function getVerifiedCustomerByEmail(email: string, accessToken: string, a
     params.set("api_base_url", apiBaseUrl);
   }
 
-  return apiRequest<CustomerLookupResponse>("/customer/verified?" + params.toString());
+  return apiRequest<CustomerLookupResponse>("/customer/verified?" + params.toString(), { headers: { Authorization: `Bearer ${accessToken}` } });
 }
 export function getAdminCustomerByEmail(email: string, apiBaseUrl?: string) {
   const params = new URLSearchParams({

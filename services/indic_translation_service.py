@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from functools import lru_cache
@@ -7,6 +8,8 @@ from dotenv import load_dotenv
 from huggingface_hub import snapshot_download
 
 load_dotenv()
+logger = logging.getLogger(__name__)
+TRANSLATION_WARMUP_ERROR = ""
 
 _WORKSPACE_HF_MODULES_CACHE = Path(__file__).resolve().parents[1] / "data" / "hf_modules"
 _WORKSPACE_HF_MODULES_CACHE.mkdir(parents=True, exist_ok=True)
@@ -111,9 +114,12 @@ def translate_english_to_indic(text, language_name):
 def warm_translation_model_async():
 
     def warm_runtime():
+        global TRANSLATION_WARMUP_ERROR
         try:
             load_translation_pipeline()
-        except Exception:
-            return
+            TRANSLATION_WARMUP_ERROR = ""
+        except Exception as error:
+            TRANSLATION_WARMUP_ERROR = type(error).__name__
+            logger.exception("Translation model warm-up failed")
 
     Thread(target=warm_runtime, daemon=True).start()

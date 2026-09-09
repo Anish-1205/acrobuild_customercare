@@ -4,24 +4,6 @@ import { useRole } from "../contexts/RoleContext";
 import { getRoleHomePath } from "../lib/roleNavigation";
 import { AcrobuildLogo } from "../components/AcrobuildLogo";
 
-const demoAccounts = [
-  {
-    role: "Admin",
-    email: "admin@acrobuild.com",
-    description: "Full workspace access, analytics, routing, and macros."
-  },
-  {
-    role: "Owner",
-    email: "owner@acrobuild.com",
-    description: "Project oversight, escalations, and executive ticket visibility."
-  },
-  {
-    role: "Agent",
-    email: "agent@acrobuild.com",
-    description: "Fast inbox triage, customer replies, and assignment follow-through."
-  }
-] as const;
-
 function getRememberedEmail() {
   if (typeof window === "undefined") {
     return "";
@@ -56,18 +38,12 @@ export function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleDemoSelect(nextEmail: string) {
-    setEmail(nextEmail);
-    setPassword("demo@123");
-    setError("");
-  }
-
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
 
-    const matchedUser = login(email, password);
+    const matchedUser = await login(email, password);
 
     if (!matchedUser) {
       setError("Invalid email or password");
@@ -128,31 +104,6 @@ export function LoginPage() {
                 Sign in to the support workspace to review conversations, route tickets,
                 and keep project follow-up moving.
               </p>
-            </div>
-          </div>
-
-          <div className="login-demo-panel">
-            <div className="login-demo-copy">
-              <strong>Demo access</strong>
-              <span>Any role below uses the shared password <code>demo@123</code>.</span>
-            </div>
-            <div className="login-demo-list">
-              {demoAccounts.map((account) => {
-                const isActive = email.trim().toLowerCase() === account.email;
-
-                return (
-                  <button
-                    key={account.email}
-                    type="button"
-                    className={`login-demo-button${isActive ? " active" : ""}`}
-                    onClick={() => handleDemoSelect(account.email)}
-                  >
-                    <strong>{account.role}</strong>
-                    <span>{account.email}</span>
-                    <small>{account.description}</small>
-                  </button>
-                );
-              })}
             </div>
           </div>
 

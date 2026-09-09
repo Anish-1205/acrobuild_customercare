@@ -61,6 +61,8 @@ def evaluate_rag_response(issue, response_payload, data_api_calls=None):
     """
     response_payload = response_payload or {}
     data_api_calls = data_api_calls or []
+    from services.answer_evidence_service import enrich_answer_evidence
+    enrich_answer_evidence(response_payload, data_api_calls)
     answer = str(response_payload.get("answer", "") or "")
     matched_chunks = [
         chunk for chunk in response_payload.get("matched_chunks", [])

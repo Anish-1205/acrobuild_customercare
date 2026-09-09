@@ -8,6 +8,8 @@ with _runtime_path.open("rb") as _runtime_file:
     _runtime_file.read(16)
     _runtime_code = _marshal.load(_runtime_file)
 exec(_runtime_code, globals(), globals())
+build_company_api_direct_answer = globals()["build_company_api_direct_answer"]
+normalize_ai_text = globals()["normalize_ai_text"]
 _legacy_build_company_api_direct_answer = build_company_api_direct_answer
 
 
@@ -302,7 +304,7 @@ def _build_project_catalogue_answer(matched_chunks):
     _, _, names = _project_catalogue_from_chunks(matched_chunks)
     if not names:
         return "I could not retrieve the project catalogue right now. Please try again shortly."
-    return "\n".join([f"We currently have {len(names)} projects in the retrieved Acrobuild catalogue:", "", *[f"{index}. {name}" for index, name in enumerate(names, start=1)], "", "Tell me a project name and what you want to know: overview, location, configurations, pricing, availability, or site visit."])
+    return "\n".join([f"We currently have {len(names)} projects available to explore in the retrieved Acrobuild catalogue:", "", *[f"{index}. {name}" for index, name in enumerate(names, start=1)], "", "Tell me a project name and what you want to know: overview, location, configurations, pricing, availability, or site visit."])
 
 def _build_acrobuild_overview(matched_chunks):
     company_chunk = next((chunk for chunk in (matched_chunks or []) if normalize_ai_text(chunk.get("source_key", "")) == "acrobuild-cs-company"), {})
@@ -646,6 +648,8 @@ def _sanitize_project_location_answer(answer, project_chunk):
     return _re.sub(r"\n\nLocation:[^\n]+", f"\n\nLocation: {', '.join(values)}.", answer)
 
 def build_company_api_direct_answer(issue, matched_chunks, conversation_messages=None):
+    issue = _re.sub(r"\bshopes\b", "shops", str(issue), flags=_re.IGNORECASE)
+    issue = _re.sub(r"\b(?:avaibale|avilable)\b", "available", issue, flags=_re.IGNORECASE)
     cleaned_issue = normalize_ai_text(issue).lower()
     contextual_flat_cost = _build_contextual_flat_cost_answer(cleaned_issue, conversation_messages)
     if contextual_flat_cost:

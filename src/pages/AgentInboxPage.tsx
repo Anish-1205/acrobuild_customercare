@@ -1,3 +1,4 @@
+import { AttachmentPreview } from "../components/AttachmentPreview";
 import {
   startTransition,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -1733,35 +1734,7 @@ export function AgentInboxPage() {
         </aside>
       </div>
 
-      {attachmentPreview ? (
-        <div
-          aria-label="Attachment preview"
-          aria-modal="true"
-          className="support-image-lightbox"
-          onClick={() => setAttachmentPreview(null)}
-          role="dialog"
-        >
-          <div
-            className="support-image-lightbox-frame"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              aria-label="Close image preview"
-              className="support-image-lightbox-close"
-              onClick={() => setAttachmentPreview(null)}
-              type="button"
-            >
-              Close
-            </button>
-            <img
-              alt={attachmentPreview.alt}
-              className="support-image-lightbox-image"
-              src={attachmentPreview.src}
-            />
-            <div className="support-image-lightbox-caption">{attachmentPreview.alt}</div>
-          </div>
-        </div>
-      ) : null}
+      {attachmentPreview ? <AttachmentPreview {...attachmentPreview} onClose={() => setAttachmentPreview(null)} /> : null}
     </div>
   );
 }

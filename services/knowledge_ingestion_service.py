@@ -1,9 +1,12 @@
 import base64
 import csv
 import hashlib
+import ipaddress
 import io
 import json
+import logging
 import re
+import socket
 import zipfile
 from pathlib import Path
 from urllib.parse import urljoin, urlparse, urlunparse
@@ -13,6 +16,10 @@ from bs4 import BeautifulSoup, Tag
 import requests
 
 from services.database_service import create_knowledge_document
+
+logger = logging.getLogger(__name__)
+MAX_REMOTE_DOWNLOAD_BYTES = 10 * 1024 * 1024
+MAX_REMOTE_REDIRECTS = 5
 
 # -----------------------------------
 # CONFIG
@@ -1061,6 +1068,9 @@ def normalize_remote_crawl_url(raw_url):
         cleaned_url
     )
 
+    if parsed_url.username is not None or parsed_url.password is not None:
+        return ""
+
     if parsed_url.scheme not in (
         "http",
         "https",
@@ -1087,6 +1097,25 @@ def normalize_remote_crawl_url(raw_url):
             "",
         )
     )
+
+
+def validate_public_remote_url(raw_url):
+    normalized_url = normalize_remote_crawl_url(raw_url)
+    parsed = urlparse(normalized_url)
+    hostname = parsed.hostname
+    if not hostname or hostname.lower() == "localhost":
+        raise ValueError("The URL must use a public host.")
+    try:
+        addresses = {item[4][0] for item in socket.getaddrinfo(hostname, parsed.port or (443 if parsed.scheme == "https" else 80), type=socket.SOCK_STREAM)}
+    except socket.gaierror as error:
+        raise ValueError("The URL host could not be resolved.") from error
+    if not addresses:
+        raise ValueError("The URL host could not be resolved.")
+    for address in addresses:
+        ip = ipaddress.ip_address(address)
+        if not ip.is_global:
+            raise ValueError("Private, local, link-local, and reserved hosts are not allowed.")
+    return normalized_url
 
 
 def should_skip_remote_crawl_url(
@@ -1368,11 +1397,7 @@ def fetch_remote_knowledge_source(
     raw_url,
 ):
 
-    normalized_url = (
-        normalize_remote_crawl_url(
-            raw_url
-        )
-    )
+    normalized_url = validate_public_remote_url(raw_url)
 
     if not normalized_url:
         raise ValueError(
@@ -1392,14 +1417,43 @@ def fetch_remote_knowledge_source(
         )
 
     try:
-        response = requests.get(
-            normalized_url,
-            timeout=20,
-            headers={
-                "User-Agent": DEFAULT_FETCH_USER_AGENT
-            },
-        )
-        response.raise_for_status()
+        current_url = normalized_url
+        for _ in range(MAX_REMOTE_REDIRECTS + 1):
+            current_url = validate_public_remote_url(current_url)
+            response = requests.get(
+                current_url, timeout=20, stream=True, allow_redirects=False,
+                headers={"User-Agent": DEFAULT_FETCH_USER_AGENT},
+            )
+            if response.is_redirect or response.is_permanent_redirect:
+                destination = response.headers.get("location", "")
+                response.close()
+                if not destination:
+                    raise ValueError("Remote redirect did not include a destination.")
+                current_url = urljoin(current_url, destination)
+                continue
+            response.raise_for_status()
+            break
+        else:
+            raise ValueError("Remote URL exceeded the redirect limit.")
+        declared_size = int(response.headers.get("content-length", "0") or 0)
+        if declared_size > MAX_REMOTE_DOWNLOAD_BYTES:
+            response.close()
+            raise ValueError("Remote document exceeds the 10 MB limit.")
+        chunks = []
+        received = 0
+        for chunk in response.iter_content(chunk_size=64 * 1024):
+            if not chunk:
+                continue
+            received += len(chunk)
+            if received > MAX_REMOTE_DOWNLOAD_BYTES:
+                response.close()
+                raise ValueError("Remote document exceeds the 10 MB limit.")
+            chunks.append(chunk)
+        response._content = b"".join(chunks)
+        response.close()
+        normalized_url = current_url
+    except ValueError:
+        raise
     except Exception as error:
         raise ValueError(
             f"Could not read {normalized_url}."
@@ -1457,6 +1511,8 @@ def fetch_remote_knowledge_source(
             )
         )
     else:
+        from services.upload_security_service import validate_knowledge_upload
+        validate_knowledge_upload(response.content, parsed_url.path or "remote-file")
         extracted_text = extract_uploaded_knowledge_text(
             file_name=parsed_url.path or "remote-file",
             mime_type=content_type,
@@ -1494,6 +1550,7 @@ def fetch_remote_knowledge_sources(
     )
     page_payloads = [seed_payload]
     crawl_warning = ""
+    skipped_page_count = 0
 
     if (
         not seed_payload.get(
@@ -1505,6 +1562,7 @@ def fetch_remote_knowledge_sources(
     ):
         return {
             "pages": page_payloads,
+            "skipped_page_count": 0,
             "warning": crawl_warning,
         }
 
@@ -1547,7 +1605,9 @@ def fetch_remote_knowledge_sources(
                     next_url
                 )
             )
-        except ValueError:
+        except ValueError as error:
+            logger.warning("Skipping related knowledge URL %s: %s", next_url, error)
+            skipped_page_count += 1
             continue
 
         next_page_signature = (
@@ -1621,6 +1681,7 @@ def fetch_remote_knowledge_sources(
 
     return {
         "pages": page_payloads,
+        "skipped_page_count": skipped_page_count,
         "warning": crawl_warning,
     }
 
@@ -1801,6 +1862,8 @@ def ingest_uploaded_knowledge_files(
                 "",
             )
         )
+        from services.upload_security_service import validate_knowledge_upload
+        validate_knowledge_upload(file_bytes, file_name)
         extracted_text = extract_uploaded_knowledge_text(
             file_name=file_name,
             mime_type=mime_type,
@@ -1989,6 +2052,7 @@ def ingest_url_knowledge_source(
 
     return {
         "documents": created_documents,
+        "skipped_page_count": remote_source_result.get("skipped_page_count", 0),
         "title": lead_page["title"],
         "url": lead_page["url"],
         "warning": warning,

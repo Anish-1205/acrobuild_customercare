@@ -1,0 +1,11 @@
+# Versions observed in the verified development environment.
+fastapi==0.141.1
+uvicorn==0.52.4
+python-jose[cryptography]==3.5.0
+bcrypt==5.0.0
+python-dotenv==1.2.3
+requests==2.34.2
+httpx==0.28.1
+beautifulsoup4==4.15.0
+pypdf==6.18.0
+haystack-ai==3.1.1

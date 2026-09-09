@@ -1,10 +1,19 @@
 ﻿import os
 from functools import lru_cache
-from threading import Lock, Thread
+import logging
+from threading import Event, Lock, Thread
+from time import monotonic
 
 import torch
 from dotenv import load_dotenv
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer, StoppingCriteria, StoppingCriteriaList
+
+logger = logging.getLogger(__name__)
+
+from services.observability import get_logger, kv, preview
+
+llm_logger = get_logger("llm")
+QWEN_WARMUP_ERROR = ""
 
 load_dotenv()
 
@@ -234,22 +243,33 @@ def generate_qwen_chat_response(
     model_name="",
     temperature=0.1,
 ):
-    if get_llm_provider() == "sarvam":
-        return _generate_sarvam_chat_response(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            conversation_messages=conversation_messages,
-            model_name=model_name,
-            temperature=temperature,
-        )
-
-    return _generate_local_qwen_chat_response(
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
-        conversation_messages=conversation_messages,
-        model_name=model_name,
-        temperature=temperature,
+    from services.provider_resilience_service import guarded_generation
+    provider = get_llm_provider()
+    operation = _generate_sarvam_chat_response if provider == "sarvam" else _generate_local_qwen_chat_response
+    history = len(conversation_messages or [])
+    llm_logger.info(
+        "llm call %s",
+        kv(provider=provider, model=get_qwen_model_name(), mode="generate", temperature=temperature,
+           history_turns=history, prompt=preview(user_prompt, 160)),
     )
+    llm_logger.debug("llm system prompt %s", kv(text=system_prompt))
+    started = monotonic()
+    try:
+        answer = guarded_generation(provider, lambda: operation(
+            system_prompt=system_prompt, user_prompt=user_prompt,
+            conversation_messages=conversation_messages, model_name=model_name, temperature=temperature))
+    except Exception as error:
+        llm_logger.warning(
+            "llm call failed %s",
+            kv(provider=provider, mode="generate", duration_ms=round((monotonic() - started) * 1000, 1), error=error),
+        )
+        raise
+    llm_logger.info(
+        "llm reply %s",
+        kv(provider=provider, mode="generate", duration_ms=round((monotonic() - started) * 1000, 1),
+           reply_chars=len(answer or ""), reply=preview(answer, 160)),
+    )
+    return answer
 
 
 def stream_qwen_chat_response(
@@ -259,16 +279,36 @@ def stream_qwen_chat_response(
     model_name="",
     temperature=0.1,
 ):
-    if get_llm_provider() == "sarvam":
-        answer = _generate_sarvam_chat_response(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            conversation_messages=conversation_messages,
-            model_name=model_name,
-            temperature=temperature,
+    provider = get_llm_provider()
+    llm_logger.info(
+        "llm call %s",
+        kv(provider=provider, model=get_qwen_model_name(), mode="stream", temperature=temperature,
+           history_turns=len(conversation_messages or []), prompt=preview(user_prompt, 160)),
+    )
+    llm_logger.debug("llm system prompt %s", kv(text=system_prompt))
+    started = monotonic()
+
+    if provider == "sarvam":
+        from sarvam_client import get_sarvam_client
+        chunks = 0
+        chars = 0
+        try:
+            for piece in get_sarvam_client().stream(
+                build_qwen_messages(system_prompt, user_prompt, conversation_messages), temperature=temperature):
+                chunks += 1
+                chars += len(piece)
+                yield piece
+        except Exception as error:
+            llm_logger.warning(
+                "llm stream failed %s",
+                kv(provider=provider, chunks=chunks, duration_ms=round((monotonic() - started) * 1000, 1), error=error),
+            )
+            raise
+        llm_logger.info(
+            "llm stream done %s",
+            kv(provider=provider, chunks=chunks, reply_chars=chars,
+               duration_ms=round((monotonic() - started) * 1000, 1)),
         )
-        if answer:
-            yield answer
         return
 
     active_model = get_local_qwen_model_name()
@@ -306,6 +346,13 @@ def stream_qwen_chat_response(
         generation_options["temperature"] = max(float(temperature), 0.01)
 
     generation_error = []
+    cancelled = Event()
+
+    class StopWhenCancelled(StoppingCriteria):
+        def __call__(self, input_ids, scores, **kwargs):
+            return cancelled.is_set()
+
+    generation_options["stopping_criteria"] = StoppingCriteriaList([StopWhenCancelled()])
 
     def run_generation():
         try:
@@ -319,14 +366,30 @@ def stream_qwen_chat_response(
     generation_thread = Thread(target=run_generation, daemon=True)
     generation_thread.start()
 
-    for content_chunk in streamer:
-        if content_chunk:
-            yield content_chunk
-
-    generation_thread.join()
+    chunks = 0
+    chars = 0
+    try:
+        for content_chunk in streamer:
+            if content_chunk:
+                chunks += 1
+                chars += len(content_chunk)
+                yield content_chunk
+    finally:
+        cancelled.set()
+        generation_thread.join(timeout=5)
 
     if generation_error:
+        llm_logger.warning(
+            "llm stream failed %s",
+            kv(provider="qwen", chunks=chunks, duration_ms=round((monotonic() - started) * 1000, 1),
+               error=generation_error[0]),
+        )
         raise RuntimeError("Qwen generation failed.") from generation_error[0]
+    llm_logger.info(
+        "llm stream done %s",
+        kv(provider="qwen", chunks=chunks, reply_chars=chars,
+           duration_ms=round((monotonic() - started) * 1000, 1)),
+    )
 
 
 def warm_qwen_model_async():
@@ -334,11 +397,13 @@ def warm_qwen_model_async():
         return
 
     def warm_runtime():
+        global QWEN_WARMUP_ERROR
         try:
             get_qwen_runtime()
-        except RuntimeError:
-            # CPU generation is intentionally disabled so chat stays responsive.
-            return
+            QWEN_WARMUP_ERROR = ""
+        except RuntimeError as error:
+            QWEN_WARMUP_ERROR = type(error).__name__
+            logger.exception("Qwen model warm-up failed")
 
     Thread(target=warm_runtime, daemon=True).start()
 

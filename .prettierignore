@@ -1,0 +1,6 @@
+node_modules
+dist
+.venv
+package-lock.json
+data
+*.pyc

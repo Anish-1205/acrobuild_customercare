@@ -2,13 +2,13 @@ import os
 import unittest
 from unittest.mock import patch
 
-import app
+import api_context as app
 
 
 class BackendStartupTests(unittest.TestCase):
-    @patch("app.warm_qwen_model_async")
-    @patch("app.warm_translation_model_async")
-    @patch("app.refresh_workspace_index_async")
+    @patch("api_context.warm_qwen_model_async")
+    @patch("api_context.warm_translation_model_async")
+    @patch("api_context.refresh_workspace_index_async")
     def test_heavy_startup_work_is_disabled_by_default(self, refresh_index, warm_translation, warm_qwen):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("ACROBUILD_WARM_LOCAL_AI_MODELS", None)
@@ -18,9 +18,9 @@ class BackendStartupTests(unittest.TestCase):
         warm_translation.assert_not_called()
         warm_qwen.assert_not_called()
 
-    @patch("app.warm_qwen_model_async")
-    @patch("app.warm_translation_model_async")
-    @patch("app.refresh_workspace_index_async")
+    @patch("api_context.warm_qwen_model_async")
+    @patch("api_context.warm_translation_model_async")
+    @patch("api_context.refresh_workspace_index_async")
     def test_heavy_model_preload_can_be_enabled_explicitly(self, refresh_index, warm_translation, warm_qwen):
         with patch.dict(os.environ, {
             "ACROBUILD_WARM_LOCAL_AI_MODELS": "true",

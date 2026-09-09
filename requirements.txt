@@ -1,20 +1,5 @@
-haystack-ai>=3.0,<4.0
-langchain
-fastapi
-uvicorn
-pandas
-sqlite-utils
-python-dotenv
-requests
-httpx
-beautifulsoup4
-pypdf
-torch
-transformers
-accelerate
-soundfile
-parler-tts @ git+https://github.com/huggingface/parler-tts.git
-indic-nlp-library
-edge-tts
-faiss-cpu
-sentence-transformers
+-r requirements/core.txt
+-r requirements/local-llm.txt
+-r requirements/translation.txt
+-r requirements/tts.txt
+-r requirements/retrieval.txt

@@ -1,53 +1,13 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { getWorkspaceSession, loginWorkspace, logoutWorkspace } from "../lib/api";
 
 export type RoleId = "admin" | "owner" | "agent";
 
 export type AuthUser = {
   email: string;
   name: string;
-  password: string;
   role: RoleId;
 };
-
-const demoEmailByLocalPart: Record<string, string> = {
-  admin: "admin@acrobuild.com",
-  agent: "agent@acrobuild.com",
-  owner: "owner@acrobuild.com"
-};
-
-function normalizeDemoEmail(email: string) {
-  const normalizedEmail = email.trim().toLowerCase();
-  const localPart = normalizedEmail.split("@")[0] ?? "";
-  return demoEmailByLocalPart[localPart] ?? normalizedEmail;
-}
-
-function normalizeStoredUser(user: Omit<AuthUser, "password">) {
-  return {
-    ...user,
-    email: normalizeDemoEmail(user.email)
-  };
-}
-
-export const demoAccounts: AuthUser[] = [
-  {
-    email: "owner@acrobuild.com",
-    name: "Michael Ross",
-    password: "demo@123",
-    role: "owner"
-  },
-  {
-    email: "admin@acrobuild.com",
-    name: "Sarah Khan",
-    password: "demo@123",
-    role: "admin"
-  },
-  {
-    email: "agent@acrobuild.com",
-    name: "John Lewis",
-    password: "demo@123",
-    role: "agent"
-  }
-];
 
 export interface RolePermissions {
   canAccessInbox: boolean;
@@ -130,9 +90,9 @@ const rolePermissionsMap: Record<RoleId, RolePermissions> = {
 };
 
 interface RoleContextType {
-  currentUser: Omit<AuthUser, "password"> | null;
+  currentUser: AuthUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Omit<AuthUser, "password"> | null;
+  login: (email: string, password: string) => Promise<AuthUser | null>;
   logout: () => void;
   role: RoleId;
   setRole: (role: RoleId) => void;
@@ -143,25 +103,10 @@ const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 const ROLE_STORAGE_KEY = "supportConsole_userRole";
 const USER_STORAGE_KEY = "supportConsole_authUser";
+const TOKEN_STORAGE_KEY = "supportConsole_accessToken";
 
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<Omit<AuthUser, "password"> | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    try {
-      const rawUser = localStorage.getItem(USER_STORAGE_KEY);
-
-      if (!rawUser) {
-        return null;
-      }
-
-      return normalizeStoredUser(JSON.parse(rawUser) as Omit<AuthUser, "password">);
-    } catch {
-      return null;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
 
   const [role, setRoleState] = useState<RoleId>(() => {
     if (typeof window === "undefined") {
@@ -172,7 +117,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 
     if (storedUser) {
       try {
-        return normalizeStoredUser(JSON.parse(storedUser) as Omit<AuthUser, "password">).role;
+        return (JSON.parse(storedUser) as AuthUser).role;
       } catch {
         // Fall back to the persisted role key below.
       }
@@ -183,39 +128,48 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   });
 
   const setRole = (newRole: RoleId) => {
+    if (!currentUser || currentUser.role !== newRole) {
+      return;
+    }
     setRoleState(newRole);
     localStorage.setItem(ROLE_STORAGE_KEY, newRole);
   };
 
-  const login = (email: string, password: string) => {
-    const matchedAccount = demoAccounts.find(
-      (account) =>
-        normalizeDemoEmail(account.email) === normalizeDemoEmail(email) &&
-        account.password === password
-    );
+  useEffect(() => {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    getWorkspaceSession().then(({ user }) => {
+      const verifiedUser: AuthUser = { email: user.email, name: user.name, role: user.role };
+      setCurrentUser(verifiedUser);
+      setRoleState(verifiedUser.role);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(verifiedUser));
+    }).catch(() => { setCurrentUser(null); });
+  }, []);
 
-    if (!matchedAccount) {
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await loginWorkspace(email, password);
+      const nextUser: AuthUser = {
+        email: response.user.email,
+        name: response.user.name,
+        role: response.user.role
+      };
+      setCurrentUser(nextUser);
+      setRoleState(nextUser.role);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
+      localStorage.setItem(ROLE_STORAGE_KEY, nextUser.role);
+      return nextUser;
+    } catch {
       return null;
     }
-
-    const nextUser = {
-      email: matchedAccount.email,
-      name: matchedAccount.name,
-      role: matchedAccount.role
-    };
-
-    setCurrentUser(nextUser);
-    setRoleState(matchedAccount.role);
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
-    localStorage.setItem(ROLE_STORAGE_KEY, matchedAccount.role);
-    return nextUser;
   };
 
   const logout = () => {
+    void logoutWorkspace().catch(() => undefined);
     setCurrentUser(null);
     setRoleState("admin");
     localStorage.removeItem(USER_STORAGE_KEY);
     localStorage.removeItem(ROLE_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
   };
 
   return (

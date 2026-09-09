@@ -12,7 +12,11 @@ from time import monotonic, time
 
 from dotenv import load_dotenv
 
-from services.internal_api_log_service import log_data_api_call
+from services.internal_api_log_service import (
+    log_data_api_call,
+    turn_cache_get,
+    turn_cache_set,
+)
 
 load_dotenv()
 
@@ -196,8 +200,21 @@ def normalize_inventory_status(record):
 
 
 def _cached_request(path, params=None, ttl_seconds=None):
+    turn_key = (path, tuple(sorted((params or {}).items())))
+    memoised = turn_cache_get(turn_key)
+    if memoised is not None:
+        summary = _response_summary(memoised)
+        summary["kind"] = "turn_cache"
+        log_data_api_call(
+            provider="Acrobuild CS API", endpoint=path, method="GET", params=params,
+            status="completed", cache_hit=True, response_summary=summary,
+        )
+        return memoised
+
     if CS_API_LIVE_ONLY:
-        return _request_json(path, params=params)
+        value = _request_json(path, params=params)
+        turn_cache_set(turn_key, value)
+        return value
     ttl_seconds = (
         CS_API_CACHE_TTL_SECONDS
         if ttl_seconds is None
@@ -241,6 +258,7 @@ def _cached_request(path, params=None, ttl_seconds=None):
             "stored_at": time(),
             "value": value,
         }
+    turn_cache_set(turn_key, value)
     return value
 
 

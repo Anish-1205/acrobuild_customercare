@@ -1,12 +1,12 @@
 # AI Customer Support Ticket Agent using Haystack
 
-## ⚡ AI Models (100% Local - No API Keys Required)
+## AI models and external services
 - **Qwen**: Local LLM for chat responses (Qwen/Qwen2.5-1.5B-Instruct or 0.5B-Instruct)
 - **AI4Bharat IndicTrans2**: Indian language translation (22+ languages)
 - **AI4Bharat Indic-Parler-TTS**: Indian language text-to-speech
 - **Sentence Transformers**: Knowledge base semantic search
 
-All models run locally with no external API dependencies.
+Qwen, IndicTrans2, Indic-Parler-TTS, and sentence-transformers can run locally. Depending on configuration and feature use, the application also connects to RunPod/Sarvam, the Acrobuild CS API, SMTP, Edge TTS, Hugging Face model downloads, and administrator-supplied HTTP(S) knowledge sources.
 
 ## Setup
 
@@ -25,7 +25,7 @@ HF_TOKEN=your_token_here
 INDIC_TTS_DEVICE=cpu  # or 'cuda' if GPU available
 ```
 
-No Google API key or other external API keys needed!
+Local-only chat does not require a commercial LLM API key. External integrations require their corresponding credentials and network access.
 
 ## Run
 
@@ -45,4 +45,3 @@ npm run dev
 ```
 
 With the backend running on `http://127.0.0.1:8000`, the React app will be available through Vite on `http://127.0.0.1:5173`.
-

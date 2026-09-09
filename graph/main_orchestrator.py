@@ -5,6 +5,7 @@ from graph.haystack_conversation_pipeline import (
     run_conversation_pipeline,
     validate_support_node,
 )
+import os
 from threading import Lock
 from time import monotonic
 from datetime import datetime
@@ -12,15 +13,112 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import re
 from qwen import (
     generate_qwen_chat_response,
+    stream_qwen_chat_response,
     get_llm_agent_mode,
     get_llm_source_label,
     get_qwen_model_name,
 )
+from services.observability import get_logger, kv, normalize_agent_mode, preview
+
+logger = get_logger("orchestrator")
 
 _CONVERSATION_MEMORY = {}
 _MEMORY_LOCK = Lock()
 _MEMORY_TTL_SECONDS = 7200
 _MEMORY_MAX_MESSAGES = 60
+_DEFAULT_LLM_HISTORY_TURNS = 10
+
+
+# Non-Latin scripts + common romanised-Indic marker words / patterns. A message
+# hitting these is treated as "not English" for language-consistency filtering.
+_NON_LATIN_RE = re.compile(r"[^\x00-\x7f]")
+# Transliterated Indic agglutination: "projects-a", "project-um", "Ambernath-la".
+# A hyphen glued to a 1-3 letter case suffix almost never occurs in English.
+_TRANSLIT_SUFFIX_RE = re.compile(r"[a-z]{2,}-(?:a|um|la|ku|ki|na|nu|il|la|kku|aana|oda|ana)\b", re.IGNORECASE)
+_ROMANISED_INDIC_WORDS = frozenset("""
+naan naanga naanum naa naam oru onnu ena enna epdi eppo enge yaar evvalavu sollunga
+irukku irukka irukkura irukkanum panren panna panrom pannunga pannalam mudiyum venum
+illa illai neenga unga ungal ungalukku adhu adhula idhu idhula ovvoru appuram innum sila
+paakkalaam thevai konja neram sari vanakkam mattrum
+chestunnav chestunav chestunnaru enti entha enthaa emiti ela edi idi meeru meku
+unnava unnaru naaku naku kavali kaavali cheppu cheppandi avunu ledu enduku eppudu
+ekkada bagunnara namaskaram kaani telusa telidu
+kiti lagnar kasa kaay kuthe kevha kartoy ahe aahe pahije mala tumhi kase konta kadhi
+kaise kya hai hain chahiye batao bataiye karo karna karni kitna kitne kahan kab kyun
+mujhe aap nahin nahi hoga raha rahe kaisa haan bhai
+""".split())
+
+
+def _looks_english(text):
+    text = str(text or "").strip()
+    if not text:
+        return True
+    if _NON_LATIN_RE.search(text):
+        return False
+    if _TRANSLIT_SUFFIX_RE.search(text):
+        return False
+    words = re.findall(r"[a-zA-Z]+", text.lower())
+    if not words:
+        return True
+    indic_hits = sum(1 for w in words if w in _ROMANISED_INDIC_WORDS)
+    return indic_hits / len(words) < 0.15
+
+
+_ENGLISH_DIRECTIVE = "\n\n[Note: the customer is writing in English. Reply in English.]"
+
+
+def _generation_issue(issue):
+    """Issue text for the answer-writing model. When the customer's message is
+    English, append an explicit English directive so the multilingual model
+    does not carry over a stale conversation language. Detection/retrieval keep
+    the clean issue."""
+    if _looks_english(issue):
+        return f"{issue}{_ENGLISH_DIRECTIVE}"
+    return issue
+
+
+def _recent_history(conversation_messages, current_issue=None):
+    """Trim the merged conversation before handing it to an LLM.
+
+    - Cap to the last N turns (latency + hallucination surface).
+    - If the current message is English, drop earlier non-English turns so the
+      model does not mirror a stale language (Sarvam is Indian-multilingual and
+      will otherwise answer an English question in romanised Tamil/Telugu when
+      the history is in that language). The full store is untouched — this only
+      shapes the model prompt.
+    """
+    try:
+        turns = max(int(os.getenv("LLM_HISTORY_TURNS", _DEFAULT_LLM_HISTORY_TURNS)), 1)
+    except (TypeError, ValueError):
+        turns = _DEFAULT_LLM_HISTORY_TURNS
+    messages = list(conversation_messages or [])
+    if current_issue is not None and _looks_english(current_issue):
+        messages = [m for m in messages if _looks_english(m.get("text", ""))]
+    return messages[-(turns * 2):]
+
+
+def _log_retrieval(issue, response, is_property=False):
+    """The retrieval engine lives in a compiled blob; log what it returned so an
+    empty result is diagnosable (query, mode, matched chunk ids + scores)."""
+    response = response or {}
+    chunks = response.get("matched_chunks") or []
+    retrieval_mode = response.get("retrieval_mode")
+    logger.debug(
+        "retrieval result %s",
+        kv(mode=retrieval_mode, matched=len(chunks), query=preview(issue, 120)),
+    )
+    for chunk in chunks[:8]:
+        logger.debug(
+            "retrieval chunk %s",
+            kv(source=chunk.get("source_key") or chunk.get("document_id") or chunk.get("article_id"),
+               kind=chunk.get("record_kind"), score=chunk.get("score"),
+               title=preview(chunk.get("title") or chunk.get("project_name"), 60)),
+        )
+    if is_property and not chunks:
+        logger.warning(
+            "property turn retrieved no evidence %s",
+            kv(mode=retrieval_mode, query=preview(issue, 120)),
+        )
 
 
 def _current_local_time():
@@ -111,10 +209,11 @@ def _build_live_general_llm_response(issue, conversation_messages):
                 "and time questions instead of claiming that you cannot access it. "
                 "Do not invent current Acrobuild property, pricing, availability, company, or customer facts; those "
                 "require the live CS API. For other genuinely live external information, clearly state the limitation "
-                "and still provide any useful non-live answer you can. Keep the answer focused on exactly what was asked."
+                "and still provide any useful non-live answer you can. Keep the answer focused on exactly what was asked. "
+                "Reply in the same language as the user's most recent message; if that message is in English, reply in English."
             ),
             user_prompt=issue,
-            conversation_messages=conversation_messages,
+            conversation_messages=_recent_history(conversation_messages, issue),
             temperature=0,
         )
         grounded_answer = (
@@ -178,29 +277,43 @@ def run_support_orchestration(
 ):
     conversation_messages = _merge_conversation(conversation_id, conversation_messages, issue)
     resolved_issue = resolve_contextual_support_issue(issue, conversation_messages)
+    if resolved_issue != issue:
+        logger.info("issue resolved from context %s", kv(raw=preview(issue, 120), resolved=preview(resolved_issue, 120)))
 
     def existing_support_handler():
         return build_ai_support_answer(
-            issue=resolved_issue,
+            issue=_generation_issue(resolved_issue),
             customer_name=customer_name,
             customer_email=customer_email,
             business_hours_tag=business_hours_tag,
             issue_type=issue_type,
             article_hint_url=article_hint_url,
-            conversation_messages=conversation_messages,
+            conversation_messages=_recent_history(conversation_messages, resolved_issue),
             limit=limit,
             prefer_fast_response=prefer_fast_response,
             prefer_qwen_response=prefer_qwen_response,
         )
 
-    if prefer_qwen_response and not is_property_support_message(resolved_issue):
+    is_property = is_property_support_message(resolved_issue)
+    if prefer_qwen_response and not is_property:
+        logger.info("orchestration branch %s", kv(mode="general_llm", is_property=is_property))
         response = _build_live_general_llm_response(resolved_issue, conversation_messages)
     else:
+        logger.info("orchestration branch %s", kv(mode="rag_pipeline", is_property=is_property))
         response = run_conversation_pipeline(
             issue=resolved_issue,
             conversation_messages=conversation_messages,
             support_handler=existing_support_handler,
         )
+        _log_retrieval(resolved_issue, response, is_property=is_property)
+    if isinstance(response, dict):
+        response["agent_mode"] = normalize_agent_mode(response.get("agent_mode"))
+    logger.info(
+        "orchestration result %s",
+        kv(source_status=response.get("source_status"), retrieval_mode=response.get("retrieval_mode"),
+           used_llm=response.get("used_llm"), confidence=response.get("confidence_label"),
+           agent_mode=response.get("agent_mode"), answer=preview(response.get("answer"))),
+    )
     _remember_response(conversation_id, conversation_messages, response)
     return response
 
@@ -220,21 +333,48 @@ def stream_support_orchestration_events(
 ):
     conversation_messages = _merge_conversation(conversation_id, conversation_messages, issue)
     resolved_issue = resolve_contextual_support_issue(issue, conversation_messages)
-    if prefer_qwen_response and not is_property_support_message(resolved_issue):
-        response = _build_live_general_llm_response(resolved_issue, conversation_messages)
+    if resolved_issue != issue:
+        logger.info("issue resolved from context %s", kv(raw=preview(issue, 120), resolved=preview(resolved_issue, 120)))
+    is_property = is_property_support_message(resolved_issue)
+    if prefer_qwen_response and not is_property:
+        logger.info("orchestration branch %s", kv(mode="general_llm_stream", is_property=is_property))
+        yield {"type": "progress", "stage": "generating"}
+        grounded = build_social_conversation_answer(resolved_issue) or _ground_current_date_time_answer(resolved_issue, _current_local_time())
+        if grounded:
+            logger.info("grounded shortcut answer used %s", kv(answer=preview(grounded, 120)))
+        pieces = []
+        if grounded:
+            pieces.append(grounded)
+            yield {"type": "delta", "text": grounded}
+        else:
+            for piece in stream_qwen_chat_response(
+                system_prompt=("You are Acrobuild Support, a real-estate customer support assistant. "
+                               "Answer directly. Do not invent facts or claim access to live external data. "
+                               "Current property, price and availability facts require verified CS API evidence. "
+                               "Reply in the same language as the user's most recent message; if it is in English, reply in English. "
+                               f"Current local time: {_current_local_time().isoformat()}."),
+                user_prompt=resolved_issue, conversation_messages=_recent_history(conversation_messages, resolved_issue), temperature=0,
+            ):
+                pieces.append(piece)
+                yield {"type": "delta", "text": piece}
+        response = {"answer": "".join(pieces), "agent_mode": normalize_agent_mode(get_llm_agent_mode()),
+                    "used_llm": not bool(grounded), "source_label": get_llm_source_label(),
+                    "model": get_qwen_model_name(), "source_status": "live", "retrieval_mode": "none",
+                    "confidence_label": "medium", "handoff_recommended": False,
+                    "articles": [], "knowledge_documents": [], "matched_chunks": [], "assist_error": ""}
         _remember_response(conversation_id, conversation_messages, response)
-        yield {"text": response.get("answer", ""), "type": "delta"}
         yield {"response": response, "type": "done"}
         return
-    if is_property_support_message(resolved_issue):
+    if is_property:
+        logger.info("orchestration branch %s", kv(mode="property_stream"))
         for event in stream_ai_support_answer_events(
-            issue=resolved_issue,
+            issue=_generation_issue(resolved_issue),
             customer_name=customer_name,
             customer_email=customer_email,
             business_hours_tag=business_hours_tag,
             issue_type=issue_type,
             article_hint_url=article_hint_url,
-            conversation_messages=conversation_messages,
+            conversation_messages=_recent_history(conversation_messages, resolved_issue),
             limit=limit,
             prefer_fast_response=prefer_fast_response,
             prefer_qwen_response=prefer_qwen_response,
@@ -265,25 +405,32 @@ def stream_support_orchestration_events(
                         "response": event["response"],
                     })["response"],
                 }
+                if isinstance(event.get("response"), dict):
+                    event["response"]["agent_mode"] = normalize_agent_mode(event["response"].get("agent_mode"))
+                _log_retrieval(resolved_issue, event["response"], is_property=True)
                 _remember_response(conversation_id, conversation_messages, event["response"])
             yield event
         return
 
+    logger.info("orchestration branch %s", kv(mode="rag_pipeline_stream"))
     response = run_conversation_pipeline(
         issue=resolved_issue,
         conversation_messages=conversation_messages,
         support_handler=lambda: build_ai_support_answer(
-            issue=resolved_issue,
+            issue=_generation_issue(resolved_issue),
             customer_name=customer_name,
             customer_email=customer_email,
             business_hours_tag=business_hours_tag,
             issue_type=issue_type,
             article_hint_url=article_hint_url,
-            conversation_messages=conversation_messages,
+            conversation_messages=_recent_history(conversation_messages, resolved_issue),
             limit=limit,
             prefer_fast_response=prefer_fast_response,
             prefer_qwen_response=prefer_qwen_response,
         ),
     )
+    _log_retrieval(resolved_issue, response, is_property=is_property)
+    if isinstance(response, dict):
+        response["agent_mode"] = normalize_agent_mode(response.get("agent_mode"))
     _remember_response(conversation_id, conversation_messages, response)
     yield {"response": response, "type": "done"}

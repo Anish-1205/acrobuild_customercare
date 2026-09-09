@@ -2,6 +2,7 @@ import json
 import mimetypes
 import re
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from uuid import uuid4
 
@@ -237,6 +238,8 @@ def persist_message_attachments(
 
     if not attachments:
         return []
+    if len(attachments) > 5:
+        raise ValueError("A reply can contain at most 5 attachments.")
 
     ensure_message_upload_dir()
 
@@ -263,6 +266,8 @@ def persist_message_attachments(
 
         if not file_bytes:
             continue
+        if len(file_bytes) > 5 * 1024 * 1024:
+            raise ValueError("Each attachment must be 5 MB or smaller.")
 
         suffix = Path(file_name).suffix.lower()
 
@@ -282,10 +287,22 @@ def persist_message_attachments(
             or "application/octet-stream"
         )
 
-        if not inferred_mime_type.startswith(
-            "image/"
-        ):
-            continue
+        magic_types = (
+            (b"\x89PNG\r\n\x1a\n", "image/png"),
+            (b"\xff\xd8\xff", "image/jpeg"),
+            (b"GIF87a", "image/gif"),
+            (b"GIF89a", "image/gif"),
+        )
+        detected_mime_type = next((kind for magic, kind in magic_types if file_bytes.startswith(magic)), "")
+        if len(file_bytes) >= 12 and file_bytes[:4] == b"RIFF" and file_bytes[8:12] == b"WEBP":
+            detected_mime_type = "image/webp"
+        if not detected_mime_type or (mime_type and mime_type != detected_mime_type):
+            raise ValueError("Attachment content does not match a supported image type.")
+        inferred_mime_type = detected_mime_type
+        from services.upload_security_service import scan_upload, check_storage_quota
+        scan_upload(file_bytes)
+        check_storage_quota(MESSAGE_UPLOAD_DIR, len(file_bytes))
+        suffix = {"image/png": ".png", "image/jpeg": ".jpg", "image/gif": ".gif", "image/webp": ".webp"}[detected_mime_type]
 
         stored_name = (
             f"{str(ticket_id).lower()}_"
@@ -396,6 +413,18 @@ def parse_message_attachments(raw_value):
         )
 
     return attachments
+
+
+def delete_attachment_records(raw_values):
+    for raw_value in raw_values:
+        for attachment in parse_message_attachments(raw_value):
+            candidate = (PROJECT_ROOT / attachment["path"]).resolve()
+            if MESSAGE_UPLOAD_DIR.resolve() in candidate.parents and candidate.is_file():
+                try:
+                    candidate.unlink()
+                except OSError:
+                    # Database deletion must not be rolled back by an already-missing/locked file.
+                    pass
 
 
 def ensure_ticket_counter(cursor):
@@ -564,25 +593,11 @@ def generate_next_ticket_id(cursor):
 
     sync_ticket_counter(cursor)
 
-    cursor.execute(
-        """
-        SELECT next_value
-        FROM ticket_counters
-        WHERE name = 'ticket_id'
-        """
-    )
-
-    row = cursor.fetchone()
+    row = cursor.execute(
+        "UPDATE ticket_counters SET next_value = next_value + 1 "
+        "WHERE name = 'ticket_id' RETURNING next_value - 1"
+    ).fetchone()
     next_value = int(row[0] if row else 1)
-
-    cursor.execute(
-        """
-        UPDATE ticket_counters
-        SET next_value = ?
-        WHERE name = 'ticket_id'
-        """,
-        (next_value + 1,)
-    )
 
     return f"TK{next_value:06d}"
 
@@ -1006,6 +1021,21 @@ def seed_default_support_users(cursor):
     )
 
 
+def migrate_support_user_passwords(cursor):
+    """One-way migration for legacy plaintext workspace passwords."""
+    from services.auth_service import hash_password
+
+    cursor.execute("SELECT id, password FROM support_users")
+    for user_id, password in cursor.fetchall():
+        password_text = str(password or "")
+        if password_text.startswith(("$2a$", "$2b$", "$2y$", "$argon2")):
+            continue
+        cursor.execute(
+            "UPDATE support_users SET password = ? WHERE id = ?",
+            (hash_password(password_text or "demo@123"), int(user_id)),
+        )
+
+
 def seed_default_support_articles(cursor):
 
     timestamp = get_ticket_timestamp()
@@ -1105,6 +1135,7 @@ def initialize_database():
     if database_bootstrap_is_complete(
         cursor
     ):
+        migrate_support_user_passwords(cursor)
         seed_default_support_articles(cursor)
         conn.commit()
         conn.close()
@@ -1286,6 +1317,7 @@ def initialize_database():
     )
 
     seed_default_support_users(cursor)
+    migrate_support_user_passwords(cursor)
 
     # -----------------------------------
     # SUPPORT ARTICLES TABLE
@@ -1571,7 +1603,8 @@ def create_ticket(
     assignment_method="Auto-Routed",
     attachments=None,
 ):
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
+    conn.execute("BEGIN IMMEDIATE")
     cursor = conn.cursor()
 
     ticket_id = generate_next_ticket_id(
@@ -1666,7 +1699,7 @@ def create_ticket(
 
 def get_all_tickets():
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     conn.row_factory = sqlite3.Row
 
@@ -1688,13 +1721,32 @@ def get_all_tickets():
         for row in rows
     ]
 
+
+def list_tickets(limit=100, offset=0, status="", search="", assigned_agent=None):
+    clauses, params = [], []
+    if status:
+        clauses.append("status=?")
+        params.append(status)
+    if assigned_agent is not None:
+        clauses.append("assigned_agent=?")
+        params.append(assigned_agent)
+    if search:
+        clauses.append("(ticket_id LIKE ? OR issue LIKE ?)")
+        params.extend([f"%{search[:200]}%"] * 2)
+    where = " WHERE " + " AND ".join(clauses) if clauses else ""
+    with closing(open_database_connection()) as conn:
+        conn.row_factory = sqlite3.Row
+        total = conn.execute("SELECT COUNT(*) FROM tickets" + where, params).fetchone()[0]
+        rows = conn.execute("SELECT * FROM tickets" + where + " ORDER BY created_at DESC,ticket_id DESC LIMIT ? OFFSET ?", [*params, min(max(limit, 1), 500), max(offset, 0)]).fetchall()
+    return {"tickets": [enrich_ticket_record(dict(row)) for row in rows], "total": total, "limit": limit, "offset": offset}
+
 # -----------------------------------
 # GET SINGLE TICKET
 # -----------------------------------
 
 def get_ticket(ticket_id):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     conn.row_factory = sqlite3.Row
 
@@ -1726,7 +1778,7 @@ def get_ticket(ticket_id):
 
 def get_ticket_messages(ticket_id):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     conn.row_factory = sqlite3.Row
 
@@ -1769,7 +1821,7 @@ def get_ticket_messages(ticket_id):
 
 def get_ticket_notes(ticket_id):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     conn.row_factory = sqlite3.Row
 
@@ -1818,7 +1870,7 @@ def save_ticket_note(
     if not cleaned_note:
         return
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     cursor = conn.cursor()
 
@@ -1888,7 +1940,7 @@ def save_message(
     ):
         return None
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     cursor = conn.cursor()
     timestamp = get_ticket_timestamp()
@@ -1993,7 +2045,7 @@ def attach_attachments_to_latest_message(
     if not attachment_records:
         return []
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
 
     cursor = conn.cursor()
@@ -2116,7 +2168,7 @@ def attach_attachments_to_latest_message(
 
 def reset_unread(ticket_id):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     cursor = conn.cursor()
 
@@ -2139,7 +2191,7 @@ def reset_unread(ticket_id):
 
 def close_ticket(ticket_id):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     cursor = conn.cursor()
 
@@ -2166,9 +2218,13 @@ def close_ticket(ticket_id):
 
 def delete_ticket(ticket_id):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     cursor = conn.cursor()
+
+    attachment_rows = cursor.execute(
+        "SELECT attachments_json FROM messages WHERE ticket_id = ?", (ticket_id,)
+    ).fetchall()
 
     cursor.execute(
         """
@@ -2198,14 +2254,18 @@ def delete_ticket(ticket_id):
 
     conn.close()
 
+    delete_attachment_records(row[0] for row in attachment_rows)
+
     remove_ticket_tag_links(ticket_id)
 
 
 def reset_ticket_history():
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     cursor = conn.cursor()
+
+    attachment_rows = cursor.execute("SELECT attachments_json FROM messages").fetchall()
 
     cursor.execute(
         """
@@ -2255,6 +2315,7 @@ def reset_ticket_history():
     conn.commit()
 
     conn.close()
+    delete_attachment_records(row[0] for row in attachment_rows)
 # -----------------------------------
 # AI RECOMMENDATION
 # -----------------------------------
@@ -2283,7 +2344,7 @@ def generate_ai_reply(issue):
 
 def update_ticket_agent(ticket_id, agent_name):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     cursor = conn.cursor()
 
@@ -2313,7 +2374,7 @@ def update_ticket_agent(ticket_id, agent_name):
 
 def update_ticket_status(ticket_id, status):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
 
     cursor = conn.cursor()
 
@@ -2342,13 +2403,13 @@ def update_ticket_status(ticket_id, status):
 
 def get_support_users():
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     cursor.execute(
         """
-        SELECT *
+        SELECT id, name, email, role, team, status, created_at, updated_at
         FROM support_users
         ORDER BY
             CASE role
@@ -2384,7 +2445,7 @@ def create_support_user(
 ):
 
     timestamp = get_ticket_timestamp()
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2408,7 +2469,9 @@ def create_support_user(
             str(role or "agent").strip().lower(),
             str(team or "Support").strip() or "Support",
             str(status or "Invited").strip() or "Invited",
-            str(password or "demo@123").strip() or "demo@123",
+            __import__("services.auth_service", fromlist=["hash_password"]).hash_password(
+                str(password or "demo@123").strip() or "demo@123"
+            ),
             timestamp,
             timestamp,
         )
@@ -2423,13 +2486,13 @@ def create_support_user(
 
 def get_support_user(user_id):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     cursor.execute(
         """
-        SELECT *
+        SELECT id, name, email, role, team, status, created_at, updated_at
         FROM support_users
         WHERE id = ?
         """,
@@ -2445,6 +2508,17 @@ def get_support_user(user_id):
     return dict(row)
 
 
+def get_support_user_for_login(email):
+    conn = open_database_connection()
+    conn.row_factory = sqlite3.Row
+    row = conn.execute(
+        "SELECT id, name, email, role, team, status, password FROM support_users WHERE email = ?",
+        (str(email or "").strip().lower(),),
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
 def update_support_user(
     user_id,
     name,
@@ -2453,7 +2527,7 @@ def update_support_user(
     status,
 ):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2503,7 +2577,7 @@ def normalize_support_article_row(row):
 
 def get_support_articles():
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2531,7 +2605,7 @@ def get_support_articles():
 
 def get_support_article(article_id):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2564,7 +2638,7 @@ def create_support_article(
 ):
 
     timestamp = get_ticket_timestamp()
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2620,7 +2694,7 @@ def update_support_article(
     url="",
 ):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2728,7 +2802,7 @@ def normalize_knowledge_document_row(row):
 
 def get_knowledge_documents():
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2757,7 +2831,7 @@ def get_knowledge_documents():
 
 def get_knowledge_document(document_id):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2791,7 +2865,7 @@ def create_knowledge_document(
 ):
 
     timestamp = get_ticket_timestamp()
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2850,7 +2924,7 @@ def update_knowledge_document(
     source_type="manual",
 ):
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -2914,7 +2988,7 @@ def delete_knowledge_documents(
             "deleted_ids": [],
         }
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = open_database_connection()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     placeholders = ",".join(

@@ -15,6 +15,7 @@ data/
 
 # runtime logs & dev artifacts
 *.log
+logs/
 /uvicorn
 *-preview.png
 *.xlsx

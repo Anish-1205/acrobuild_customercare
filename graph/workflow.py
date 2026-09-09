@@ -1,3 +1,7 @@
+import logging
+import os
+
+import requests
 
 from services.database_service import create_ticket
 from services.ticket_metadata_service import (
@@ -18,6 +22,7 @@ DEFAULT_CUSTOMER_CONTEXT = {
     "project_count": 0,
     "total_spent": 0.0,
 }
+logger = logging.getLogger(__name__)
 
 
 # -----------------------------------
@@ -126,8 +131,36 @@ def first_bool_value(*values):
 # -----------------------------------
 
 def get_customer_context(email, timeout_seconds=None):
-    del email, timeout_seconds
-    return build_default_customer_context()
+    normalized_email = str(email or "").strip().lower()
+    context = build_default_customer_context()
+    if not normalized_email:
+        return context
+    base_url = os.getenv("NUFOODZ_API_BASE_URL", "").strip().rstrip("/")
+    if not base_url:
+        return context
+    timeout = float(timeout_seconds or os.getenv("NUFOODZ_API_TIMEOUT_SECONDS", "3"))
+    try:
+        response = requests.get(f"{base_url}/api/customer", params={"email": normalized_email}, timeout=timeout)
+        response.raise_for_status()
+        payload = response.json()
+        customer = payload.get("customer", payload) if isinstance(payload, dict) else {}
+        if not isinstance(customer, dict):
+            raise ValueError("Customer API returned an invalid object")
+        context.update({
+            "active_site_visits": first_int_value(customer.get("active_site_visits"), customer.get("activeSiteVisits")),
+            "lead_stage": first_non_empty_text(customer.get("lead_stage"), customer.get("leadStage"), "new"),
+            "ndis_enabled": first_bool_value(customer.get("ndis_enabled"), customer.get("ndisEnabled"), customer.get("is_ndis")),
+            "order_count": first_int_value(customer.get("order_count"), customer.get("orderCount"), customer.get("total_orders")),
+            "owns_property": first_bool_value(customer.get("owns_property"), customer.get("ownsProperty")),
+            "portfolio_value": first_float_value(customer.get("portfolio_value"), customer.get("portfolioValue")),
+            "project_count": first_int_value(customer.get("project_count"), customer.get("projectCount")),
+            "total_spent": first_float_value(customer.get("total_spent"), customer.get("totalSpent")),
+        })
+        context["is_new"] = context["order_count"] == 0 and context["project_count"] == 0
+        context["is_vip"] = first_bool_value(customer.get("is_vip"), customer.get("isVip")) or context["order_count"] >= 10 or context["total_spent"] >= 1000
+    except (requests.RequestException, ValueError, TypeError):
+        logger.exception("Customer context lookup failed for %s", normalized_email)
+    return context
 
 
 # -----------------------------------
@@ -356,7 +389,10 @@ def run_workflow(
 
     customer_context = get_customer_context(customer_email)
 
-    issue_type = classify_issue(issue, customer_context)
+    from services.intent_service import classify_structured_intent
+    from qwen import generate_qwen_chat_response
+    decision = classify_structured_intent(issue, customer_context, generate_qwen_chat_response if os.getenv("SUPPORT_LLM_CLASSIFICATION", "false").lower() == "true" else None)
+    issue_type = decision.intent if decision.confidence >= 0.7 else classify_issue(issue, customer_context)
 
     priority = set_priority(
         issue_type,

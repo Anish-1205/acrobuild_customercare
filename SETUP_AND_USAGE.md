@@ -278,7 +278,7 @@ curl -X POST "http://localhost:8000/create_ticket" \
 
 Create a `.env` file (no API keys needed!):
 ```env
-# Optional: NuFoodz API connection
+# Optional: NuFoodz customer-context connection
 NUFOODZ_API_BASE_URL=http://10.10.1.23:9092
 
 # Database location (optional)
@@ -287,6 +287,62 @@ DATABASE_PATH=./support_system.db
 # Optional: Qwen model path
 QWEN_MODEL_PATH=~/models/qwen
 ```
+
+## 🔎 Debugging the Chatbot (logs)
+
+Every request gets a **12-char `request_id`** (also returned as the `X-Request-ID`
+response header). All pipeline log lines for that turn carry it, so one turn is
+reconstructable with a single grep.
+
+Output goes to **the terminal running uvicorn** and to a rotating file
+`logs/chatbot.log` (5 MB × 5, gitignored).
+
+### Env knobs (`.env`)
+```env
+LOG_LEVEL=INFO            # root / uvicorn
+CHATBOT_LOG_LEVEL=INFO    # our loggers; set DEBUG for full prompts,
+                          # retrieved chunks and raw LLM output
+LOG_FILE=logs/chatbot.log # "" to disable the file sink
+LOG_JSON=false            # true -> one JSON object per line
+LIB_LOG_LEVEL=WARNING     # httpx / haystack / transformers chatter
+
+# Chatbot tuning
+SARVAM_DEADLINE_SECONDS=45  # wall-clock cap on one LLM call; deadline -> graceful fallback
+SARVAM_TIMEOUT_SECONDS=120  # httpx client ceiling
+LLM_HISTORY_TURNS=10        # conversation turns sent to the model (full store stays 60)
+```
+
+### What each turn logs (INFO)
+| Logger | Line | Tells you |
+|---|---|---|
+| `chatbot.request` | `request in` / `request out` | method, path, status, total ms |
+| `chatbot.assist` | `turn start` | question preview, customer (masked), `conversation_id`, flags, history length |
+| `chatbot.orchestrator` | `orchestration branch` | `general_llm` / `property` / `rag_pipeline` and why |
+| `chatbot.orchestrator` | `retrieval chunk` (DEBUG) / `property turn retrieved no evidence` (WARNING) | what the retriever returned; scores per chunk |
+| `chatbot.llm` | `llm call` / `llm reply` / `llm stream done` | provider, model, latency, reply size, deadline failures |
+| `chatbot.dataapi` | `data api call` | CS API endpoint, status, ms, record count; `cache_hit=True` = served from the per-turn memo (no network) |
+| `chatbot.assist` | `turn done` | source_status, retrieval_mode, used_llm, confidence, handoff, data-API failures, answer preview |
+| `api_context` | `property answer rejected` | grounding gate fired — a property answer with unverifiable figures was replaced with a handoff |
+
+### `agent_mode` values (normalized enum)
+`remote_llm` · `local_llm` · `retrieval` · `grounded` · `fallback` · `live_data_error`.
+Legacy blob labels (`gemini`, `knowledge_retrieval`, …) are mapped to these by
+`normalize_agent_mode` in `services/observability.py`.
+
+### Trace one turn / one conversation
+```bash
+grep "a71075f19eb7" logs/chatbot.log                    # one turn, by request_id (X-Request-ID header)
+grep "conversation_id=<uuid>" logs/chatbot.log          # every turn in a chat session
+grep "turn done" logs/chatbot.log | grep handoff=True   # every escalation
+grep "data api call" logs/chatbot.log | grep status=failed
+grep "property answer rejected" logs/chatbot.log        # blocked hallucinations
+```
+
+### Step-debugging in VSCode
+`.vscode/launch.json` ships a **“FastAPI: debug chatbot”** config (debugpy,
+`justMyCode=false`, forces `CHATBOT_LOG_LEVEL=DEBUG`). Set breakpoints in
+`routers/assist.py`, `graph/main_orchestrator.py`, or `qwen.py` and press F5.
+`.vscode/settings.json` pins the interpreter to `.venv`.
 
 ## 📈 Performance Tips
 
@@ -334,13 +390,13 @@ pip install -r requirements.txt
 ## 📞 Support Services Integration
 
 The chatbot integrates with:
-1. **NuFoodz Admin API** - Customer data, order history
+1. **NuFoodz Admin API** - Optional customer context used for routing when `NUFOODZ_API_BASE_URL` is configured; failures degrade to an anonymous/default customer profile and are logged.
 2. **SQLite Database** - Ticket storage, conversation history
 3. **Knowledge Base** - Document search via RAG
 4. **Qwen LLM** - Response generation
 5. **AI4Bharat** - Language greetings
 
-All local, no external API dependencies!
+Core chat can run locally. SMTP, Edge TTS, URL ingestion, NuFoodz, Acrobuild CS API, and RunPod/Sarvam are external dependencies when enabled.
 
 ## 🎯 Next Steps
 

@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 
 const proxy_paths = [
   "/api",
+  "/auth",
   "/admin/articles",
   "/admin/knowledge-documents",
   "/admin/users",
@@ -28,6 +29,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    test: {
+      environment: "jsdom",
+    },
     server: {
       port: 5173,
       proxy,

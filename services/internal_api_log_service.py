@@ -4,6 +4,9 @@ from datetime import datetime, timezone
 from threading import Lock
 from uuid import uuid4
 
+from services.observability import get_logger, kv
+
+_api_logger = get_logger("dataapi")
 _MAX_LOGS = 500
 _LOGS = deque(maxlen=_MAX_LOGS)
 _LOG_LOCK = Lock()
@@ -15,6 +18,10 @@ def begin_data_api_trace(conversation_id="", question=""):
         "trace_id": uuid4().hex,
         "conversation_id": str(conversation_id or "").strip(),
         "question": str(question or "").strip(),
+        # Per-turn memo of live data-API responses: identical calls within one
+        # assist turn reuse the first live fetch instead of hitting the network
+        # again. Dies with the trace, so nothing is ever stale across turns.
+        "turn_cache": {},
     })
 
 
@@ -25,6 +32,17 @@ def end_data_api_trace(token):
         # StreamingResponse can resume a synchronous generator in a different
         # worker context. Clear that context instead of crashing the stream.
         _TRACE_CONTEXT.set({})
+
+
+def turn_cache_get(key):
+    """Return a memoised value for this turn, or None."""
+    return (_TRACE_CONTEXT.get() or {}).get("turn_cache", {}).get(key)
+
+
+def turn_cache_set(key, value):
+    cache = (_TRACE_CONTEXT.get() or {}).get("turn_cache")
+    if cache is not None:
+        cache[key] = value
 
 
 def log_data_api_call(
@@ -58,6 +76,19 @@ def log_data_api_call(
     }
     with _LOG_LOCK:
         _LOGS.appendleft(record)
+
+    summary = record["response_summary"] or {}
+    fields = kv(
+        provider=record["provider"], endpoint=record["endpoint"], method=record["method"],
+        params=record["params"] or None, status=record["status"],
+        duration_ms=record["duration_ms"], cache_hit=record["cache_hit"] or None,
+        records=summary.get("record_count"), fields=summary.get("field_count"),
+        error=record["error"] or None,
+    )
+    if record["status"] == "failed":
+        _api_logger.warning("data api call %s", fields)
+    else:
+        _api_logger.info("data api call %s", fields)
     return record
 
 

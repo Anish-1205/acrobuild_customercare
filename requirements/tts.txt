@@ -1,0 +1,4 @@
+-r local-llm.txt
+soundfile==0.14.0
+edge-tts==7.2.8
+# Install parler-tts separately at a reviewed commit when enabling Indic-Parler.
