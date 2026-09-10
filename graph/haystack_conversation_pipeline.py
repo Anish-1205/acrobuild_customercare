@@ -75,10 +75,10 @@ def _deterministic_social_answer(issue):
     if cleaned in negative_replies:
         return "I'm sorry to hear that. If there is something I can help you with, tell me what happened."
 
-    cleaned = _re.sub(r"\\s+", " ", cleaned).strip()
+    cleaned = _re.sub(r"\s+", " ", cleaned).strip()
 
-    if _re.search(r"\\b(how are you|how is your day|how's your day|how are things)\\b", cleaned):
-        if _re.search(r"\\b(hi|hello|hey|good morning|good afternoon|good evening)\\b", cleaned):
+    if _re.search(r"\b(how are you|how is your day|how's your day|how are things)\b", cleaned):
+        if _re.search(r"\b(hi|hello|hey|good morning|good afternoon|good evening)\b", cleaned):
             return "Hi! I'm doing well and ready to help. How is your day going?"
         return "I'm doing well and ready to help. How is your day going?"
 
