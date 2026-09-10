@@ -112,6 +112,21 @@ leaf helpers and nothing else.
 (large — ~150 functions, one 2,200-line function), or stop here with Phases 1–3
 delivered and the two constants patched.
 
+**Usage measurement (2026-09-10) — see `docs/BYTECODE_FALLBACK_USAGE.md`:**
+- No production traffic exists (app not deployed; `logs/chatbot.log` = 22 real
+  turns from one dev session).
+- Added a `bytecode_fallback` logger (`services/ai_agent_service.py`) that flags
+  `legacy_bytecode_invoked` / `raw_document_dump_path` / `generic_fallback_answer`.
+- 200-prompt proxy corpus (`scripts/measure_bytecode_fallback.py`, LLM stubbed):
+  **0/200 reached the 2,200-line legacy function; 0/200 hit the document-dump.**
+  Deterministic pre-handlers + LLM-with-context handle everything.
+- The document-dump bug is real but retrieval-quality-driven (fires only when
+  retrieval returns a lone company/SOP chunk), not query-type-driven.
+- Recommendation: **do not** full-reconstruct this file. Fix the dump with a
+  thin-retrieval guard + excluding the monolithic company record from
+  property-search retrieval (both in `.py` we already control). Keep the logger
+  and revisit if `legacy_bytecode_invoked` climbs under real traffic.
+
 ---
 
 ## Change log
@@ -121,3 +136,5 @@ delivered and the two constants patched.
 | 2026-09-10 | 1 | `DECOMPILED_MAP.md` created (read-only) | not run (no code change) | — |
 | 2026-09-10 | 2 | patched `temperature`/`agent_mode` consts into `*_runtime.patched.pyc`; loader prefers it | 634 passed, 43 subtests | original `.pyc` md5 unchanged; ruff clean |
 | 2026-09-10 | 3 | reconstructed `haystack_conversation_pipeline_source.py`; loader `exec`s it in preference | 634 passed, 43 subtests | 13,077 differential cases 0 mismatches; ruff clean; `.pyc` untouched |
+| 2026-09-10 | 4 spike | pycdc built + evaluated (scaffold-only for 3.12); 2 chunks reconstructed + diff-verified | n/a | 6,014 diff cases 0 mismatches |
+| 2026-09-10 | 4 measure | added `bytecode_fallback` logger; ran 200-prompt usage measurement | 634 passed, 43 subtests | 0/200 reach legacy fn; 0/200 dump; ruff clean |

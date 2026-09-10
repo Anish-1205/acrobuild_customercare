@@ -20,3 +20,4 @@ logs/
 /uvicorn
 *-preview.png
 *.xlsx
+scripts/_*.json

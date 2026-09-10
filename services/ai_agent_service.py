@@ -19,6 +19,43 @@ build_company_api_direct_answer = globals()["build_company_api_direct_answer"]
 normalize_ai_text = globals()["normalize_ai_text"]
 _legacy_build_company_api_direct_answer = build_company_api_direct_answer
 
+# --- bytecode-fallback usage telemetry -------------------------------------
+# Measures how often traffic actually reaches the un-reconstructed bytecode and
+# how often it lands on the raw-document-dump path, to decide whether a full
+# reconstruction of `ai_agent_service_runtime.pyc` is worth it. See
+# docs/RECONSTRUCTION_STATUS.md and docs/BYTECODE_FALLBACK_USAGE.md.
+from services.observability import get_logger as _get_logger  # noqa: E402
+
+_fallback_logger = _get_logger("bytecode_fallback")
+
+
+def _log_and_call(_fn, _event):
+    def _wrapper(*args, **kwargs):
+        _fallback_logger.info("bytecode fallback %s", _event)
+        return _fn(*args, **kwargs)
+
+    _wrapper.__name__ = getattr(_fn, "__name__", "wrapped")
+    _wrapper.__wrapped__ = _fn
+    return _wrapper
+
+
+_legacy_build_company_api_direct_answer = _log_and_call(
+    _legacy_build_company_api_direct_answer, "event=legacy_bytecode_invoked",
+)
+if callable(globals().get("should_return_verbatim_source_answer")):
+    _legacy_should_return_verbatim = globals()["should_return_verbatim_source_answer"]
+
+    def should_return_verbatim_source_answer(*args, **kwargs):
+        result = _legacy_should_return_verbatim(*args, **kwargs)
+        if result:
+            _fallback_logger.info("bytecode fallback event=raw_document_dump_path")
+        return result
+
+if callable(globals().get("build_fallback_assist_answer")):
+    globals()["build_fallback_assist_answer"] = _log_and_call(
+        globals()["build_fallback_assist_answer"], "event=generic_fallback_answer",
+    )
+
 
 def _parse_number(value):
     try:
