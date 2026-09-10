@@ -8,6 +8,32 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-09-10 18:30 — Bytecode reconstruction: Phases 1–2
+
+**Context:** The original source for the two `*_runtime.pyc` modules is
+unrecoverable. Rebuilding in phases; see `docs/RECONSTRUCTION_STATUS.md`.
+
+**Phase 1 — documentation (read-only):** `DECOMPILED_MAP.md` — full function
+inventory of both modules (26 + ~150 functions), module constants, entry-point
+flow, and provenance (the big file was originally a food-catalogue bot). Baked-in
+constants located to the bytecode line.
+
+**Phase 2 — constant patch:** `scripts/patch_runtime_constants.py` rewrites two
+constants inside `build_ai_support_answer` / `stream_ai_support_answer_events`:
+- `temperature 0.35 → 0.1` on the property/factual generation call (reduces
+  fabricated figures)
+- `agent_mode "gemini" → "remote_llm"` (correct `AGENT_MODE_ENUM` value)
+
+Output is `services/ai_agent_service_runtime.patched.pyc`; the original `.pyc` is
+never written (md5 unchanged). `services/ai_agent_service.py` loads the patched
+copy when present.
+
+**Verification:** `pytest tests/` → **634 passed, 43 subtests** (identical to
+baseline). `ruff` clean. Patched-module import confirms `0.35`/`"gemini"` gone,
+`0.1`/`"remote_llm"` present.
+
+---
+
 ## 2026-09-10 17:05 — Repeatable prompt evaluation + failure analysis
 
 **Problem:** The only chatbot quality signal was a stale spreadsheet

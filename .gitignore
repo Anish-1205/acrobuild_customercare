@@ -12,6 +12,7 @@ data/
 
 # keep compiled runtime blobs that app loads at import time
 !*_runtime.pyc
+!*_runtime.patched.pyc
 
 # runtime logs & dev artifacts
 *.log

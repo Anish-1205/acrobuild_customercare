@@ -3,8 +3,14 @@ from pathlib import Path as _Path
 import marshal as _marshal
 import re as _re
 from services.acrobuild_company_service import resolve_project_from_text
+# The `.pyc` is bytecode-only (no source). A hand-patched copy —
+# `*_runtime.patched.pyc`, produced by scripts/patch_runtime_constants.py — is
+# loaded in preference to the pristine original when present. See
+# docs/RECONSTRUCTION_STATUS.md.
 _runtime_path = _Path(__file__).with_name("ai_agent_service_runtime.pyc")
-with _runtime_path.open("rb") as _runtime_file:
+_patched_runtime_path = _runtime_path.with_suffix(".patched.pyc")
+_active_runtime_path = _patched_runtime_path if _patched_runtime_path.exists() else _runtime_path
+with _active_runtime_path.open("rb") as _runtime_file:
     from services.runtime_compatibility_service import validate_runtime_header
     validate_runtime_header(_runtime_file.read(16))
     _runtime_code = _marshal.load(_runtime_file)
