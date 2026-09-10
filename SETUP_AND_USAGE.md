@@ -230,6 +230,31 @@ Pre-loaded knowledge base with:
 
 Automatically searches relevant documents for each query.
 
+## 📋 Running the prompt evaluation
+
+`scripts/evaluate_chatbot_prompts.py` replays 200 test prompts against a running
+backend and writes a scored spreadsheet. Prompts are committed at
+`scripts/eval_prompts.json` (no external PDF needed).
+
+```bash
+# 1. start the backend (separate shell)
+.venv/Scripts/python.exe -m uvicorn app:api --port 8000
+
+# 2. run the eval
+.venv/Scripts/python.exe scripts/evaluate_chatbot_prompts.py
+```
+
+Output: `customer_support_chatbot_200_prompt_evaluation.xlsx` (Summary +
+per-prompt sheets). Partial progress is cached in
+`data/chatbot_200_prompt_results.json` and resumed on the next run — delete it to
+start clean.
+
+Overrides (env vars): `EVAL_API_URL`, `EVAL_MAX_WORKERS` (default 4 — use 1–2
+against a demo-grade or serverless endpoint), `EVAL_TIMEOUT_SECONDS`,
+`EVAL_OUTPUT_PATH`, `EVAL_CACHE_PATH`, `EVAL_PROMPTS_PATH`.
+
+Latest analysis and the fix list: `docs/EVAL_FINDINGS.md`.
+
 ## 🧪 Testing the Chatbot
 
 ### Test 1: Simple Query

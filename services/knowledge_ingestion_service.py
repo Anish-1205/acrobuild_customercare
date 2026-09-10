@@ -1474,6 +1474,8 @@ def fetch_remote_knowledge_source(
     is_html_page = False
     discovered_links = []
 
+    from services.upload_security_service import validate_knowledge_upload
+    validate_knowledge_upload(response.content, "remote.pdf" if content_type == "application/pdf" else parsed_url.path or "remote-file")
     if suffix == ".pdf" or content_type == "application/pdf":
         extracted_text = extract_pdf_text(
             response.content
@@ -1511,8 +1513,6 @@ def fetch_remote_knowledge_source(
             )
         )
     else:
-        from services.upload_security_service import validate_knowledge_upload
-        validate_knowledge_upload(response.content, parsed_url.path or "remote-file")
         extracted_text = extract_uploaded_knowledge_text(
             file_name=parsed_url.path or "remote-file",
             mime_type=content_type,

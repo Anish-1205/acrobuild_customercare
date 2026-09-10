@@ -1,7 +1,8 @@
 """Assist HTTP endpoints."""
 from time import monotonic
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from services.conversation_store_service import COOKIE_NAME, ConversationSession
 
 from services.observability import (
     get_logger,
@@ -97,7 +98,12 @@ def _log_turn_result(kind, cleaned_issue, payload, started):
     turn_logger.debug("turn answer (full) %s", kv(answer=payload.get("answer")))
 
 @router.post("/api/support/assist")
-def get_support_assist(request: SupportAssistRequest):
+def get_support_assist(request: SupportAssistRequest, http_request: Request, response: Response):
+    session = ConversationSession(http_request.cookies.get(COOKIE_NAME, ""), request.conversation_id)
+    session.set_cookie(response)
+    saved_history = session.load()
+    if saved_history:
+        request = SupportAssistRequest.model_validate({**request.model_dump(), "conversation_messages": saved_history})
     cleaned_issue = str(request.issue or "").strip()
     if not cleaned_issue:
         raise HTTPException(status_code=400, detail="Issue is required.")
@@ -121,6 +127,7 @@ def get_support_assist(request: SupportAssistRequest):
                 cleaned_issue, response_payload, data_api_calls,
             )
             _log_turn_result("assist", cleaned_issue, response_payload, started)
+            session.append(cleaned_issue, response_payload.get("answer"))
             return response_payload
         response_payload = run_support_orchestration(
             issue=cleaned_issue,
@@ -142,6 +149,7 @@ def get_support_assist(request: SupportAssistRequest):
         response_payload["data_api_calls"] = data_api_calls
         response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
         _log_turn_result("assist", cleaned_issue, response_payload, started)
+        session.append(cleaned_issue, response_payload.get("answer"))
         return response_payload
     except Exception:
         turn_logger.exception("turn failed %s", kv(kind="assist", question=preview(cleaned_issue)))
@@ -173,7 +181,11 @@ def synthesize_support_voice(request: VoiceSynthesisRequest):
     )
 
 @router.post("/api/support/assist/stream")
-def stream_support_assist(request: SupportAssistRequest):
+def stream_support_assist(request: SupportAssistRequest, http_request: Request):
+    session = ConversationSession(http_request.cookies.get(COOKIE_NAME, ""), request.conversation_id)
+    saved_history = session.load()
+    if saved_history:
+        request = SupportAssistRequest.model_validate({**request.model_dump(), "conversation_messages": saved_history})
     cleaned_issue = str(request.issue or "").strip()
     if not cleaned_issue:
         raise HTTPException(status_code=400, detail="Issue is required.")
@@ -205,6 +217,7 @@ def stream_support_assist(request: SupportAssistRequest):
                 response_payload["rag_evaluation"] = evaluate_rag_response(
                     cleaned_issue, response_payload, data_api_calls,
                 )
+                session.append(cleaned_issue, response_payload.get("answer"))
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
                 }, ensure_ascii=True) + "\n"
@@ -244,6 +257,7 @@ def stream_support_assist(request: SupportAssistRequest):
                     response_payload["data_api_calls"] = data_api_calls
                     response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
                     event["response"] = response_payload
+                    session.append(cleaned_issue, response_payload.get("answer"))
                 if property_request:
                     property_events.append(event)
                 else:
@@ -288,4 +302,13 @@ def stream_support_assist(request: SupportAssistRequest):
         finally:
             end_data_api_trace(trace_token)
 
-    return StreamingResponse(event_stream(), media_type="application/x-ndjson")
+    response = StreamingResponse(event_stream(), media_type="application/x-ndjson")
+    session.set_cookie(response)
+    return response
+
+
+@router.delete("/api/support/conversations/{conversation_id}")
+def delete_conversation(conversation_id: str, http_request: Request):
+    session = ConversationSession(http_request.cookies.get(COOKIE_NAME, ""), conversation_id)
+    session.clear()
+    return {"deleted": True}

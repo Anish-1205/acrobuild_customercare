@@ -8,7 +8,7 @@ import type {
   CSSProperties,
   KeyboardEvent as ReactKeyboardEvent
 } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useRole } from "../contexts/RoleContext";
 import { useSearch } from "../contexts/SearchContext";
 import { roleExperienceMap } from "../lib/roleNavigation";
@@ -226,6 +226,7 @@ export function AppShell() {
         </div>
 
         <div className="support-shell-toolbar">
+          {role !== "agent" && <Link className="support-shell-link" to={`/${role}/automation`}>Automations</Link>}
           {role === "admin" ? (
             <a
               className="support-shell-link support-shell-test-home"

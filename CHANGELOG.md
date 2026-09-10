@@ -8,6 +8,121 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-09-10 17:05 — Repeatable prompt evaluation + failure analysis
+
+**Problem:** The only chatbot quality signal was a stale spreadsheet
+(`...prompt_evaluation.xlsx`, 66.5% pass). The eval script couldn't be re-run —
+`extract_cases()` read a PDF from a hardcoded path that exists on no current
+machine.
+
+**Changes:**
+- `scripts/eval_prompts.json` (new) — the 200 prompts (id/category/prompt/
+  expected), extracted from the cached results, version-controlled.
+- `scripts/evaluate_chatbot_prompts.py` — `extract_cases()` now loads that JSON;
+  dropped the `pypdf` dependency in this script. `API_URL`, worker count,
+  timeout, and all paths are env-overridable (`EVAL_*`).
+- `docs/EVAL_FINDINGS.md` (new) — analysis of the 67 failures.
+- `SETUP_AND_USAGE.md` — "Running the prompt evaluation" section.
+
+**Findings:** 41 of 67 failures were `ReadTimeout` (60 s) against the RunPod
+*serverless* Sarvam endpoint — an infra/latency problem, not answer quality.
+16 were wrong-document dumps, 4 wrong refusals, ~6 genuinely wrong — all in the
+compiled-blob answer path, so blocked on `.pyc` source recovery. Priority order:
+fix endpoint latency → re-measure → fix content.
+
+**Verification:** `extract_cases()` returns 200 contiguous cases; `judge()` smoke
+check passes; `ruff` clean. Full 200-prompt run not executed here (hits a paid
+remote endpoint) — left for the owner to run once the provider latency is
+addressed.
+
+---
+
+## 2026-09-10 16:20 — Dependency security triage
+
+**Problem:** `pip-audit` reported 42 known vulnerabilities across 5 packages;
+none had been triaged.
+
+**Findings & actions** (full detail in `requirements/SECURITY_ADVISORIES.md`):
+- `pip` (7) — dev tooling only. **Fixed:** upgraded venv pip 25.0.1 → 26.2.1.
+- `ecdsa` PYSEC-2026-1325 — **not reachable**; auth uses HS256/HMAC
+  (`services/auth_service.py:14`), the ECDSA path is never called. No upstream fix.
+- `transformers` (~30), `accelerate`, `protobuf` — local-ML stack only, not on
+  the live (remote-provider) request path. Nearly all require loading an
+  attacker-controlled model; this app runs a fixed self-hosted Qwen. **Deferred
+  on purpose:** bump + regression-test these alongside enabling the local
+  fallback LLM.
+- No package was found unused; nothing removed.
+
+**Verification:** `pip-audit` re-run shows the 7 `pip` findings cleared; the
+remaining findings are documented with reachability analysis.
+
+---
+
+## 2026-09-10 15:40 — Validation of pending-upgrade batch
+
+**Problem:** The durable-history, runtime-guard, provider-fallback, and
+workflow-UI changes were in the tree but their verification lines still read
+"pending" / "in progress".
+
+**Verification (run 2026-09-10):**
+- `pytest tests/` → **634 passed**, 43 subtests (was 625; +9 in
+  `tests/test_pending_upgrades.py` covering browser isolation, retention, size
+  cap, deletion, HTTP restore/delete integration, incompatible runtime header,
+  provider-fallback metadata, and stream provider-stability).
+- `ruff check .` clean.
+- `tsc --noEmit` clean · `eslint` clean (7 pre-existing `any` warnings, none new)
+  · `vitest run` → 3 passed · `vite build` succeeded
+  (`dist/assets/index-*.js` 495.90 kB / 130.41 kB gzip).
+
+**Still outside the repo:** original source recovery for the two `.pyc`
+runtimes; a ClamAV binary + definitions on the host (`CLAMSCAN_PATH`); Python
+dependency-advisory triage; a live remote-provider fallback endpoint. All are
+documented as fail-closed / config-gated above.
+
+---
+
+## 2026-09-10 — Knowledge-import scan coverage
+
+**Problem:** Remote PDFs and HTML bypassed the scanner hook because validation ran only in the generic-file branch.
+
+**Changes:** `services/knowledge_ingestion_service.py` scans remote content before any parser, including PDF/HTML, and validates PDFs selected by MIME type. The automation page is now linked from the manager toolbar.
+
+**Verification:** Scanner failure-path and PDF-signature tests added below; no ClamAV executable was found on PATH. Production remains fail-closed until an administrator supplies `CLAMSCAN_PATH` and virus definitions.
+
+---
+
+## 2026-09-10 — Workflow review UI
+
+**Changes:** `src/pages/AutomationPage.tsx`, `src/automation.css`, `src/lib/api.ts`, and `src/App.tsx` expose overdue tickets, available agent capacity, and explicit preview/confirm actions at `/admin/automation` and `/owner/automation`. Server-side role checks, proposal expiry, and changed-ticket rejection remain authoritative.
+
+**Verification:** `tsc`/`eslint`/`vite build` pass; existing `vitest` suite (3) still green. Dedicated interaction tests not yet added. This is a review workflow, not unattended scheduling or execution of refunds.
+
+---
+
+## 2026-09-10 — Configurable provider fallback
+
+**Changes:** `services/provider_resilience_service.py`, `qwen.py`, and `services/answer_evidence_service.py` now support a configured alternate provider, routing based on previously observed latency, and explicit actual-provider/fallback metadata. Streaming never switches providers after emitting text.
+
+**Configuration:** `LLM_FALLBACK_PROVIDER=qwen|sarvam`; optional `LLM_FALLBACK_LATENCY_MS`. An unset alternate preserves the configured provider. Both providers must be installed/configured to enable fallback.
+
+**Verification:** `tests/test_pending_upgrades.py::test_fallback_reports_actual_provider` and `::test_stream_does_not_mix_providers` pass (mocked provider failure, actual-provider metadata, stream provider-stability). No remote endpoint was provisioned or changed.
+
+---
+
+## 2026-09-10 — Pending upgrades: durable history and runtime compatibility
+
+**Problem:** Conversation state had no durable implementation, and loading the recovered bytecode with another Python version could crash the process.
+
+**Changes:**
+- `services/conversation_store_service.py` — cookie-scoped SQLite history, two-hour retention, a 60-message cap, atomic appends, and conversation deletion.
+- `services/runtime_compatibility_service.py`, both runtime loaders — validate the Python bytecode header before unmarshalling.
+
+**Integration:** `routers/assist.py` restores history for both chat endpoints, stores verified final replies, sets an HttpOnly conversation cookie, and exposes cookie-scoped deletion. No history is restored using a conversation ID alone.
+
+**Verification:** `tests/test_pending_upgrades.py` (9 tests) passes — browser isolation, restoration, retention, size limits, deletion, HTTP restore/delete integration, and incompatible runtime headers. `conversation_turns` table + expiry index added as migration 3. Original source restoration remains pending; the compatibility guard is not source recovery.
+
+---
+
 ## 2026-09-09 19:29 — Fix: bot replied in romanised Tamil/Telugu instead of English
 
 **Problem:** After heavy multilingual testing, the assistant answered plain

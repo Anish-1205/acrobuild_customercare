@@ -3,6 +3,9 @@ from datetime import datetime, timezone
 
 
 def enrich_answer_evidence(payload, calls):
+    if payload.get("used_llm"):
+        from services.provider_resilience_service import completion_metadata
+        payload["provider_execution"] = completion_metadata()
     citations = []
     retrieved_at = datetime.now(timezone.utc).isoformat()
     for chunk in payload.get("matched_chunks", []):

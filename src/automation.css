@@ -1,0 +1,6 @@
+.automation-page { max-width: 1000px; padding: 24px; margin: auto; }
+.automation-page section { margin: 20px 0; padding: 20px; border: 1px solid #cbd5e1; border-radius: 12px; background: white; }
+.automation-page table { width: 100%; border-collapse: collapse; }
+.automation-page th, .automation-page td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; }
+.automation-page label { display: block; margin: 12px 0; }
+.automation-page input, .automation-page select, .automation-page button { padding: 8px; margin: 4px; }

@@ -214,6 +214,26 @@ export function getWorkspaceSession() {
   return apiRequest<{ user: WorkspaceSessionUser }>("/auth/me");
 }
 
+export type EscalationTicket = { ticket_id: string; priority: string; assigned_agent: string; status: string; age_hours: number };
+export type AgentCapacity = { name: string; team: string; active_tickets: number; available_capacity: number };
+export type ActionProposal = { proposal_id: string; ticket_id: string; kind: string; before: Record<string, string>; change: Record<string, string>; expires_in: number };
+
+export async function getAutomationDashboard() {
+  const [queue, capacity] = await Promise.all([
+    apiRequest<{ tickets: EscalationTicket[] }>("/api/admin/automation/escalations"),
+    apiRequest<{ agents: AgentCapacity[] }>("/api/admin/automation/capacity")
+  ]);
+  return { tickets: queue.tickets, agents: capacity.agents };
+}
+
+export function proposeTicketAction(ticket_id: string, kind: "assign" | "status", value: string) {
+  return apiRequest<ActionProposal>("/api/admin/automation/proposals", { method: "POST", body: JSON.stringify({ ticket_id, kind, value }) });
+}
+
+export function confirmTicketAction(proposal_id: string) {
+  return apiRequest<{ completed: boolean }>(`/api/admin/automation/proposals/${proposal_id}/confirm`, { method: "POST", body: JSON.stringify({ confirmed: true }) });
+}
+
 async function apiRequestWithFallback<T>(
   primaryPath: string,
   fallbackPath: string,

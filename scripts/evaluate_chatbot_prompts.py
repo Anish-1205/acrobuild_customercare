@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import json
+import os
 import re
 import time
 import uuid
@@ -13,14 +14,17 @@ from openpyxl import Workbook
 from openpyxl.formatting.rule import ColorScaleRule
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
-from pypdf import PdfReader
 
-PDF_PATH = Path(r"C:\Users\ROOTS_GRAPHICS1\Downloads\customer_support_chatbot_200_test_prompts.pdf")
-OUTPUT_PATH = Path("customer_support_chatbot_200_prompt_evaluation.xlsx")
-CACHE_PATH = Path("data/chatbot_200_prompt_results.json")
-API_URL = "http://127.0.0.1:8000/api/support/assist"
-MAX_WORKERS = 4
-TIMEOUT_SECONDS = 60
+# The 200 prompts are committed here (id, category, prompt, expected). The old
+# run extracted them from a local PDF; that path no longer exists on every
+# machine, so the prompt set is version-controlled instead.
+_ROOT = Path(__file__).resolve().parent.parent
+PROMPTS_PATH = Path(os.getenv("EVAL_PROMPTS_PATH", _ROOT / "scripts" / "eval_prompts.json"))
+OUTPUT_PATH = Path(os.getenv("EVAL_OUTPUT_PATH", "customer_support_chatbot_200_prompt_evaluation.xlsx"))
+CACHE_PATH = Path(os.getenv("EVAL_CACHE_PATH", "data/chatbot_200_prompt_results.json"))
+API_URL = os.getenv("EVAL_API_URL", "http://127.0.0.1:8000/api/support/assist")
+MAX_WORKERS = int(os.getenv("EVAL_MAX_WORKERS", "4"))
+TIMEOUT_SECONDS = int(os.getenv("EVAL_TIMEOUT_SECONDS", "60"))
 
 
 def clean(value: Any) -> str:
@@ -28,53 +32,20 @@ def clean(value: Any) -> str:
 
 
 def extract_cases() -> list[dict[str, Any]]:
-    reader = PdfReader(str(PDF_PATH))
-    cases: list[dict[str, Any]] = []
-    for page in reader.pages[1:]:
-        text = page.extract_text(extraction_mode="layout") or ""
-        lines = text.splitlines()
-        category = ""
-        for line in lines:
-            match = re.search(r"^\s*([A-Z][A-Z ]+)\s+\(\d+ prompts\)", line)
-            if match:
-                category = clean(match.group(1))
-                break
-        header_index = next((i for i, line in enumerate(lines) if "Test prompt" in line and "Expected POC behavior" in line), -1)
-        if header_index < 0:
-            continue
-        header = lines[header_index]
-        prompt_col = header.index("Test prompt")
-        expected_col = header.index("Expected POC behavior")
-        current: dict[str, Any] | None = None
-        for line in lines[header_index + 1:]:
-            if re.search(r"Page\s+\d+\s*$", line):
-                continue
-            id_match = re.match(r"^\s*(\d{1,3})\s+", line)
-            if id_match and int(id_match.group(1)) <= 200:
-                if current:
-                    current["prompt"] = clean(" ".join(current.pop("prompt_parts")))
-                    current["expected"] = clean(" ".join(current.pop("expected_parts")))
-                    cases.append(current)
-                current = {
-                    "id": int(id_match.group(1)),
-                    "category": category,
-                    "prompt_parts": [line[prompt_col:expected_col].strip()],
-                    "expected_parts": [line[expected_col:].strip()],
-                }
-            elif current:
-                left = line[prompt_col:expected_col].strip() if len(line) > prompt_col else ""
-                right = line[expected_col:].strip() if len(line) > expected_col else ""
-                if left:
-                    current["prompt_parts"].append(left)
-                if right:
-                    current["expected_parts"].append(right)
-        if current:
-            current["prompt"] = clean(" ".join(current.pop("prompt_parts")))
-            current["expected"] = clean(" ".join(current.pop("expected_parts")))
-            cases.append(current)
+    raw = json.loads(PROMPTS_PATH.read_text(encoding="utf-8"))
+    cases = [
+        {
+            "id": int(item["id"]),
+            "category": clean(item["category"]),
+            "prompt": clean(item["prompt"]),
+            "expected": clean(item.get("expected")),
+        }
+        for item in raw
+    ]
     cases.sort(key=lambda item: item["id"])
-    if len(cases) != 200 or [item["id"] for item in cases] != list(range(1, 201)):
-        raise RuntimeError(f"Expected IDs 1-200, extracted {len(cases)} cases: {[item['id'] for item in cases]}")
+    ids = [item["id"] for item in cases]
+    if ids != list(range(1, len(cases) + 1)):
+        raise RuntimeError(f"{PROMPTS_PATH} must hold contiguous IDs from 1; got {ids}")
     return cases
 
 

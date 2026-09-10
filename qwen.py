@@ -1,5 +1,6 @@
 ﻿import os
 from functools import lru_cache
+import httpx
 import logging
 from threading import Event, Lock, Thread
 from time import monotonic
@@ -53,7 +54,8 @@ def get_local_qwen_model_name():
 
 def get_qwen_model_name():
     """Active chat model name for the configured LLM provider."""
-    if get_llm_provider() == "sarvam":
+    from services.provider_resilience_service import response_provider
+    if response_provider(get_llm_provider()) == "sarvam":
         from sarvam_client import get_sarvam_model_name
 
         return get_sarvam_model_name()
@@ -61,7 +63,8 @@ def get_qwen_model_name():
 
 
 def get_llm_source_label():
-    if get_llm_provider() == "sarvam":
+    from services.provider_resilience_service import response_provider
+    if response_provider(get_llm_provider()) == "sarvam":
         return "RunPod Sarvam"
     return "Live local Qwen"
 
@@ -69,7 +72,8 @@ def get_llm_source_label():
 def get_llm_agent_mode(success=True):
     if not success:
         return "live_llm_error"
-    if get_llm_provider() == "sarvam":
+    from services.provider_resilience_service import response_provider
+    if response_provider(get_llm_provider()) == "sarvam":
         return "live_remote_llm"
     return "live_local_llm"
 
@@ -243,8 +247,9 @@ def generate_qwen_chat_response(
     model_name="",
     temperature=0.1,
 ):
-    from services.provider_resilience_service import guarded_generation
+    from services.provider_resilience_service import guarded_generation, provider_candidates, mark_completion
     provider = get_llm_provider()
+    mark_completion(provider, provider)
     operation = _generate_sarvam_chat_response if provider == "sarvam" else _generate_local_qwen_chat_response
     history = len(conversation_messages or [])
     llm_logger.info(
@@ -255,9 +260,18 @@ def generate_qwen_chat_response(
     llm_logger.debug("llm system prompt %s", kv(text=system_prompt))
     started = monotonic()
     try:
-        answer = guarded_generation(provider, lambda: operation(
-            system_prompt=system_prompt, user_prompt=user_prompt,
-            conversation_messages=conversation_messages, model_name=model_name, temperature=temperature))
+        candidates = provider_candidates(provider)
+        for index, candidate in enumerate(candidates):
+            operation = _generate_sarvam_chat_response if candidate == "sarvam" else _generate_local_qwen_chat_response
+            try:
+                answer = guarded_generation(candidate, lambda: operation(
+                    system_prompt=system_prompt, user_prompt=user_prompt,
+                    conversation_messages=conversation_messages, model_name=model_name if candidate == provider else "", temperature=temperature))
+                mark_completion(provider, candidate, "provider_failure" if index else "latency_policy" if candidate != provider else "")
+                break
+            except (RuntimeError, OSError, httpx.HTTPError):
+                if index == len(candidates) - 1:
+                    raise
     except Exception as error:
         llm_logger.warning(
             "llm call failed %s",
@@ -272,14 +286,15 @@ def generate_qwen_chat_response(
     return answer
 
 
-def stream_qwen_chat_response(
+def _stream_qwen_chat_response(
     system_prompt,
     user_prompt,
     conversation_messages=None,
     model_name="",
     temperature=0.1,
+    provider=None,
 ):
-    provider = get_llm_provider()
+    provider = provider or get_llm_provider()
     llm_logger.info(
         "llm call %s",
         kv(provider=provider, model=get_qwen_model_name(), mode="stream", temperature=temperature,
@@ -390,6 +405,28 @@ def stream_qwen_chat_response(
         kv(provider="qwen", chunks=chunks, reply_chars=chars,
            duration_ms=round((monotonic() - started) * 1000, 1)),
     )
+
+
+def stream_qwen_chat_response(system_prompt, user_prompt, conversation_messages=None, model_name="", temperature=0.1):
+    from services.provider_resilience_service import provider_candidates, mark_completion
+    primary = get_llm_provider()
+    candidates = provider_candidates(primary)
+    emitted = False
+    for index, candidate in enumerate(candidates):
+        reason = "provider_failure" if index else "latency_policy" if candidate != primary else ""
+        mark_completion(primary, candidate, reason)
+        try:
+            for piece in _stream_qwen_chat_response(system_prompt, user_prompt, conversation_messages,
+                                                    model_name if candidate == primary else "", temperature,
+                                                    provider=candidate):
+                emitted = True
+                mark_completion(primary, candidate, reason)
+                yield piece
+            mark_completion(primary, candidate, reason)
+            return
+        except Exception:
+            if emitted or index == len(candidates) - 1:
+                raise
 
 
 def warm_qwen_model_async():

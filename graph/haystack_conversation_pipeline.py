@@ -5,7 +5,8 @@ import re as _re
 
 _runtime_path = _Path(__file__).with_name("haystack_conversation_pipeline_runtime.pyc")
 with _runtime_path.open("rb") as _runtime_file:
-    _runtime_file.read(16)
+    from services.runtime_compatibility_service import validate_runtime_header
+    validate_runtime_header(_runtime_file.read(16))
     _runtime_code = _marshal.load(_runtime_file)
 exec(_runtime_code, globals(), globals())
 build_deterministic_conversation_answer = globals()["build_deterministic_conversation_answer"]

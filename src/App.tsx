@@ -15,6 +15,7 @@ import { ApiActivityPage } from "./pages/ApiActivityPage";
 import { DataApiLogsPage } from "./pages/DataApiLogsPage";
 import { CustomerLookupPage } from "./pages/CustomerLookupPage";
 import { LoginPage } from "./pages/LoginPage";
+import { AutomationPage } from "./pages/AutomationPage";
 
 function RoleRoute({
   allowedRole,
@@ -79,6 +80,8 @@ export default function App() {
       <Route element={<CustomerHomePage />} path="/home/articles/:articleSlug" />
       <Route element={<LoginRoute />} path="/login" />
       <Route element={<ProtectedAppShell />} path="/">
+        <Route element={<RoleRoute allowedRole="admin" element={<AutomationPage />} />} path="admin/automation" />
+        <Route element={<RoleRoute allowedRole="owner" element={<AutomationPage />} />} path="owner/automation" />
         <Route element={<RoleRedirect />} index />
         <Route element={<RoleRedirect />} path="admin" />
         <Route element={<RoleRedirect />} path="owner" />
