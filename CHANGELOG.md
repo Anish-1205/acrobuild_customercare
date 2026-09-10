@@ -8,6 +8,30 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-09-10 20:15 — Bytecode reconstruction: Phase 3 (conversation router)
+
+**Change:** `graph/haystack_conversation_pipeline_source.py` — a hand
+reconstruction of the smaller bytecode-only module (26 functions + the
+`ConversationOrchestrator` Haystack component + pipeline construction), built
+from the full disassembly. `graph/haystack_conversation_pipeline.py` now `exec`s
+this source in preference to marshalling the `.pyc` (exec, not import, so the
+loader's wrapper overrides still bind). The `.pyc` stays as the fallback.
+
+**Verification:**
+- `scripts/verify_pipeline_reconstruction.py` — differential test of source vs
+  bytecode in isolated namespaces with stubbed deps: **13,077 cases, 0
+  mismatches**.
+- `pytest tests/` with the source active → **634 passed, 43 subtests**.
+- `ruff` clean.
+
+One discrepancy found and fixed during differential testing: the
+`validate_support_answer` "one recommended option" rule flags when the answer
+*contains* cross-project phrasing, not when it lacks it.
+
+The `.pyc` file is unmodified.
+
+---
+
 ## 2026-09-10 18:30 — Bytecode reconstruction: Phases 1–2
 
 **Context:** The original source for the two `*_runtime.pyc` modules is

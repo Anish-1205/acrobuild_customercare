@@ -50,10 +50,28 @@ provider the label is technically wrong, but it already was — the real
 provider-aware value comes from `get_llm_agent_mode()` in the orchestrator, which
 is unaffected.
 
-### Phase 3 — Reconstruct `haystack_conversation_pipeline_runtime.pyc` as `.py` — ⏳ NOT STARTED
-- Function by function, lowest-level helpers first, running the tests that touch
-  each as it lands.
-- Keep the `.pyc` in place until the whole module passes all 634 tests.
+### Phase 3 — Reconstruct `haystack_conversation_pipeline_runtime.pyc` as `.py` — ✅ DONE (2026-09-10)
+- `graph/haystack_conversation_pipeline_source.py` — all 26 functions + 1 class +
+  module constants + pipeline construction, hand-reconstructed from the full
+  bytecode disassembly.
+- The loader `graph/haystack_conversation_pipeline.py` `exec`s the source in
+  preference to the `.pyc` when present (exec, not import, so the loader's
+  wrapper overrides still bind to the pipeline).
+- `.pyc` left in place as the fallback and the reconstruction reference.
+- Verified:
+  - `scripts/verify_pipeline_reconstruction.py` — differential test, source vs
+    bytecode in isolated namespaces with stubbed deps: **13,077 cases, 0
+    mismatches**.
+  - `pytest tests/` with the source active → **634 passed, 43 subtests**.
+  - `ruff` clean.
+- One bug found and fixed during differential testing: `validate_support_answer`
+  "one recommended option" check — the bytecode flags when the answer *contains*
+  cross-project phrasing (`and any(...)`), not when it lacks it.
+
+**Reconstructed by careful bytecode tracing, then confirmed by 13k differential
+cases — not guesswork.** The trickiest branches (`resolve_contextual_support_issue`
+wing-reset condition, `is_contextual_property_reply` return shape,
+`matches_live_company_context` try-scope) were all confirmed against the bytecode.
 
 ### Phase 4 — Big answer-engine file — ⏳ NOT STARTED
 - Spike first: decompile + verify ONE chunk of `build_company_api_direct_answer`,
@@ -68,3 +86,4 @@ is unaffected.
 |---|---|---|---|---|
 | 2026-09-10 | 1 | `DECOMPILED_MAP.md` created (read-only) | not run (no code change) | — |
 | 2026-09-10 | 2 | patched `temperature`/`agent_mode` consts into `*_runtime.patched.pyc`; loader prefers it | 634 passed, 43 subtests | original `.pyc` md5 unchanged; ruff clean |
+| 2026-09-10 | 3 | reconstructed `haystack_conversation_pipeline_source.py`; loader `exec`s it in preference | 634 passed, 43 subtests | 13,077 differential cases 0 mismatches; ruff clean; `.pyc` untouched |

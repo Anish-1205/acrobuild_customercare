@@ -3,11 +3,20 @@ from pathlib import Path as _Path
 import marshal as _marshal
 import re as _re
 
+# The original module is bytecode-only. A hand-reconstruction —
+# `haystack_conversation_pipeline_source.py`, verified against the bytecode by
+# scripts/verify_pipeline_reconstruction.py — is exec'd in preference when
+# present. It is exec'd (not imported) so the wrapper overrides below still apply
+# to the pipeline it builds. See docs/RECONSTRUCTION_STATUS.md.
 _runtime_path = _Path(__file__).with_name("haystack_conversation_pipeline_runtime.pyc")
-with _runtime_path.open("rb") as _runtime_file:
-    from services.runtime_compatibility_service import validate_runtime_header
-    validate_runtime_header(_runtime_file.read(16))
-    _runtime_code = _marshal.load(_runtime_file)
+_source_path = _Path(__file__).with_name("haystack_conversation_pipeline_source.py")
+if _source_path.exists():
+    _runtime_code = compile(_source_path.read_text(encoding="utf-8"), str(_source_path), "exec")
+else:
+    with _runtime_path.open("rb") as _runtime_file:
+        from services.runtime_compatibility_service import validate_runtime_header
+        validate_runtime_header(_runtime_file.read(16))
+        _runtime_code = _marshal.load(_runtime_file)
 exec(_runtime_code, globals(), globals())
 build_deterministic_conversation_answer = globals()["build_deterministic_conversation_answer"]
 is_small_talk_message = globals()["is_small_talk_message"]
