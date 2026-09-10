@@ -73,10 +73,44 @@ cases — not guesswork.** The trickiest branches (`resolve_contextual_support_i
 wing-reset condition, `is_contextual_property_reply` return shape,
 `matches_live_company_context` try-scope) were all confirmed against the bytecode.
 
-### Phase 4 — Big answer-engine file — ⏳ NOT STARTED
-- Spike first: decompile + verify ONE chunk of `build_company_api_direct_answer`,
-  report how usable the output is, get sign-off before continuing.
-- Then proceed in chunks, same discipline.
+### Phase 4 — Big answer-engine file — 🔬 SPIKE DONE, awaiting decision (2026-09-10)
+
+**pycdc built:** `zrax/pycdc` @ b428976, compiled with MinGW-w64 GCC 16.1 +
+CMake 4.4 (both installed via winget, user scope). Build lives at
+`<scratchpad>/pycdc/build/pycdc.exe` — not committed (third-party tool).
+
+**pycdc 3.12 output quality — measured on 5 functions from this file:**
+
+| Function | Result |
+|---|---|
+| `classify_confidence` (4 locals) | skeleton ~70% right; **2 bugs**: inverted `if assist_error or not matched_chunks`, and `float(X or 0)` flattened to `float(0)` (value dropped) |
+| `has_sufficient_guidance` (4 locals) | skeleton right; same `float(0)` bug; final line emitted as `return None >= 7` (variable lost) |
+| `should_use_llm_generation` (10 locals) | ~15 lines then **"Decompyle incomplete"** at `LOAD_FAST_AND_CLEAR`; guard sequence usable as scaffold |
+| `build_contextual_assist_query` (21 locals, closure) | **total failure** — 0 lines, dies at `MAKE_CELL` |
+| `build_company_api_direct_answer` (283 locals) | **total failure** — 0 lines, dies at `MAKE_CELL` |
+
+pycdc's 3.12 backend does not support `MAKE_CELL`, `LOAD_FAST_AND_CLEAR`,
+`RETURN_GENERATOR`, `DICT_UPDATE` — i.e. any closure, any inlined
+comprehension/genexpr, any `{**a, ...}`. It also silently drops the RHS of
+`X or Y` and conditional expressions. This file is saturated with those
+constructs.
+
+**Chunk reconstruction + differential harness (spike deliverable):**
+`classify_confidence` + `has_sufficient_guidance` rebuilt from pycdc scaffold +
+disassembly corrections, verified by `<scratchpad>/spike_diff.py` (code objects
+extracted straight from the blob, no full-module import) — **6,014 cases, 0
+mismatches**.
+
+**Assessment:** pycdc is a *scaffold generator for small functions only*, not a
+decompiler we can lean on. For anything with a comprehension or closure — most
+of this file, and the entire 2,200-line function — it produces nothing. The
+workable method is the Phase 3 method: hand-reconstruct from disassembly, verify
+with a differential harness. pycdc output is a mild time-saver on the simplest
+leaf helpers and nothing else.
+
+**Decision needed:** proceed with full hand-reconstruction of this file
+(large — ~150 functions, one 2,200-line function), or stop here with Phases 1–3
+delivered and the two constants patched.
 
 ---
 
