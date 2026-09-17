@@ -42,7 +42,17 @@ PROPERTY_SUPPORT_TERMS = frozenset({
     "possession", "price", "pricing", "project", "projects", "properties", "property",
     "rate", "rates", "refund", "rera", "site visit", "size", "sq ft", "sq.ft", "support",
     "ticket", "tower", "unit", "units", "villa", "villas", "wing",
+    # Romanized Indian-language words for home/price (fallback routing only; the
+    # LLM turn analyzer is the primary router).
+    "ghar", "makaan", "makan", "illu", "veedu", "keemat", "kimat", "daam", "dhara", "vilai",
 })
+
+# Whole-word/phrase matching — a plain substring check let "unit" match inside
+# "united" (e.g. "president of the united states"), misrouting ordinary general
+# questions into the property assistant.
+_PROPERTY_SUPPORT_TERM_RE = re.compile(
+    r"\b(?:" + "|".join(re.escape(term) for term in PROPERTY_SUPPORT_TERMS) + r")\b"
+)
 
 SMALL_TALK_PATTERNS = (
     r"^(?:hi|hello|hey|good morning|good afternoon|good evening)[!. ]*$",
@@ -76,7 +86,7 @@ def is_property_support_message(issue: str) -> bool:
         cleaned,
     ))
     return (
-        any(term in cleaned for term in PROPERTY_SUPPORT_TERMS)
+        bool(_PROPERTY_SUPPORT_TERM_RE.search(cleaned))
         or natural_location_search
         or bool(re.search(r"\b[1-6]\s*bhk\b|\bfloor\s*\d+\b|\b\d{3,5}\s*sq", cleaned))
     )
@@ -85,6 +95,21 @@ def is_property_support_message(issue: str) -> bool:
 def is_small_talk_message(issue: str) -> bool:
     cleaned = normalize_text(issue).lower()
     return any(re.search(pattern, cleaned, flags=re.IGNORECASE) for pattern in SMALL_TALK_PATTERNS)
+
+
+# Generic real-estate marketing words that commonly form part of a project name
+# (e.g. "Vishwajeet Prime", "Thane Heights") but are also ordinary English words.
+# A bare token match on these alone ("prime minister", "grand total") produced
+# false positives that routed plain general-knowledge questions into the
+# property assistant, which then refused them outright.
+_GENERIC_PROJECT_NAME_WORDS = frozenset({
+    "prime", "heights", "elite", "grand", "royal", "empire", "park", "palace",
+    "square", "central", "gardens", "greens", "woods", "towers", "tower",
+    "residency", "enclave", "view", "vista", "homes", "home", "hills", "valley",
+    "meadows", "regency", "plaza", "court", "manor", "paradise", "complex",
+    "phase", "crown", "pearl", "orchid", "sapphire", "emerald", "county",
+    "town", "group", "precious", "space",
+})
 
 
 def matches_live_company_context(issue: str) -> bool:
@@ -110,13 +135,19 @@ def matches_live_company_context(issue: str) -> bool:
     if not project_chunk:
         return False
     project_names = [normalize_text(name).lower() for name in project_chunk.get("project_names", [])]
-    if any(token in project_name for token in tokens for project_name in project_names):
+    # A full project name appearing in the message is an unambiguous match.
+    if any(project_name and project_name in cleaned for project_name in project_names):
+        return True
+    # A single generic word (e.g. "prime") is not distinctive enough on its own.
+    distinctive_tokens = tokens - _GENERIC_PROJECT_NAME_WORDS
+    project_words = {word for name in project_names for word in re.findall(r"[a-z0-9]+", name)}
+    if distinctive_tokens & project_words:
         return True
     if re.search(r"\b(?:in|near|around|at)\b", cleaned):
-        catalogue_text = normalize_text(
+        catalogue_words = set(re.findall(r"[a-z0-9]+", normalize_text(
             project_chunk.get("body_text", "") or project_chunk.get("excerpt", "")
-        ).lower()
-        return any(token in catalogue_text for token in tokens)
+        ).lower()))
+        return bool(distinctive_tokens & catalogue_words)
     return False
 
 
@@ -419,7 +450,8 @@ def build_local_conversation_answer(issue: str, conversation_messages: list[dict
         answer = generate_qwen_chat_response(
             system_prompt=(
                 "You are a helpful general-purpose conversational assistant inside the Acrobuild chat. "
-                "Answer the user's actual question directly in 2 to 5 concise sentences. General questions do "
+                "Answer the user's actual question directly in 1 to 3 short, plain sentences, with no lists, "
+                "emojis, filler, or offers of further help. General questions do "
                 "not need to be related to Acrobuild. Never invent a connection between a person or topic and "
                 "Acrobuild. Use facts you know confidently; never fabricate names, titles, dates, quotations, "
                 "film credits, or other specifics. If you are unsure, say what you cannot verify instead of "
@@ -553,7 +585,19 @@ def validate_support_answer(issue: str, answer: str) -> list[str]:
     )):
         failures.append("one recommended option")
 
-    if any(term in cleaned_issue for term in (
+    # "cost"/"price"/"rate"/"how much" are common outside real estate too (e.g. "cost
+    # of living"), so only require an INR-denominated answer when the question also
+    # shows some property-specific signal — otherwise this fires on ordinary general
+    # questions and overrides a perfectly good answer with a confusing clarification.
+    has_property_pricing_context = bool(
+        bhk_match or floor_match or size_match or explicit_projects
+        or any(term in cleaned_issue for term in (
+            "flat", "flats", "apartment", "apartments", "villa", "villas", "wing",
+            "shop", "shops", "unit", "units", "acrobuild", "project", "projects",
+            "property", "properties", "tower",
+        ))
+    )
+    if has_property_pricing_context and any(term in cleaned_issue for term in (
         "price", "pricing", "cost", "rate", "how much",
     )) and not any(term in cleaned_answer for term in (
         "inr", "rs.", "rupee", "price", "rate", "value",

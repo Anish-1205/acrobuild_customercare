@@ -12,6 +12,8 @@ from time import monotonic, time
 
 from dotenv import load_dotenv
 
+from services.reply_language import strip_reply_language_directive
+
 from services.internal_api_log_service import (
     log_data_api_call,
     turn_cache_get,
@@ -37,6 +39,23 @@ CS_API_LIVE_ONLY = os.getenv("ACROBUILD_CS_API_LIVE_ONLY", "true").strip().lower
 
 _CACHE = {}
 _CACHE_LOCK = Lock()
+
+# Words that mean "the customer wants company / contact details" vs. words that
+# mean "the customer is asking about property inventory". Used to decide whether
+# the dense company-contact record belongs in the retrieval pool for a query.
+_COMPANY_CONTACT_TERMS = frozenset({
+    "contact", "phone", "call", "email", "office", "address", "located", "location",
+    "website", "social", "helpline", "helpdesk", "number", "reach", "whatsapp",
+    "headquarters", "hq",
+})
+_PROPERTY_INTENT_TERMS = frozenset({
+    "property", "properties", "bhk", "flat", "flats", "home", "homes", "apartment",
+    "apartments", "villa", "villas", "plot", "plots", "shop", "shops", "unit", "units",
+    "wing", "wings", "floor", "floors", "price", "pricing", "rate", "rates", "cost",
+    "budget", "possession", "amenity", "amenities", "availability", "available",
+    "inventory", "brochure", "carpet", "saleable", "configuration", "layout",
+    "project", "projects",
+})
 _COMPANY_DATA_SNAPSHOT_LOCK = Lock()
 _COMPANY_DATA_SNAPSHOT_PATH = Path(
     os.getenv("ACROBUILD_COMPANY_DATA_PATH", "data/acrobuild_all_company_data.txt")
@@ -397,6 +416,7 @@ def search_company_knowledge(query, max_projects=20):
     if not is_cs_api_configured():
         return []
 
+    query = strip_reply_language_directive(query)
     query_words = _words(query)
     if any(word.startswith("shop") for word in query_words) or query_words.intersection({"store", "stores", "commercial"}):
         query_words.update({"shop", "shops"})
@@ -416,8 +436,19 @@ def search_company_knowledge(query, max_projects=20):
         }))
     )
 
+    # The company contact record is a single dense blob. Keep it out of the
+    # retrieval pool for property-shaped queries, where it used to win on its
+    # fixed score and get pasted verbatim; only surface it when the query is
+    # actually about the company / how to reach it. See
+    # docs/BYTECODE_FALLBACK_USAGE.md.
+    wants_contact_info = bool(query_words.intersection(_COMPANY_CONTACT_TERMS))
+    looks_like_property_query = bool(query_words.intersection(_PROPERTY_INTENT_TERMS))
+    suppress_company_chunk = is_project_count_query or (
+        looks_like_property_query and not wants_contact_info
+    )
+
     chunks = []
-    if is_project_count_query:
+    if suppress_company_chunk:
         company = None
     else:
         try:
@@ -445,6 +476,10 @@ def search_company_knowledge(query, max_projects=20):
             "acrobuild-cs-company",
         )
         company_chunk["company"] = company
+        # `_knowledge_chunk` stamps a fixed score of 100; that let the contact
+        # blob outrank genuine project / article matches. Keep it modest so it
+        # only wins when nothing substantive matched.
+        company_chunk["score"] = 12.0
         chunks.append(company_chunk)
 
     projects = _cached_request("/api/cs/projects")

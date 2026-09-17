@@ -22,29 +22,6 @@ export const VOICE_LANGUAGES = {
 
 export type VoiceLanguageCode = keyof typeof VOICE_LANGUAGES;
 
-export function resolveVoiceLanguage(issue: string, selectedLanguage: VoiceLanguageCode): VoiceLanguageCode {
-  if (selectedLanguage !== "en-IN") {
-    return selectedLanguage;
-  }
-
-  const normalizedIssue = issue.toLowerCase().replace(/[^a-z\s]/g, " ");
-  const romanizedTeluguTerms = [
-    "chestunnav", "chestunav", "enti", "emiti", "ela", "unnava", "unnaru",
-    "naku", "naaku", "kavali", "kaavali", "cheppu", "cheppandi", "avunu",
-    "ledu", "enduku", "eppudu", "ekkada", "bagunnara", "namaskaram"
-  ];
-
-  if (romanizedTeluguTerms.some((term) => normalizedIssue.split(/\s+/).includes(term))) {
-    return "te-IN";
-  }
-
-  if (/[\u0C00-\u0C7F]/.test(issue)) {
-    return "te-IN";
-  }
-
-  return selectedLanguage;
-}
-
 export function detectSpeechLanguage(text: string, selectedLanguage: VoiceLanguageCode): VoiceLanguageCode {
   if (selectedLanguage !== "en-IN") {
     return selectedLanguage;
@@ -63,10 +40,4 @@ export function detectSpeechLanguage(text: string, selectedLanguage: VoiceLangua
     [/[\u0600-\u06FF]/, "ur-IN"],
   ];
   return scriptLanguages.find(([pattern]) => pattern.test(text))?.[1] ?? selectedLanguage;
-}
-export function buildVoiceAssistIssue(issue: string, languageCode: VoiceLanguageCode) {
-  const languageName = VOICE_LANGUAGES[languageCode];
-  return languageCode === "te-IN"
-    ? `${issue}\n\nVoice language: Telugu. Reply in natural conversational Telugu-English (Tenglish): use Telugu sentence structure with familiar English words like update, payment, ticket, email, project, status, photos, and support. Keep Telugu in Telugu script, English terms in English. Sound like a helpful Hyderabad support agent, not formal or literary. Use 2-4 short sentences. Never say Good day, relevant information, most certainly, or further assistance.`
-    : `${issue}\n\nVoice language: ${languageName}. Reply naturally in the customer's language, keeping common product and support terms in English.`;
 }

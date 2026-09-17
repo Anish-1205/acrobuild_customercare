@@ -117,7 +117,10 @@ def test_assist_restores_history(workspace, monkeypatch):
         return {"answer": "Hello", "matched_chunks": [], "confidence_label": "medium"}
     monkeypatch.setattr(assist, "run_support_orchestration", answer)
     monkeypatch.setattr(assist, "_enforce_live_property_data", lambda payload, *args: payload)
-    monkeypatch.setattr(assist, "answer_matches_response_language", lambda *args: True)
+    from graph.main_orchestrator import TurnContext
+    from services.turn_analysis_service import TurnAnalysis
+    monkeypatch.setattr(assist, "prepare_turn", lambda issue, *args, **kwargs: TurnContext(
+        [], issue, TurnAnalysis("general", "English", "latin", "test"), issue))
     client = TestClient(app.api)
     for issue in ("Hi", "What did I say?"):
         assert client.post("/api/support/assist", json={"issue": issue, "conversation_id": "c"}).status_code == 200

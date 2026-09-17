@@ -20,7 +20,6 @@ from api_context import (
     SupportAssistRequest,
     VoiceSynthesisRequest,
     _enforce_live_property_data,
-    answer_matches_response_language,
     begin_data_api_trace,
     build_grounded_project_amenities_assist,
     build_grounded_project_location_assist,
@@ -32,12 +31,11 @@ from api_context import (
     generate_indic_speech,
     get_current_data_api_logs,
     get_support_base_url,
-    is_property_support_message,
     json,
-    localize_ai_answer,
     run_support_orchestration,
     stream_support_orchestration_events,
 )
+from graph.main_orchestrator import localize_response, prepare_turn
 
 router = APIRouter(tags=["assist"])
 
@@ -97,6 +95,40 @@ def _log_turn_result(kind, cleaned_issue, payload, started):
             )
     turn_logger.debug("turn answer (full) %s", kv(answer=payload.get("answer")))
 
+def _history(request):
+    return [message.model_dump() for message in request.conversation_messages if str(message.text or "").strip()]
+
+
+def _grounded_property_shortcut(request, turn):
+    """Router-level grounded answers only for property turns, matched on the English
+    rendering so they work for questions asked in any language."""
+    if not turn.analysis.is_property:
+        return None
+    shortcut_request = request
+    if turn.property_issue != str(request.issue or "").strip():
+        shortcut_request = SupportAssistRequest.model_validate({**request.model_dump(), "issue": turn.property_issue})
+    payload = (
+        build_grounded_site_visit_document_assist(shortcut_request)
+        or build_grounded_project_amenities_assist(shortcut_request)
+        or build_grounded_project_location_assist(shortcut_request)
+    )
+    if payload is not None:
+        payload = {**payload, "route": "property"}
+    return payload
+
+
+def _complete_payload(response_payload, cleaned_issue, turn):
+    """Shared post-processing: live-data enforcement, then localization last so any
+    replacement text (e.g. the live-data fallback) is in the customer's language.
+    The blob-only localize_ai_answer() is not used: it returned garbled boilerplate."""
+    data_api_calls = get_current_data_api_logs()
+    response_payload = _enforce_live_property_data(response_payload, cleaned_issue, data_api_calls)
+    response_payload = localize_response(response_payload, turn.analysis)
+    response_payload["data_api_calls"] = data_api_calls
+    response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
+    return response_payload
+
+
 @router.post("/api/support/assist")
 def get_support_assist(request: SupportAssistRequest, http_request: Request, response: Response):
     session = ConversationSession(http_request.cookies.get(COOKIE_NAME, ""), request.conversation_id)
@@ -113,41 +145,27 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
     clear_assist_response_cache()
     trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
     try:
-        response_payload = (
-            build_grounded_site_visit_document_assist(request)
-            or build_grounded_project_amenities_assist(request)
-            or build_grounded_project_location_assist(request)
-        )
+        turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
+        response_payload = _grounded_property_shortcut(request, turn)
         if response_payload is not None:
             turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
-            data_api_calls = get_current_data_api_logs()
-            response_payload = _enforce_live_property_data(response_payload, cleaned_issue, data_api_calls)
-            response_payload["data_api_calls"] = data_api_calls
-            response_payload["rag_evaluation"] = evaluate_rag_response(
-                cleaned_issue, response_payload, data_api_calls,
+        else:
+            response_payload = run_support_orchestration(
+                issue=cleaned_issue,
+                conversation_id=request.conversation_id,
+                customer_name=request.customer_name,
+                customer_email=request.customer_email,
+                business_hours_tag=request.business_hours_tag,
+                issue_type=request.issue_type,
+                article_hint_url=request.article_hint_url,
+                conversation_messages=_history(request),
+                limit=min(max(int(request.limit or 3), 1), 6),
+                prefer_fast_response=bool(request.prefer_fast_response),
+                prefer_qwen_response=bool(request.prefer_qwen_response),
+                language_hint=request.language_hint,
+                turn=turn,
             )
-            _log_turn_result("assist", cleaned_issue, response_payload, started)
-            session.append(cleaned_issue, response_payload.get("answer"))
-            return response_payload
-        response_payload = run_support_orchestration(
-            issue=cleaned_issue,
-            conversation_id=request.conversation_id,
-            customer_name=request.customer_name,
-            customer_email=request.customer_email,
-            business_hours_tag=request.business_hours_tag,
-            issue_type=request.issue_type,
-            article_hint_url=request.article_hint_url,
-            conversation_messages=[message.model_dump() for message in request.conversation_messages if str(message.text or "").strip()],
-            limit=min(max(int(request.limit or 3), 1), 6),
-            prefer_fast_response=bool(request.prefer_fast_response),
-            prefer_qwen_response=bool(request.prefer_qwen_response),
-        )
-        if not answer_matches_response_language(response_payload.get("answer"), cleaned_issue):
-            response_payload["answer"] = localize_ai_answer(response_payload.get("answer"), cleaned_issue)
-        data_api_calls = get_current_data_api_logs()
-        response_payload = _enforce_live_property_data(response_payload, cleaned_issue, data_api_calls)
-        response_payload["data_api_calls"] = data_api_calls
-        response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
+        response_payload = _complete_payload(response_payload, cleaned_issue, turn)
         _log_turn_result("assist", cleaned_issue, response_payload, started)
         session.append(cleaned_issue, response_payload.get("answer"))
         return response_payload
@@ -201,22 +219,15 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
         set_conversation_id(request.conversation_id)
         delta_count = 0
         streamed_chars = 0
+        response_payload = None
         clear_assist_response_cache()
         trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
         try:
-            response_payload = (
-                build_grounded_site_visit_document_assist(request)
-            or build_grounded_project_amenities_assist(request)
-                or build_grounded_project_location_assist(request)
-            )
-            if response_payload is not None:
+            turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
+            shortcut_payload = _grounded_property_shortcut(request, turn)
+            if shortcut_payload is not None:
                 turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
-                data_api_calls = get_current_data_api_logs()
-                response_payload = _enforce_live_property_data(response_payload, cleaned_issue, data_api_calls)
-                response_payload["data_api_calls"] = data_api_calls
-                response_payload["rag_evaluation"] = evaluate_rag_response(
-                    cleaned_issue, response_payload, data_api_calls,
-                )
+                response_payload = _complete_payload(shortcut_payload, cleaned_issue, turn)
                 session.append(cleaned_issue, response_payload.get("answer"))
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
@@ -227,8 +238,14 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 _log_turn_result("stream", cleaned_issue, response_payload, started)
                 return
             property_events = []
-            property_request = is_property_support_message(cleaned_issue)
-            turn_logger.info("turn branch %s", kv(branch="property" if property_request else "conversational"))
+            # Property answers are buffered because validation, the live-data guard and
+            # localization can replace the draft text before it is final.
+            property_request = turn.analysis.is_property
+            turn_logger.info(
+                "turn branch %s",
+                kv(branch="property" if property_request else "conversational",
+                   language=turn.analysis.reply_language, source=turn.analysis.source),
+            )
             for event in stream_support_orchestration_events(
                 issue=cleaned_issue,
                 conversation_id=request.conversation_id,
@@ -237,25 +254,23 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 business_hours_tag=request.business_hours_tag,
                 issue_type=request.issue_type,
                 article_hint_url=request.article_hint_url,
-                conversation_messages=[message.model_dump() for message in request.conversation_messages if str(message.text or "").strip()],
+                conversation_messages=_history(request),
                 limit=min(max(int(request.limit or 3), 1), 6),
                 prefer_fast_response=bool(request.prefer_fast_response),
                 prefer_qwen_response=bool(request.prefer_qwen_response),
+                language_hint=request.language_hint,
+                turn=turn,
             ):
                 event_type = event.get("type")
+                if event_type == "route":
+                    continue
                 if event_type == "delta":
                     delta_count += 1
                     streamed_chars += len(str(event.get("text", "")))
                 elif event_type not in {"done", None}:
                     turn_logger.debug("stream event %s", kv(type=event_type, stage=event.get("stage")))
-                if event.get("type") == "done" and isinstance(event.get("response"), dict):
-                    response_payload = event["response"]
-                    if not answer_matches_response_language(response_payload.get("answer"), cleaned_issue):
-                        response_payload["answer"] = localize_ai_answer(response_payload.get("answer"), cleaned_issue)
-                    data_api_calls = get_current_data_api_logs()
-                    response_payload = _enforce_live_property_data(response_payload, cleaned_issue, data_api_calls)
-                    response_payload["data_api_calls"] = data_api_calls
-                    response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
+                if event_type == "done" and isinstance(event.get("response"), dict):
+                    response_payload = _complete_payload(event["response"], cleaned_issue, turn)
                     event["response"] = response_payload
                     session.append(cleaned_issue, response_payload.get("answer"))
                 if property_request:

@@ -23,6 +23,7 @@ import type {
   PropertyProject,
   PropertyTypology,
   PropertyWing,
+  SupportAssistResponse,
   SupportConversationMessage,
   SupportArticleRecord,
   Ticket
@@ -106,12 +107,13 @@ function createDefaultChatMessages(): ChatMessage[] {
     relatedArticles: [],
     sender: "bot",
     showHelpfulPrompt: false,
-    text: "Hi! How can I help you today?"
+    text: "Hi! How can I help you today? You can chat in English, Hindi, Telugu or any Indian language."
   }];
 }
 
 import { MessageLauncherIcon, PaperPlaneIcon, MicrophoneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
-import { type BrowserSpeechRecognition, type SpeechRecognitionConstructor, VOICE_LANGUAGES, type VoiceLanguageCode, resolveVoiceLanguage, detectSpeechLanguage, buildVoiceAssistIssue } from "../lib/voiceLanguage";
+import { type BrowserSpeechRecognition, type SpeechRecognitionConstructor, VOICE_LANGUAGES, type VoiceLanguageCode, detectSpeechLanguage } from "../lib/voiceLanguage";
+import { FLOW_TEXT, type ChatLanguage, chatLanguageFromReply, detectChatLanguage, extractLocationHint, isProjectBrowseRequest } from "../lib/chatLanguage";
 
 const helpCenterArticlesPath = "/home";
 const helpCenterHomePath = "/home";
@@ -1063,24 +1065,6 @@ function prepareConversationalSpeech(value: string) {
     .join(" ")
     .trim();
 }
-function isProjectBrowseRequest(value: string) {
-  const normalizedValue = value.trim().toLowerCase();
-  return (
-    normalizedValue === "project" ||
-    normalizedValue === "projects" ||
-    normalizedValue.includes("browse projects") ||
-    normalizedValue.includes("browse all projects") ||
-    normalizedValue.includes("show projects") ||
-    normalizedValue.includes("show me the projects") ||
-    normalizedValue.includes("list projects")
-  );
-}
-function isGreetingRequest(value: string) {
-  const normalizedValue = value.trim().toLowerCase().replace(/[.!?]+$/g, "").trim();
-  return /^(hi+|hello|hey|greetings|namaste|good morning|good afternoon|good evening)( there)?$/.test(
-    normalizedValue
-  );
-}
 function getNumberedProjectSelection(messages: ChatMessage[], value: string) {
   const selectionMatch = value.trim().match(/^(?:project\s*)?(?:number\s*)?(\d{1,2})[).:-]?$/i);
   if (!selectionMatch) return "";
@@ -1157,6 +1141,8 @@ export function CustomerHomePage() {
   const [storefrontError, setStorefrontError] = useState("");
   const [activeFollowUpIssue, setActiveFollowUpIssue] = useState("");
   const [propertyFlow, setPropertyFlow] = useState<PropertyFlowState | null>(null);
+  const [chatLanguage, setChatLanguage] = useState<ChatLanguage>("en");
+  const chatLanguageRef = useRef<ChatLanguage>("en");
   const [isSiteVisitFormVisible, setIsSiteVisitFormVisible] = useState(false);
   const [isSubmittingSiteVisit, setIsSubmittingSiteVisit] = useState(false);
   const [siteVisitProjects, setSiteVisitProjects] = useState<PropertyProject[]>([]);
@@ -1602,10 +1588,10 @@ export function CustomerHomePage() {
       return [...current, nextCustomerMessage];
     });
 
-    const resolvedVoiceLanguage = resolveVoiceLanguage(trimmedIssue, voiceLanguage);
-    const assistIssue = resolvedVoiceLanguage === "en-IN"
-      ? trimmedIssue
-      : buildVoiceAssistIssue(trimmedIssue, resolvedVoiceLanguage);
+    // The customer's words go to the backend untouched; it detects the reply
+    // language itself. Only an explicitly selected voice language is passed on.
+    const assistIssue = trimmedIssue;
+    const languageHint = isVoiceConversation && voiceLanguage !== "en-IN" ? VOICE_LANGUAGES[voiceLanguage] : "";
     let streamedAnswer = "";
 
     try {
@@ -1641,6 +1627,7 @@ export function CustomerHomePage() {
         customer_email: chatEmail.trim(),
         issue: assistIssue,
         issue_type: inferIssueType(trimmedCustomerMessage || trimmedIssue),
+        language_hint: languageHint,
         limit: isVoiceConversation ? 6 : 2,
         prefer_fast_response: !isVoiceConversation,
         prefer_qwen_response: true
@@ -1654,6 +1641,7 @@ export function CustomerHomePage() {
         },
         onDone: (assistResponse) => {
           setIsTypingReply(false);
+          applyReplyLanguage(assistResponse);
 
           setChatMessages((current) =>
             finalizeBotMessage(current, botMessageId, trimmedIssue, {
@@ -1689,12 +1677,14 @@ export function CustomerHomePage() {
           customer_email: chatEmail.trim(),
           issue: assistIssue,
           issue_type: inferIssueType(trimmedCustomerMessage || trimmedIssue),
+          language_hint: languageHint,
           limit: isVoiceConversation ? 6 : 2,
           prefer_fast_response: !isVoiceConversation,
           prefer_qwen_response: true
         });
 
         setIsTypingReply(false);
+        applyReplyLanguage(assistResponse);
         setChatMessages((current) =>
           finalizeBotMessage(current, botMessageId, trimmedIssue, {
             feedbackState: undefined,
@@ -1783,23 +1773,47 @@ export function CustomerHomePage() {
         relatedArticles: [],
         sender: "bot",
         showHelpfulPrompt: false,
-        text: "I could not load that live property step. Please try again."
+        text: FLOW_TEXT[chatLanguageRef.current].stepFailed
       }
     ]);
   }
 
-  async function startProjectsFlow(label = "Browse all projects") {
-    const contextIssue = "Browse live projects";
+  function applyReplyLanguage(response: SupportAssistResponse) {
+    const nextLanguage = chatLanguageFromReply(response.reply_language, response.reply_script, chatLanguageRef.current);
+    chatLanguageRef.current = nextLanguage;
+    setChatLanguage(nextLanguage);
+  }
+
+  function updateChatLanguage(text: string) {
+    const nextLanguage = detectChatLanguage(text, voiceLanguageRef.current, chatLanguageRef.current);
+    chatLanguageRef.current = nextLanguage;
+    setChatLanguage(nextLanguage);
+  }
+
+  async function startProjectsFlow(label = FLOW_TEXT[chatLanguageRef.current].browseAll, location?: string | null) {
+    const t = FLOW_TEXT[chatLanguageRef.current];
+    const contextIssue = location ? `Browse live projects in ${location}` : "Browse live projects";
     const botMessageId = beginPropertyFlowStep(label, contextIssue);
     try {
       const response = await getPropertyProjects();
-      const projects = response.items;
+      const normalizedLocation = location?.trim().toLowerCase();
+      const projects = normalizedLocation
+        ? response.items.filter((project) => {
+            const city = project.city?.trim().toLowerCase() ?? "";
+            const locality = project.locality?.trim().toLowerCase() ?? "";
+            return (
+              (city && (city.includes(normalizedLocation) || normalizedLocation.includes(city))) ||
+              (locality && (locality.includes(normalizedLocation) || normalizedLocation.includes(locality)))
+            );
+          })
+        : response.items;
+      const message = location
+        ? projects.length ? t.chooseProjectInLocation(projects.length, location) : t.noProjectsInLocation(location)
+        : projects.length ? t.chooseProject(projects.length) : t.noProjects;
       finishPropertyFlowStep(
         botMessageId,
         contextIssue,
-        projects.length
-          ? `Choose a project to explore. ${projects.length} live project${projects.length === 1 ? " is" : "s are"} available.`
-          : "No live projects are currently available.",
+        message,
         {
           inventory: [],
           level: "projects",
@@ -1818,6 +1832,7 @@ export function CustomerHomePage() {
     customerLabel = project.projectName,
     projects = propertyFlow?.projects ?? [project]
   ) {
+    const t = FLOW_TEXT[chatLanguageRef.current];
     const contextIssue = `Project ${project.projectName}`;
     const botMessageId = beginPropertyFlowStep(customerLabel, contextIssue);
     try {
@@ -1826,9 +1841,7 @@ export function CustomerHomePage() {
       finishPropertyFlowStep(
         botMessageId,
         contextIssue,
-        wings.length
-          ? `Choose a wing in ${project.projectName}.`
-          : `${project.projectName} does not currently have any wings available.`,
+        wings.length ? t.chooseWing(project.projectName) : t.noWings(project.projectName),
         {
           inventory: [],
           level: "wings",
@@ -1861,6 +1874,17 @@ export function CustomerHomePage() {
   function handlePropertyFlowTextSelection(value: string) {
     if (!propertyFlow) return false;
     const normalizedValue = value.trim().toLowerCase();
+    if (propertyFlow.level === "projects") {
+      const numberMatch = normalizedValue.match(/^(?:project\s*)?(\d{1,2})$/);
+      const selectedProject = propertyFlow.projects.find(
+        (project) => project.projectName.trim().toLowerCase() === normalizedValue
+      ) ?? (numberMatch ? propertyFlow.projects[Number(numberMatch[1]) - 1] : undefined);
+      if (selectedProject) {
+        setChatDraft("");
+        void selectPropertyProject(selectedProject, value.trim());
+        return true;
+      }
+    }
     if (propertyFlow.level === "wings") {
       const numberMatch = normalizedValue.match(/^(?:wing\s*)?(\d{1,2})$/);
       const selectedWing = propertyFlow.wings.find((wing) =>
@@ -1877,6 +1901,7 @@ export function CustomerHomePage() {
   }
 
   async function selectPropertyWing(wing: PropertyWing) {
+    const t = FLOW_TEXT[chatLanguageRef.current];
     const project = propertyFlow?.selectedProject;
     const contextIssue = `Wing ${wing.name}`;
     const botMessageId = beginPropertyFlowStep(wing.name, contextIssue);
@@ -1891,9 +1916,7 @@ export function CustomerHomePage() {
       finishPropertyFlowStep(
         botMessageId,
         contextIssue,
-        floors.length
-          ? `Choose a floor in ${wing.name}.`
-          : `${wing.name} does not currently have available flats. You can still request a site visit.`,
+        floors.length ? t.chooseFloor(wing.name) : t.noFlatsInWing(wing.name),
         {
           inventory,
           level: "floors",
@@ -1910,6 +1933,7 @@ export function CustomerHomePage() {
   }
 
   function selectPropertyFloor(floor: number) {
+    const t = FLOW_TEXT[chatLanguageRef.current];
     const flats = (propertyFlow?.inventory ?? []).filter((unit) => unit.floorNumber === floor);
     const contextIssue = `Floor ${floor}`;
     const customerMessageId = Date.now();
@@ -1921,7 +1945,7 @@ export function CustomerHomePage() {
         id: customerMessageId,
         relatedArticles: [],
         sender: "customer",
-        text: `Floor ${floor}`
+        text: t.floor(floor)
       },
       {
         contextIssue,
@@ -1931,9 +1955,7 @@ export function CustomerHomePage() {
         relatedArticles: [],
         sender: "bot",
         showHelpfulPrompt: false,
-        text: flats.length
-          ? `Choose an available flat on floor ${floor}.`
-          : `No available flats are currently listed on floor ${floor}.`
+        text: flats.length ? t.chooseFlat(floor) : t.noFlatsOnFloor(floor)
       }
     ]);
     setPropertyFlow((current) => current ? {
@@ -1949,7 +1971,8 @@ export function CustomerHomePage() {
   async function selectInventoryUnit(unit: PropertyInventoryUnit) {
     const wing = propertyFlow?.selectedWing;
     if (!wing) return;
-    const flatLabel = `Flat ${unit.unitNumber ?? unit.id}`;
+    const t = FLOW_TEXT[chatLanguageRef.current];
+    const flatLabel = t.flat(unit.unitNumber ?? unit.id);
     const contextIssue = `${flatLabel} price`;
     const botMessageId = beginPropertyFlowStep(flatLabel, contextIssue);
     try {
@@ -1961,20 +1984,20 @@ export function CustomerHomePage() {
         ? minimumPrice === maximumPrice
           ? minimumPrice
           : `${minimumPrice} – ${maximumPrice}`
-        : minimumPrice || maximumPrice || "Price not listed by the live API";
+        : minimumPrice || maximumPrice || t.priceNotListed;
       const rateLabel = typology?.rateType ? ` (${typology.rateType})` : "";
       const areaParts = [
-        typology?.carpetArea ? `Carpet area: ${typology.carpetArea} sq ft` : "",
-        typology?.saleableArea ? `Saleable area: ${typology.saleableArea} sq ft` : ""
+        typology?.carpetArea ? `${t.carpetArea}: ${typology.carpetArea} sq ft` : "",
+        typology?.saleableArea ? `${t.saleableArea}: ${typology.saleableArea} sq ft` : ""
       ].filter(Boolean);
       finishPropertyFlowStep(
         botMessageId,
         contextIssue,
         [
           `${flatLabel}${typology?.typologyName ? ` · ${typology.typologyName}` : ""}`,
-          `Live price: ${priceText}${rateLabel}`,
+          `${t.livePrice}: ${priceText}${rateLabel}`,
           ...areaParts,
-          "You can now request a site visit for this flat."
+          t.canBookVisit
         ].join("\n"),
         {
           inventory: propertyFlow?.inventory ?? [unit],
@@ -3421,7 +3444,7 @@ export function CustomerHomePage() {
                                               type="button"
                                             >
                                               <span className="store-chat-project-index">{floor}</span>
-                                              <span className="store-chat-guided-label">Floor {floor}</span>
+                                              <span className="store-chat-guided-label">{FLOW_TEXT[chatLanguage].floor(floor)}</span>
                                               <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
                                             </button>
                                           ))
@@ -3436,7 +3459,7 @@ export function CustomerHomePage() {
                                           >
                                             <span className="store-chat-project-index">{unit.unitNumber ?? "–"}</span>
                                             <span className="store-chat-guided-label">
-                                              Flat {unit.unitNumber ?? unit.id}
+                                              {FLOW_TEXT[chatLanguage].flat(unit.unitNumber ?? unit.id)}
                                               {unit.typologyName ? ` · ${unit.typologyName}` : ""}
                                             </span>
                                             <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
@@ -3449,11 +3472,11 @@ export function CustomerHomePage() {
                                         onClick={() => void openSiteVisitBooking()}
                                         type="button"
                                       >
-                                        Book a site visit
+                                        {FLOW_TEXT[chatLanguage].bookVisit}
                                       </button>
                                     ) : null}
                                   </div>
-                                ) : isGreetingRequest(message.contextIssue ?? "") ? (
+                                ) : !isTypingReply && message.contextIssue === "Initial welcome" ? (
                                   <div className="store-chat-guided-grid greeting-action">
                                     {GREETING_ACTIONS.map((action) => (
                                       <button
@@ -3461,14 +3484,16 @@ export function CustomerHomePage() {
                                         key={action.label}
                                         onClick={() => {
                                           if (action.kind === "projects") {
-                                            void startProjectsFlow(action.label);
+                                            void startProjectsFlow(FLOW_TEXT[chatLanguage].browseAll);
                                             return;
                                           }
                                           void queueBotResponse(action.prompt, undefined, false, action.label);
                                         }}
                                         type="button"
                                       >
-                                        <span className="store-chat-guided-label">{action.label}</span>
+                                        <span className="store-chat-guided-label">
+                                          {action.kind === "projects" ? FLOW_TEXT[chatLanguage].browseAll : action.label}
+                                        </span>
                                         <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
                                       </button>
                                     ))}
@@ -3748,6 +3773,8 @@ export function CustomerHomePage() {
                     return;
                   }
 
+                  updateChatLanguage(chatDraft);
+
                   if (handlePropertyFlowTextSelection(chatDraft)) {
                     return;
                   }
@@ -3768,10 +3795,11 @@ export function CustomerHomePage() {
                     return;
                   }
 
-                  if (isProjectBrowseRequest(chatDraft)) {
+                  if (isProjectBrowseRequest(chatDraft, (propertyFlow?.projects ?? siteVisitProjects).map((project) => project.projectName))) {
                     const projectRequest = chatDraft.trim();
+                    const location = extractLocationHint(chatDraft);
                     setChatDraft("");
-                    void startProjectsFlow(projectRequest);
+                    void startProjectsFlow(projectRequest, location);
                     return;
                   }
                   if (isSiteVisitBookingRequest(chatDraft)) {

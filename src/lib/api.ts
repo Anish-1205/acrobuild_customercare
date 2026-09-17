@@ -447,6 +447,7 @@ export async function getSupportAssist(payload: {
   customer_name?: string;
   issue: string;
   issue_type?: string;
+  language_hint?: string;
   limit?: number;
   prefer_fast_response?: boolean;
   prefer_qwen_response?: boolean;
@@ -460,6 +461,7 @@ export async function getSupportAssist(payload: {
     customer_name: payload.customer_name ?? "",
     issue: payload.issue,
     issue_type: payload.issue_type ?? "",
+    language_hint: payload.language_hint ?? "",
     limit: payload.limit ?? 3,
     prefer_fast_response: payload.prefer_fast_response ?? false,
     prefer_qwen_response: payload.prefer_qwen_response ?? true
@@ -489,6 +491,7 @@ export async function streamSupportAssist(
     customer_name?: string;
     issue: string;
     issue_type?: string;
+    language_hint?: string;
     limit?: number;
     prefer_fast_response?: boolean;
     prefer_qwen_response?: boolean;
@@ -507,6 +510,7 @@ export async function streamSupportAssist(
     customer_name: payload.customer_name ?? "",
     issue: payload.issue,
     issue_type: payload.issue_type ?? "",
+    language_hint: payload.language_hint ?? "",
     limit: payload.limit ?? 3,
     prefer_fast_response: payload.prefer_fast_response ?? false,
     prefer_qwen_response: payload.prefer_qwen_response ?? true

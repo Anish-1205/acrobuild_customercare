@@ -80,9 +80,64 @@ class PropertyQuestionVariantTests(unittest.TestCase):
             chunks,
             [],
         )
-        self.assertIn("1 match for Thane", answer)
+        self.assertIn("1 project available", answer)
         self.assertIn("Thane Heights", answer)
         self.assertNotIn("Mumbai Heights", answer)
+
+    def test_plain_location_availability_question_is_answered_deterministically(self):
+        """The legacy LLM-backed engine has been observed to deny availability in a
+        city the live catalogue actually lists (e.g. "no property in Thane" right
+        after confirming Thane is a live city), especially for non-"project" wording
+        ("property"/"asset") or non-English phrasing. This bypasses it for plain
+        location-availability questions so the answer is always grounded."""
+        chunks = [{
+            "source_key": "acrobuild-cs-projects",
+            "projects": [
+                {"id": 1, "projectName": "Vishwajeet Heights", "address": "Ambernath, Thane", "city": "Thane"},
+                {"id": 2, "projectName": "Vishwajeet Prime", "address": "Ambernath, Thane", "city": "Thane"},
+                {"id": 3, "projectName": "Vishwajeet Precious Phase-V", "address": "Varap, Kalyan West, Pune", "city": "Pune"},
+            ],
+        }]
+        for question in (
+            "In Thane, which properties do you have?",
+            "Which properties do you have in Thane?",
+            "Thane mein kaunsi property hai",
+        ):
+            with self.subTest(question=question):
+                answer = build_company_api_direct_answer(question, chunks, [])
+                self.assertIn("Vishwajeet Heights", answer)
+                self.assertIn("Vishwajeet Prime", answer)
+                self.assertNotIn("Precious Phase-V", answer)
+                self.assertNotIn("no propert", answer.lower())
+
+    def test_location_availability_with_specifics_still_reaches_the_full_engine(self):
+        """A budget/BHK-qualified location question needs the richer engine, not the
+        plain catalogue listing, so it must not be intercepted."""
+        from services.ai_agent_service import _is_location_availability_question
+
+        self.assertFalse(_is_location_availability_question(
+            "2 bhk in thane under 90 lakh", [],
+        ))
+
+    def test_generic_availability_questions_list_projects_first(self):
+        chunks = [{
+            "source_key": "acrobuild-cs-projects",
+            "project_names": ["Thane Heights", "Mumbai Heights"],
+            "projects": [
+                {"id": 1, "projectName": "Thane Heights", "city": "Thane"},
+                {"id": 2, "projectName": "Mumbai Heights", "city": "Mumbai"},
+            ],
+        }]
+        for question in (
+            "aapke paas konse projects available hai ?",
+            "kaunse projects hai aapke paas",
+            "aapke paas kya flats available hai ?",
+            "what flats are available?",
+        ):
+            with self.subTest(question=question):
+                answer = build_company_api_direct_answer(question, chunks, [])
+                self.assertIn("2 projects available to explore", answer)
+                self.assertIn("Mumbai Heights", answer)
 
     def test_project_scope_wins_when_project_and_wing_names_are_identical(self):
         chunks = [{

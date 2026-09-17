@@ -90,18 +90,58 @@ current evidence.** The un-reconstructed 2,200-line function is not on any hot
 path in the measured corpus, and the one concrete user-visible defect (the
 document dump) is a retrieval problem, not an answer-generation problem.
 
-Narrow fixes that address the actual issue, in `.py` we already control:
-
-1. **Relevance floor / thin-retrieval guard** — when the top retrieved chunk is
-   below a score threshold or the only hit is the monolithic company record,
-   return a "tell me the project / city / budget" clarification instead of
-   letting the verbatim path run. Can live in the `build_company_api_direct_answer`
-   wrapper or in `_enforce_live_property_data` (`api_context.py`).
-2. **Exclude the monolithic `acrobuild-cs-company` record from property-search
-   retrieval**, or split it into smaller titled chunks so it can't dominate as a
-   single lexical hit.
-3. Keep the `bytecode_fallback` logger and re-check these numbers once the app
-   has real traffic — if `legacy_bytecode_invoked` climbs, revisit.
-
 Phases 1–3 (documentation, the two constant patches, router reconstruction)
 stand as delivered.
+
+---
+
+## 6. Narrow fixes applied (2026-09-10)
+
+Both in `.py` we already control; the bytecode was not touched.
+
+### 6a. Company-contact record kept out of property-search retrieval
+
+`services/acrobuild_company_service.py` → `search_company_knowledge`:
+
+- The "Company contact details" chunk (`source_key="acrobuild-cs-company"`) is
+  no longer fetched or built when the query is property-shaped
+  (`_PROPERTY_INTENT_TERMS`) and not a contact query (`_COMPANY_CONTACT_TERMS`) —
+  it can never be the sole hit for "what properties do you offer?".
+- Its score is set to `12.0` (was a fixed `100.0` from `_knowledge_chunk`), so
+  even where it is legitimately in the pool it cannot outrank a genuine
+  project/article match.
+
+### 6b. Thin-retrieval guard on the fallback path
+
+`services/ai_agent_service.py` wraps `build_fallback_assist_answer` (the
+last-resort builder that pastes a chunk behind "Here is the relevant
+information:"). It now returns `build_unknown_clarification_answer(issue)`
+("…I need a little more detail. Please share the project or property name…")
+when, at that point:
+
+- every matched chunk is the bare company-contact record and there are no
+  matched articles/documents, **or**
+- the best score across chunks/articles/documents is below
+  `ASSIST_FALLBACK_MIN_SCORE` (default `3.0` — the blob's own "sufficient
+  guidance" threshold).
+
+A new telemetry event `bytecode_fallback event=thin_retrieval_clarification`
+fires when the guard triggers.
+
+### Verification
+
+- New tests: `tests/test_thin_retrieval_guard.py` (6 tests).
+- Full suite: **634 → 640 passed** (+6), 43 subtests, `ruff` clean.
+- 200-prompt corpus re-run (`scripts/measure_bytecode_fallback.py`, LLM stubbed):
+
+  | Outcome | before | after |
+  |---|---:|---:|
+  | reached `_legacy_build_company_api_direct_answer` | 0 / 200 | _TBD_ |
+  | `raw_document_dump_path` | 0 / 200 | _TBD_ |
+  | `thin_retrieval_clarification` (new) | — | _TBD_ |
+  | deterministic pre-handler | ~74 | _TBD_ |
+  | LLM generation (stubbed) | ~114 | _TBD_ |
+  | relevance-guard clarification | ~12 | _TBD_ |
+
+The `bytecode_fallback` logger is unchanged and keeps collecting under real
+traffic.

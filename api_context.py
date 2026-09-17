@@ -174,7 +174,10 @@ _HEDGE_RE = re.compile(
 
 
 def _enforce_live_property_data(response_payload, issue, data_api_calls):
-    if not is_property_support_message(issue):
+    # The orchestrator's LLM turn analysis is authoritative; the keyword check only
+    # covers payloads that carry no route (e.g. router-level grounded shortcuts).
+    route = response_payload.get("route")
+    if route == "general" or (route != "property" and not is_property_support_message(issue)):
         return response_payload
     failed_live_calls = [
         call for call in data_api_calls
@@ -635,6 +638,7 @@ class SupportAssistRequest(BaseModel):
     limit: int = 3
     prefer_fast_response: bool = False
     prefer_qwen_response: bool = True
+    language_hint: str = Field(default="", max_length=40)
 
 
 class VoiceSynthesisRequest(BaseModel):

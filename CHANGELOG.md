@@ -8,6 +8,108 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-09-17 13:33 — Multilingual free chat: any Indian language, plus two live-data bugs
+
+**Context:** Free chat replied in the wrong language or fell back to
+English/Hindi/Telugu-only handling for many Indian-language inputs (Hinglish,
+Tenglish, native scripts, and romanized Tamil/Kannada/Malayalam/Marathi/
+Bengali/Gujarati/Punjabi). A generic "what flats do you have in Mumbai" style
+question didn't reliably open the guided project-browse flow. Intent
+(property vs. general) was also being decided from static English keyword
+lists, which don't work across languages.
+
+**Change — one LLM call decides intent + language per turn:**
+- `services/turn_analysis_service.py` (new): `analyze_turn()` sends the
+  latest message plus recent history to Sarvam once, asking for
+  `{intent, reply_language, script, english}` as JSON. `english` is a plain
+  English rendering of the message, used to drive the (English-only) property
+  engine and its keyword routing regardless of the input language.
+  Deterministic heuristics (`heuristic_turn_analysis`) are the fallback when
+  the call fails, and also override the LLM when its language label is
+  contradicted by the message's own script or vocabulary (a bare "ok"/"3"/
+  emoji keeps the previous turn's language instead).
+- `services/reply_language.py` (new): script detection (10 Indic scripts) and
+  per-language romanized-word lexicons (Hindi, Telugu, Tamil, Kannada,
+  Malayalam, Marathi, Bengali, Gujarati, Punjabi), mirrored in
+  `src/lib/chatLanguage.ts` for the frontend's guided-flow button text.
+  `build_reply_language_directive()` appends a `[Reply language: X]` note to
+  the property-engine prompt, phrased without "in `<X>`" so the (English)
+  property-answer parser can't misread the language name as a location
+  (previously produced "No projects in English").
+- `graph/main_orchestrator.py`: `prepare_turn()` runs the analysis once per
+  turn (shared by the router and both entry points); property answers are
+  generated from the English rendering, then `_localize_answer()` translates
+  the property engine's fixed English templates into the customer's
+  language/script, rejecting any translation that drops a number or price.
+  `LANGUAGE_CAPABILITY` lists the languages the assistant can name when asked.
+- `routers/assist.py`, `api_context.py`: route-aware live-data enforcement
+  (skips the "unverified" rejection for general-chat answers), and a
+  grounded-shortcut path gated on `turn.analysis.is_property`.
+- Frontend: `src/pages/CustomerHomePage.tsx` stopped appending a long
+  English "Voice language: X" instruction to typed messages (root cause of
+  "No projects in English" — the suffix leaked into the property-answer
+  parser); `src/lib/chatLanguage.ts` extends the guided-flow button/prompt
+  text (`FLOW_TEXT`) to 12 language/script variants and recognizes
+  location phrases in Indian-language postpositions ("thane **lo**",
+  "pune **mein**", "kalyan **madhe**").
+
+**Bug 1 — native-script Marathi answered in Hindi:** Devanagari is shared by
+Hindi and Marathi; `detect_script_language()` always returned "Hindi",
+silently overriding a correct Marathi label from the LLM (confirmed live:
+"ठाण्यात तुमच्या कोणत्या मालमत्ता आहेत?" → answered in Hindi). Fixed in
+`services/reply_language.py` (`_MARATHI_DEVANAGARI_MARKERS`) and mirrored in
+`src/lib/chatLanguage.ts` (`MARATHI_DEVANAGARI_MARKERS`): Devanagari text
+containing Marathi-distinctive words (आहे, तुमच्या, मालमत्ता, ...) is now
+labelled Marathi; plain Hindi text is unaffected.
+
+**Bug 2 — "no property in Thane" contradicting the assistant's own prior
+answer:** reproduced live — the same "which properties do you have in
+Thane?" question, asked with different phrasing/history, sometimes correctly
+listed the 9 live Thane projects and sometimes denied having any, directly
+contradicting an answer given two turns earlier in the same conversation.
+Root cause: plain "do you have anything in `<city>`" questions were routed to
+`_legacy_build_company_api_direct_answer` (the compiled, LLM-backed
+`ai_agent_service_runtime.pyc`), which isn't reliably grounded for this
+phrasing. Fix in `services/ai_agent_service.py`: a new deterministic
+pre-filter, `_is_location_availability_question()` /
+`_build_location_catalogue_answer()`, answers a plain location-availability
+question directly from the live project catalogue (filtering `projects` by
+city/location/address word match), bypassing the blob call entirely.
+Budget/BHK/price-qualified location questions (`_NON_LOCATION_SPECIFIC_RE`)
+are excluded and still reach the full engine.
+
+**Verification:**
+- `pytest tests/` → 657 passed (12 pre-existing Windows tmp-dir permission
+  errors in `test_pending_upgrades.py`/`test_security_boundaries.py`/
+  `test_upgrade_security.py`, unrelated). New/updated: `test_free_chat_language.py`,
+  `test_company_context_matching.py`, `test_pricing_validation_guard.py`,
+  `test_property_question_variants.py` (added
+  `test_plain_location_availability_question_is_answered_deterministically`,
+  `test_location_availability_with_specifics_still_reaches_the_full_engine`).
+- `vitest run` → 59 passed, including new `chatLanguage.test.ts` cases for
+  12 languages/scripts and the Marathi/Hindi Devanagari disambiguation.
+  `tsc --noEmit` clean.
+- 100-row multilingual replay (`tests/acrobuild_multilingual_context_test_questions.csv`)
+  against the running backend: correct language/script in every turn across
+  Telugu, Hindi, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati,
+  Punjabi and English, including native scripts and mid-conversation
+  language switches.
+- Reproduced the reported conversation against the live backend before and
+  after the fix: language now correctly resolves to Marathi
+  (`property/Marathi/native`), and the Thane project list is returned
+  identically across 3 repeated runs (previously non-deterministic).
+- Playwright/Chrome smoke run against `/home` confirmed the guided
+  project-browse buttons render in-language for a multilingual conversation.
+
+**Known trade-offs:** ~0.2s added per turn for the analysis call, plus one
+translation call for non-English property answers that use an English
+template; a property answer with many numbers (e.g. a full address list)
+can fall back to English if the translator can't preserve every number;
+flow button text covers 12 language variants, other languages keep the
+previous flow language; the 30/min rate limit is unchanged.
+
+---
+
 ## 2026-09-10 20:15 — Bytecode reconstruction: Phase 3 (conversation router)
 
 **Change:** `graph/haystack_conversation_pipeline_source.py` — a hand

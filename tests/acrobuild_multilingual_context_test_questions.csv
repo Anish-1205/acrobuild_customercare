@@ -1,0 +1,101 @@
+﻿Test_ID,Scenario_ID,Turn,Domain,Test_Type,Language,Script,User_Input,Expected_Response_Language,Expected_Behavior,Requires_Context
+T001,S01,1,General,Language capability,Telugu,Latin,telugu vaccha?,Telugu,Answer naturally in Telugu/transliterated Telugu; confirm Telugu capability without changing topic.,No
+T002,S01,2,General,Current knowledge,English,Latin,who's the cm of telangana?,English,Answer the current factual question; do not force the user back to property topics unless the product is intentionally domain-restricted.,Yes
+T003,S01,3,General,Language switch + context,Telugu,Latin,telugu lo cheppu,Telugu,Translate/restate the immediately previous answer in Telugu; do not interpret this as a new property search.,Yes
+T004,S01,4,Property,Domain switch,Telugu,Latin,"sare, mee projects ekkada unnayi?",Telugu,Switch back to property support and list/offer available project locations while staying in Telugu.,Yes
+T005,S01,5,Property,Ellipsis/context,Telugu,Latin,Pune lo unnavi cheppu,Telugu,Understand 'unnavi' as projects in Pune and continue the existing project-discovery flow.,Yes
+T006,S02,1,Property,Project discovery,Hindi,Latin,aapke paas konse projects hai?,Hindi,List or offer live projects in Hindi; do not unnecessarily ask the user to switch language.,No
+T007,S02,2,Property,Location filter,Hindi,Latin,sirf Pune wale dikhao,Hindi,Filter the prior project set to Pune only.,Yes
+T008,S02,3,Property,Budget context,Hindi,Latin,mera budget 80 lakh tak hai,Hindi,Remember the ₹80 lakh budget and use it to guide available options without losing the Pune filter.,Yes
+T009,S02,4,Property,BHK preference,Hindi,Latin,2 bhk chahiye,Hindi,Add 2 BHK as another constraint while preserving Pune + ₹80 lakh context.,Yes
+T010,S02,5,Property,Context summary,Hindi,Latin,ab mere liye kya options bachte hain?,Hindi,"Summarize options matching all known constraints; do not ask again for already provided budget, city, or BHK.",Yes
+T011,S03,1,Property,Pricing,Telugu,Latin,Pune project rate entha?,Telugu,"Ask which Pune project/unit if needed, or provide available starting-price information without inventing rates.",No
+T012,S03,2,Property,Unit preference,Telugu,Latin,2 bhk ki,Telugu,Apply 2 BHK to the previous Pune pricing question.,Yes
+T013,S03,3,Property,Price clarification,Telugu,Latin,starting price cheppu,Telugu,"Provide the starting price for the selected/understood Pune 2 BHK context, or clarify only the missing project if multiple remain.",Yes
+T014,S03,4,Property,Cost components,Telugu,Latin,registration kalipi aa?,Telugu,Understand the user is asking whether the quoted price includes registration; explain inclusions/exclusions based on known project data.,Yes
+T015,S03,5,Property,Follow-up,Telugu,Latin,aithe total approx entha avutundi?,Telugu,"Estimate only from available pricing components, label it approximate, and preserve the same unit/project context.",Yes
+T016,S04,1,Property,Language support,Marathi,Latin,marathi madhe bol,Marathi,Switch to Marathi immediately.,No
+T017,S04,2,Property,Project discovery,Marathi,Devanagari,ठाण्यात तुमचे कोणते प्रोजेक्ट आहेत?,Marathi,Answer about Thane projects in Marathi.,Yes
+T018,S04,3,Property,Amenities,Marathi,Devanagari,त्यात जिम आहे का?,Marathi,Resolve 'त्यात' to the current project/project set; ask which project only if still ambiguous.,Yes
+T019,S04,4,Property,Amenity follow-up,Marathi,Latin,swimming pool pan aahe ka?,Marathi,Continue amenity discussion for the same project without resetting context.,Yes
+T020,S04,5,Property,Language switch,English,Latin,now explain the amenities in English,English,Restate the current project's amenities in English while preserving project context.,Yes
+T021,S05,1,General,Colloquial understanding,Tamil,Latin,nee yenna pandre?,Tamil,Understand colloquial Tamil ('what are you doing?') and answer naturally instead of claiming it is unintelligible.,No
+T022,S05,2,General,Assistant identity,Tamil,Latin,un peru enna?,Tamil,Answer the assistant/support identity appropriately; do not hallucinate project availability.,Yes
+T023,S05,3,General,Language capability,Tamil,Tamil,தமிழ்ல பேச முடியுமா?,Tamil,Confirm/switch to Tamil.,Yes
+T024,S05,4,Property,Project discovery,Tamil,Tamil,புனேவில் உங்களுடைய project இருக்கா?,Tamil,Answer the Pune project query in Tamil.,Yes
+T025,S05,5,Property,Pricing/context,Tamil,Latin,athoda price evlo?,Tamil,Resolve 'athoda' to the project just discussed and answer/clarify pricing without losing context.,Yes
+T026,S06,1,Property,Project discovery,Kannada,Kannada,ಪುಣೆಯಲ್ಲಿ ನಿಮ್ಮ ಪ್ರಾಜೆಕ್ಟ್‌ಗಳು ಯಾವುವು?,Kannada,List/offer Pune projects in Kannada.,No
+T027,S06,2,Property,Site visit,Kannada,Kannada,ಸೈಟ್ ವಿಸಿಟ್ ಬುಕ್ ಮಾಡಬಹುದಾ?,Kannada,Continue with site-visit booking flow for the Pune project context.,Yes
+T028,S06,3,Property,Date reference,Kannada,Latin,this Saturday barbeku,Kannada,"Interpret the requested visit day in context; if booking requires an exact date/time, ask only for the missing time/details.",Yes
+T029,S06,4,Property,Party size,Kannada,Latin,nanu mattu nanna wife bartivi,Kannada,Remember two visitors and continue booking flow.,Yes
+T030,S06,5,Property,Confirmation/context,Kannada,Latin,morning 11 ge book madi,Kannada,"Use the existing project, Saturday, two-person context and request/confirm only details required by the booking system.",Yes
+T031,S07,1,Property,Brochure,Malayalam,Malayalam,പ്രോജക്റ്റിന്റെ ബ്രോഷർ കിട്ടുമോ?,Malayalam,Offer the brochure/download path for the current or requested project; ask project only if not known.,No
+T032,S07,2,Property,Location context,Malayalam,Latin,Thane ullathinte,Malayalam,Interpret this as 'the one in Thane' and narrow the brochure request accordingly.,Yes
+T033,S07,3,Property,Document request,Malayalam,Latin,floor plan um venam,Malayalam,Add floor plan to the existing Thane project document request.,Yes
+T034,S07,4,Property,Unit filter,Malayalam,Latin,2 bhk mathi,Malayalam,Return/request only the 2 BHK floor plan within the current Thane context.,Yes
+T035,S07,5,Property,Contact preference,Malayalam,Latin,WhatsApp il ayakkamo?,Malayalam,Explain/send through supported channel if available; preserve the exact document/project context.,Yes
+T036,S08,1,Property,Construction update,Bengali,Bengali,পুনের প্রজেক্টের কাজ কতদূর হয়েছে?,Bengali,Provide current published construction status for Pune projects or clarify which project if needed.,No
+T037,S08,2,Property,Milestone context,Bengali,Bengali,"শেষ আপডেটে slab complete বলেছিল, এখন কী অবস্থা?",Bengali,Use the referenced prior milestone if conversation/project data supports it; do not invent progress.,Yes
+T038,S08,3,Property,Evidence request,Bengali,Latin,latest photo ache?,Bengali,Offer latest published site photos/media for the same project if available.,Yes
+T039,S08,4,Property,Timeline,Bengali,Bengali,পজেশন কবে আশা করা যায়?,Bengali,Answer possession timeline for the same project using authoritative project data and caveats if dates are estimates.,Yes
+T040,S08,5,Property,Language switch,Hindi,Latin,ye sab Hindi me batao,Hindi,Restate the construction status and possession information in Hindi without changing project.,Yes
+T041,S09,1,Property,Handover,Gujarati,Gujarati,પઝેશન માટે કયા દસ્તાવેજો જોઈએ?,Gujarati,Explain possession document requirements in Gujarati.,No
+T042,S09,2,Property,Snagging,Gujarati,Gujarati,ફ્લેટમાં crack હોય તો શું કરવું?,Gujarati,Explain defect/snاغ reporting workflow and escalation path.,Yes
+T043,S09,3,Property,Context follow-up,Gujarati,Latin,photo moklu to chale?,Gujarati,Understand photos refer to the reported crack/defect and explain supported evidence submission.,Yes
+T044,S09,4,Property,Severity,Gujarati,Latin,wall ma moti crack che,Gujarati,Treat as a potentially important defect; give appropriate support/escalation guidance without unrelated sales responses.,Yes
+T045,S09,5,Property,Ticket context,Gujarati,Latin,complaint number kya thi malse?,Gujarati,Explain where the complaint/ticket number appears after submission and preserve defect context.,Yes
+T046,S10,1,Property,Maintenance,Punjabi,Gurmukhi,"ਮੇਰੇ ਫਲੈਟ ਵਿੱਚ ਪਾਣੀ ਲੀਕ ਹੋ ਰਿਹਾ ਹੈ, ਕੀ ਕਰਾਂ?",Punjabi,Provide maintenance/defect reporting steps in Punjabi and prioritize urgent mitigation if appropriate.,No
+T047,S10,2,Property,Location in unit,Punjabi,Latin,bathroom ceiling ton aa reha,Punjabi,Resolve this as the source/location of the same leak issue.,Yes
+T048,S10,3,Property,Urgency,Punjabi,Latin,hun bahut zyada leak ho reha,Punjabi,Recognize increased urgency and provide immediate safe escalation/contact steps.,Yes
+T049,S10,4,Property,Availability,Punjabi,Latin,maintenance team aj aa sakdi?,Punjabi,Check/explain service availability if integrated; don't invent a confirmed visit.,Yes
+T050,S10,5,Property,Context carryover,English,Latin,please give me the complaint steps in English,English,Translate/restate the same leak complaint process in English.,Yes
+T051,S11,1,Property,Lead qualification,Hinglish,Latin,mujhe investment ke liye property chahiye,Hindi,Ask useful qualifying details such as city/budget/unit preference without overwhelming the user.,No
+T052,S11,2,Property,City preference,Hinglish,Latin,Pune preferred hai,Hindi,Remember investment intent and set Pune as preferred city.,Yes
+T053,S11,3,Property,Budget,Hinglish,Latin,budget around 1 crore,Hindi,Add ₹1 crore budget to the same investment search.,Yes
+T054,S11,4,Property,Comparison,Hinglish,Latin,2 bhk aur 3 bhk dono compare karo,Hindi,Compare available 2 BHK vs 3 BHK options under the existing Pune/investment/₹1 crore context without fabricating data.,Yes
+T055,S11,5,Property,Language switch,English,Latin,give me the same comparison in English,English,Restate the same comparison in English with all constraints preserved.,Yes
+T056,S12,1,Property,Comparison,English,Latin,Show me your Pune and Thane projects.,English,Present available projects by the two requested cities.,No
+T057,S12,2,Property,Comparison,English,Latin,Which of these have 2 BHK units?,English,Filter the previously presented projects to those with 2 BHK availability; avoid a generic reset.,Yes
+T058,S12,3,Property,Coreference,English,Latin,What is the price of the second one?,English,"Resolve 'second one' from the immediately previous ordered list; if ordering is not stable, clarify.",Yes
+T059,S12,4,Property,Amenity follow-up,English,Latin,Does that one have covered parking?,English,Resolve 'that one' to the same second project and answer from project data.,Yes
+T060,S12,5,Property,Pronoun + language switch,Telugu,Latin,adi RERA approved aa? telugu lo cheppu,Telugu,"Resolve 'adi' to the same project, answer the RERA question, and switch to Telugu.",Yes
+T061,S13,1,Property,Project discovery,English,Latin,Do you have projects in Thane?,English,Answer Thane project availability.,No
+T062,S13,2,General,General knowledge diversion,English,Latin,"By the way, what is the capital of Maharashtra?",English,Answer the general question if general knowledge is supported; do not erase the Thane project context.,Yes
+T063,S13,3,General,Language switch,Marathi,Latin,marathi madhe sang,Marathi,Restate the previous general answer in Marathi.,Yes
+T064,S13,4,Property,Context return,Marathi,Latin,"thik aahe, apan Thane project baddal bolat hoto na?",Marathi,Recognize the return to the earlier Thane property thread.,Yes
+T065,S13,5,Property,Context resume,Marathi,Latin,tyacha possession kadhi aahe?,Marathi,Resolve 'tyacha' to the previously discussed Thane project and answer possession timing.,Yes
+T066,S14,1,Property,Typo robustness,English,Latin,pue me projcts h kya,Hindi,Infer the likely intent as 'Pune me projects hai kya?' and answer without unnecessary failure.,No
+T067,S14,2,Property,Typo + price,Hinglish,Latin,2bhk ka rat kya h,Hindi,Interpret 'rat' as likely 'rate' from property context and answer/clarify pricing.,Yes
+T068,S14,3,Property,Abbreviation,Hinglish,Latin,possession kb,Hindi,Understand abbreviated 'when is possession?' for the current project.,Yes
+T069,S14,4,Property,Noisy language switch,Telugu,Latin,telgu lo chpu,Telugu,Infer the user wants the previous answer in Telugu and switch language.,Yes
+T070,S14,5,Property,Short follow-up,Telugu,Latin,amenities?,Telugu,Answer amenities for the same project in Telugu despite the English keyword.,Yes
+T071,S15,1,Property,Availability,Hindi,Devanagari,क्या अभी 2 बीएचके उपलब्ध है?,Hindi,"Answer live/current availability only if supported; otherwise explain how to check, without inventing stock.",No
+T072,S15,2,Property,Project clarification,Hindi,Devanagari,पुणे वाले प्रोजेक्ट में,Hindi,Apply Pune project context to the preceding 2 BHK availability request.,Yes
+T073,S15,3,Property,Inventory specifics,Hindi,Devanagari,कौन से फ्लोर पर है?,Hindi,Return available floors for the same Pune 2 BHK inventory if live inventory is available.,Yes
+T074,S15,4,Property,Orientation preference,Hindi,Devanagari,ईस्ट फेसिंग चाहिए,Hindi,Add east-facing as a preference to the current unit search.,Yes
+T075,S15,5,Property,Context result,Hindi,Devanagari,अब कौन सा यूनिट मैच करता है?,Hindi,Filter using Pune + 2 BHK + east-facing and prior availability context; do not ask those details again.,Yes
+T076,S16,1,Property,Location,Telugu,Telugu,ప్రాజెక్ట్ దగ్గర స్కూల్స్ ఉన్నాయా?,Telugu,Ask which project only if no project context exists; otherwise provide nearby-school guidance from supported data.,No
+T077,S16,2,Property,Project selection,Telugu,Latin,Pune lo manam chusina 2 bhk project,Telugu,Resolve this to the earlier/selected Pune 2 BHK project if uniquely identifiable.,Yes
+T078,S16,3,Property,Nearby facilities,Telugu,Telugu,హాస్పిటల్స్ కూడా ఉన్నాయా?,Telugu,Continue nearby-facilities discussion for the same project.,Yes
+T079,S16,4,Property,Travel context,Telugu,Latin,airport ki entha dooram?,Telugu,Provide distance/travel guidance for the same project's location if available.,Yes
+T080,S16,5,Property,Summary,Telugu,Latin,location advantages short ga cheppu,Telugu,Summarize location advantages concisely from the accumulated locality discussion.,Yes
+T081,S17,1,Property,Human handoff,English,Latin,I want to speak to a sales person.,English,Offer the supported sales-contact/handoff flow and collect only required contact details.,No
+T082,S17,2,Property,Language preference,Hindi,Latin,Hindi bolne wala chahiye,Hindi,Preserve sales-handoff intent and record/request a Hindi-speaking representative.,Yes
+T083,S17,3,Property,Contact preference,Hinglish,Latin,"call nahi, WhatsApp better hai",Hindi,Respect the WhatsApp preference rather than continuing a call-only flow.,Yes
+T084,S17,4,Property,Time preference,Hinglish,Latin,shaam 6 ke baad message karna,Hindi,Carry forward contact channel + Hindi preference and record the after-6-PM preference if supported.,Yes
+T085,S17,5,Property,Confirmation,Hinglish,Latin,mera request summary batao,Hindi,"Summarize: sales contact, Hindi-speaking, WhatsApp, after 6 PM; do not invent missing personal details.",Yes
+T086,S18,1,Property,Site operations,English,Latin,A material delivery reached the site damaged. What should I do?,English,Give the published damaged-delivery/acceptance workflow and escalation path.,No
+T087,S18,2,Property,Evidence/context,English,Latin,Three tiles boxes are broken.,English,"Treat this as details of the same damaged delivery, not a new unrelated request.",Yes
+T088,S18,3,Property,Evidence,English,Latin,Do I need photos before unloading?,English,Answer evidence requirements for the same delivery issue according to site-operations guidance.,Yes
+T089,S18,4,Property,Language switch,Hindi,Latin,isko Hindi me samjhao,Hindi,Restate the damaged-delivery workflow in Hindi without dropping the three-box context.,Yes
+T090,S18,5,Property,Action summary,Hindi,Latin,abhi mujhe pehle kya karna chahiye?,Hindi,Give the immediate first action based on the current damaged-delivery scenario.,Yes
+T091,S19,1,General,Assistant identity,Telugu,Latin,nee peru enti?,Telugu,Answer the assistant/support name/identity; do not respond with project availability.,No
+T092,S19,2,General,Capabilities,Telugu,Latin,nuvvu emi help cheyagalavu?,Telugu,"Explain supported help areas such as projects, pricing, brochures, site updates, handover, maintenance, plus general info if supported.",Yes
+T093,S19,3,General,Unsupported request,Telugu,Latin,oka joke cheppu,Telugu,"If small talk is supported, answer briefly; if domain-restricted, politely redirect without losing language.",Yes
+T094,S19,4,Property,Recovery,Telugu,Latin,sare project details ki veldam,Telugu,Recognize return to property support and continue in Telugu.,Yes
+T095,S19,5,Property,Project discovery,Telugu,Latin,Thane lo em unnayi?,Telugu,List/offer Thane project options in Telugu.,Yes
+T096,S20,1,Property,Complex constraints,English,Latin,I need a 2 BHK in Pune under 90 lakh for self-use.,English,"Store city=Pune, unit=2 BHK, budget≤₹90 lakh, intent=self-use.",No
+T097,S20,2,Property,Preference,English,Latin,I prefer a project with gym and covered parking.,English,Add gym + covered parking constraints without losing earlier requirements.,Yes
+T098,S20,3,Property,Language switch,Hindi,Latin,ab Hindi me continue karo,Hindi,Switch to Hindi while preserving every prior search constraint.,Yes
+T099,S20,4,Property,Constraint change,Hindi,Latin,budget 95 lakh tak stretch kar sakta hoon,Hindi,"Update only the budget from ₹90 lakh to ₹95 lakh; retain Pune, 2 BHK, self-use, gym, covered parking.",Yes
+T100,S20,5,Property,Final context check,Hindi,Latin,meri saari requirements repeat karo aur matching options batao,Hindi,Accurately restate all current constraints and show matching options from live data without resurrecting the old ₹90 lakh limit.,Yes

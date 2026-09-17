@@ -1,8 +1,10 @@
 """Recovered runtime loader plus deterministic intent fixes."""
 from pathlib import Path as _Path
 import marshal as _marshal
+import os as _os
 import re as _re
 from services.acrobuild_company_service import resolve_project_from_text
+from services.reply_language import strip_reply_language_directive
 # The `.pyc` is bytecode-only (no source). A hand-patched copy —
 # `*_runtime.patched.pyc`, produced by scripts/patch_runtime_constants.py — is
 # loaded in preference to the pristine original when present. See
@@ -51,10 +53,57 @@ if callable(globals().get("should_return_verbatim_source_answer")):
             _fallback_logger.info("bytecode fallback event=raw_document_dump_path")
         return result
 
-if callable(globals().get("build_fallback_assist_answer")):
-    globals()["build_fallback_assist_answer"] = _log_and_call(
-        globals()["build_fallback_assist_answer"], "event=generic_fallback_answer",
+# --- thin-retrieval guard ------------------------------------------------------
+# The last-resort fallback answer builder pastes whatever chunk it was handed,
+# prefixed with "Here is the relevant information:". When retrieval is thin —
+# nothing but the dense company-contact record, or only weak matches below the
+# blob's own guidance threshold — return a clarifying question instead.
+try:
+    _FALLBACK_MIN_SCORE = float(_os.getenv("ASSIST_FALLBACK_MIN_SCORE", "3"))
+except (TypeError, ValueError):
+    _FALLBACK_MIN_SCORE = 3.0
+
+
+def _is_bare_company_record(chunk):
+    if not isinstance(chunk, dict):
+        return False
+    key = normalize_ai_text(chunk.get("source_key", "")).lower()
+    title = normalize_ai_text(chunk.get("title", "")).lower()
+    return key == "acrobuild-cs-company" or (
+        chunk.get("record_kind") == "company_api" and "contact" in title
     )
+
+
+def _top_score(*collections):
+    scores = [
+        float(item.get("score", 0) or 0)
+        for collection in collections
+        for item in (collection or [])
+        if isinstance(item, dict)
+    ]
+    return max(scores, default=0.0)
+
+
+if callable(globals().get("build_fallback_assist_answer")) and callable(
+    globals().get("build_unknown_clarification_answer")
+):
+    _legacy_build_fallback_assist_answer = globals()["build_fallback_assist_answer"]
+    _build_unknown_clarification_answer = globals()["build_unknown_clarification_answer"]
+
+    def build_fallback_assist_answer(*args, **kwargs):
+        _fallback_logger.info("bytecode fallback event=generic_fallback_answer")
+        _issue = args[0] if args else kwargs.get("issue", "")
+        _articles = (args[5] if len(args) > 5 else kwargs.get("matched_articles")) or []
+        _documents = (args[6] if len(args) > 6 else kwargs.get("matched_documents")) or []
+        _chunks = (args[7] if len(args) > 7 else kwargs.get("matched_chunks")) or []
+        _substantive = [c for c in _chunks if isinstance(c, dict) and not _is_bare_company_record(c)]
+        _only_company_record = (
+            bool(_chunks) and not _substantive and not _articles and not _documents
+        )
+        if _only_company_record or _top_score(_substantive, _articles, _documents) < _FALLBACK_MIN_SCORE:
+            _fallback_logger.info("bytecode fallback event=thin_retrieval_clarification")
+            return _build_unknown_clarification_answer(_issue)
+        return _legacy_build_fallback_assist_answer(*args, **kwargs)
 
 
 def _parse_number(value):
@@ -269,6 +318,106 @@ def _is_project_catalogue_question(cleaned_issue):
     )
 
 
+def _is_generic_availability_question(cleaned_issue):
+    words = set(_re.findall(r"[a-z0-9]+", cleaned_issue))
+    if not words.intersection({"flat", "flats", "home", "homes", "apartment", "apartments", "unit", "units",
+                               "property", "properties", "inventory", "options", "project", "projects"}):
+        return False
+    asks_availability = bool(words.intersection({
+        "available", "availability", "have", "show", "list", "which", "kya", "konse", "kaunse", "kaun", "enti", "emi", "evi", "unnayi",
+    }))
+    is_specific = bool(_re.search(
+        r"\b[1-6]\s*(?:bhk|rk)\b|\bfloors?\b|\bwings?\b|\bshops?\b|\bsq|\bprice|\bcost|\brate|\bbudget|\bvalue|"
+        r"\bcheap|\bexpensive|\bpremium|\beconomical|\baffordabl|\blowest|\bhighest|\bminimum|\bmaximum|"
+        r"\bbest\b|\brecommend|\bcompar|\bmost\b|\bleast\b|\blocation|\b(?:in|near|around|at|mein)\s+[a-z]|"
+        r"\b(?:this|that|these|those|it|same|still|selected|recommended)\b",
+        cleaned_issue,
+    ))
+    return asks_availability and not is_specific
+
+
+def _mentions_catalogue_place(cleaned_issue, matched_chunks):
+    _, projects, _ = _project_catalogue_from_chunks(matched_chunks)
+    place_words = {
+        word
+        for project in projects
+        for key in ("city", "location", "address")
+        for word in _re.findall(r"[a-z]+", normalize_ai_text(project.get(key, "")).lower())
+        if len(word) >= 4
+    }
+    return bool(place_words.intersection(_re.findall(r"[a-z]+", cleaned_issue)))
+
+
+_INVENTORY_WORDS = {
+    "flat", "flats", "home", "homes", "apartment", "apartments", "unit", "units",
+    "property", "properties", "inventory", "options", "project", "projects",
+}
+_AVAILABILITY_WORDS = {
+    "available", "availability", "have", "show", "list", "which", "kya", "konse",
+    "kaunse", "kaun", "enti", "emi", "evi", "unnayi",
+}
+# Same specificity signals as _is_generic_availability_question's is_specific check,
+# minus the location clause — a location-scoped *plain* availability question ("which
+# properties do you have in Thane") should still be handled deterministically here.
+_NON_LOCATION_SPECIFIC_RE = _re.compile(
+    r"\b[1-6]\s*(?:bhk|rk)\b|\bfloors?\b|\bwings?\b|\bshops?\b|\bsq|\bprice|\bcost|\brate|\bbudget|\bvalue|"
+    r"\bcheap|\bexpensive|\bpremium|\beconomical|\baffordabl|\blowest|\bhighest|\bminimum|\bmaximum|"
+    r"\bbest\b|\brecommend|\bcompar|\bmost\b|\bleast\b|"
+    r"\b(?:this|that|these|those|it|same|still|selected|recommended)\b"
+)
+
+
+def _catalogue_place_matches(cleaned_issue, matched_chunks):
+    _, projects, _ = _project_catalogue_from_chunks(matched_chunks)
+    question_words = set(_re.findall(r"[a-z]+", cleaned_issue))
+    matches = []
+    for project in projects:
+        place_words = {
+            word
+            for key in ("city", "location", "address")
+            for word in _re.findall(r"[a-z]+", normalize_ai_text(project.get(key, "")).lower())
+            if len(word) >= 4
+        }
+        if place_words & question_words:
+            matches.append(project)
+    return matches
+
+
+def _is_location_availability_question(cleaned_issue, matched_chunks):
+    """A plain "do you have anything in <city>" question, with no BHK/price/floor
+    specifics. Handled deterministically because the legacy engine (LLM-backed, see
+    docs/RECONSTRUCTION_STATUS.md) has been observed to deny availability in a city
+    that the live catalogue actually lists projects in, when phrased with "property"
+    instead of "project" or asked in a non-English/romanized language."""
+    words = set(_re.findall(r"[a-z0-9]+", cleaned_issue))
+    if not (words & _INVENTORY_WORDS and words & _AVAILABILITY_WORDS):
+        return False
+    if _NON_LOCATION_SPECIFIC_RE.search(cleaned_issue):
+        return False
+    return bool(_catalogue_place_matches(cleaned_issue, matched_chunks))
+
+
+def _build_location_catalogue_answer(cleaned_issue, matched_chunks):
+    matches = _catalogue_place_matches(cleaned_issue, matched_chunks)
+    if not matches:
+        return ""
+    lines = [f"Yes, we currently have {len(matches)} project{'s' if len(matches) != 1 else ''} available:", ""]
+    for project in matches:
+        name = normalize_ai_text(project.get("projectName", "Project"))
+        location = next(
+            (normalize_ai_text(project.get(key, "")) for key in ("address", "location", "city")
+             if normalize_ai_text(project.get(key, ""))),
+            "",
+        )
+        lines.append(f"- {name}" + (f": {location}" if location else ""))
+    lines.extend([
+        "",
+        "Tell me a project name and what you'd like to know: overview, configurations, pricing, "
+        "availability, or a site visit.",
+    ])
+    return "\n".join(lines)
+
+
 def _is_project_count_question(cleaned_issue):
     words = set(_re.findall(r"[a-z0-9]+", cleaned_issue))
     return (
@@ -348,7 +497,7 @@ def _build_project_catalogue_answer(matched_chunks):
     _, _, names = _project_catalogue_from_chunks(matched_chunks)
     if not names:
         return "I could not retrieve the project catalogue right now. Please try again shortly."
-    return "\n".join([f"We currently have {len(names)} projects available to explore in the retrieved Acrobuild catalogue:", "", *[f"{index}. {name}" for index, name in enumerate(names, start=1)], "", "Tell me a project name and what you want to know: overview, location, configurations, pricing, availability, or site visit."])
+    return "\n".join([f"We currently have {len(names)} projects available to explore:", "", *[f"{index}. {name}" for index, name in enumerate(names, start=1)], "", "Tell me a project name and what you want to know: overview, location, configurations, pricing, availability, or site visit."])
 
 def _build_acrobuild_overview(matched_chunks):
     company_chunk = next((chunk for chunk in (matched_chunks or []) if normalize_ai_text(chunk.get("source_key", "")) == "acrobuild-cs-company"), {})
@@ -692,9 +841,14 @@ def _sanitize_project_location_answer(answer, project_chunk):
     return _re.sub(r"\n\nLocation:[^\n]+", f"\n\nLocation: {', '.join(values)}.", answer)
 
 def build_company_api_direct_answer(issue, matched_chunks, conversation_messages=None):
+    issue = strip_reply_language_directive(issue)
     issue = _re.sub(r"\bshopes\b", "shops", str(issue), flags=_re.IGNORECASE)
     issue = _re.sub(r"\b(?:avaibale|avilable)\b", "available", issue, flags=_re.IGNORECASE)
     cleaned_issue = normalize_ai_text(issue).lower()
+    if _re.search(r"\b(?:documents?|paperwork|papers)\b", cleaned_issue):
+        # The legacy dispatcher takes the project from history and answers a documents
+        # question ("what documents are needed for possession") with its wing list.
+        conversation_messages = []
     contextual_flat_cost = _build_contextual_flat_cost_answer(cleaned_issue, conversation_messages)
     if contextual_flat_cost:
         return contextual_flat_cost
@@ -720,10 +874,25 @@ def build_company_api_direct_answer(issue, matched_chunks, conversation_messages
         return _build_portfolio_overview_answer(matched_chunks)
     if _is_project_catalogue_question(cleaned_issue):
         return _build_project_catalogue_answer(matched_chunks)
+    if (
+        _is_generic_availability_question(cleaned_issue)
+        and _find_requested_project(cleaned_issue, matched_chunks) is None
+        and not _mentions_catalogue_place(cleaned_issue, matched_chunks)
+    ):
+        return _build_project_catalogue_answer(matched_chunks)
+    if (
+        _is_location_availability_question(cleaned_issue, matched_chunks)
+        and _find_requested_project(cleaned_issue, matched_chunks) is None
+    ):
+        location_answer = _build_location_catalogue_answer(cleaned_issue, matched_chunks)
+        if location_answer:
+            return location_answer
     if "acrobuild" in cleaned_issue and any(phrase in cleaned_issue for phrase in ("about acrobuild", "what is acrobuild", "who is acrobuild", "acrobuild company")):
         return _build_acrobuild_overview(matched_chunks)
     requested_project = _find_requested_project(cleaned_issue, matched_chunks)
     asks_project_overview = requested_project is not None and any(phrase in cleaned_issue for phrase in ("about", "overview", "details", "deep dive", "project of", "projects of"))
     effective_issue = f"Tell me more about project {normalize_ai_text(requested_project.get('project_name', ''))}" if asks_project_overview else issue
     answer = _legacy_build_company_api_direct_answer(effective_issue, matched_chunks, conversation_messages=conversation_messages)
+    if isinstance(answer, str):
+        answer = _re.sub(r"\n*Project type code\(s\) from the API:[^\n]*", "", answer)
     return _sanitize_project_location_answer(answer, requested_project)

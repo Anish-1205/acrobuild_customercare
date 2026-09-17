@@ -435,6 +435,8 @@ export interface SupportAssistResponse {
   matched_chunks?: SupportAssistChunkMatch[];
   model?: string;
   rag_evaluation?: RagEvaluation;
+  reply_language?: string;
+  reply_script?: "latin" | "native";
   retrieval_mode?: "empty" | "lexical" | "semantic";
   source_label: string;
   source_status: "live" | "fallback" | "workspace";

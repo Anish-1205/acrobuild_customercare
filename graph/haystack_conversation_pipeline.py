@@ -158,6 +158,10 @@ def resolve_contextual_support_issue(issue, conversation_messages):
         or asks_which_projects_exist
     ):
         return normalize_text(issue)
+    # The legacy resolver turns any "possession"/"status" follow-up into a
+    # construction-status request; a documents or payments question is not one.
+    if _re.search(r"\b(?:documents?|paperwork|papers|payments?|loan|registration|agreement)\b", cleaned):
+        return normalize_text(issue)
     return _legacy_resolve_contextual_support_issue(issue, conversation_messages)
 
 

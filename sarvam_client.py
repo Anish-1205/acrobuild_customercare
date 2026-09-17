@@ -10,8 +10,21 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DEFAULT_SARVAM_MAX_TOKENS = 300
+DEFAULT_SARVAM_REASONING_TOKENS = 1536
 DEFAULT_SARVAM_TIMEOUT_SECONDS = 120
 DEFAULT_SARVAM_DEADLINE_SECONDS = 45
+THINK_OPEN = "<think>"
+THINK_CLOSE = "</think>"
+
+
+def strip_reasoning(text):
+    # The vLLM deployment ignores enable_thinking and has no reasoning parser, so <think> lands in content.
+    text = text or ""
+    if THINK_CLOSE in text:
+        return text.split(THINK_CLOSE, 1)[1]
+    if text.lstrip().startswith(THINK_OPEN):
+        return ""
+    return text
 
 
 def get_sarvam_deadline_seconds():
@@ -36,6 +49,27 @@ def get_sarvam_max_tokens():
         return DEFAULT_SARVAM_MAX_TOKENS
 
 
+def get_sarvam_request_max_tokens(max_tokens=None):
+    # Hidden <think> tokens count against max_tokens, so reserve headroom on top of the answer budget.
+    try:
+        reasoning = max(int(os.getenv("SARVAM_REASONING_TOKENS", DEFAULT_SARVAM_REASONING_TOKENS)), 0)
+    except (TypeError, ValueError):
+        reasoning = DEFAULT_SARVAM_REASONING_TOKENS
+    return (max_tokens or get_sarvam_max_tokens()) + reasoning
+
+
+def _raise_for_status_with_body(response):
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as error:
+        body = _normalize_text(response.text)[:500]
+        raise httpx.HTTPStatusError(
+            f"{error}. Response body: {body}" if body else str(error),
+            request=error.request,
+            response=error.response,
+        ) from None
+
+
 class SarvamClient:
     def __init__(self):
         base_url = _normalize_text(os.getenv("RUNPOD_BASE_URL"))
@@ -56,6 +90,9 @@ class SarvamClient:
             base_url=self.base_url,
             headers={
                 "Authorization": f"Bearer {self.api_key}",
+                # api.sarvam.ai requires this in addition to the bearer token;
+                # a self-hosted OpenAI-compatible server ignores the extra header.
+                "api-subscription-key": self.api_key,
                 "Content-Type": "application/json",
             },
             timeout=httpx.Timeout(total_timeout, connect=10.0),
@@ -69,28 +106,31 @@ class SarvamClient:
                 "model": self.model,
                 "messages": messages,
                 "temperature": temperature,
-                "max_tokens": max_tokens or get_sarvam_max_tokens(),
-                "reasoning_effort": "none",
+                "max_tokens": get_sarvam_request_max_tokens(max_tokens),
                 "chat_template_kwargs": {
                     "enable_thinking": False,
                 },
             },
             timeout=httpx.Timeout(deadline, connect=10.0),
         )
-        response.raise_for_status()
+        _raise_for_status_with_body(response)
         data = response.json()
         message = data["choices"][0]["message"]
-        return _normalize_text(message.get("content", ""))
+        return _normalize_text(strip_reasoning(message.get("content", "")))
 
     def stream(self, messages, temperature=0.1, max_tokens=None):
         deadline = get_sarvam_deadline_seconds()
         started = monotonic()
         with self.client.stream("POST", "/v1/chat/completions", json={
             "model": self.model, "messages": messages, "temperature": temperature,
-            "max_tokens": max_tokens or get_sarvam_max_tokens(), "stream": True,
+            "max_tokens": get_sarvam_request_max_tokens(max_tokens), "stream": True,
             "chat_template_kwargs": {"enable_thinking": False},
         }) as response:
-            response.raise_for_status()
+            if response.is_error:
+                response.read()
+            _raise_for_status_with_body(response)
+            buffer = ""
+            passthrough = False
             for line in response.iter_lines():
                 if monotonic() - started > deadline:
                     raise RuntimeError(
@@ -100,12 +140,29 @@ class SarvamClient:
                     continue
                 payload = line[5:].strip()
                 if payload == "[DONE]":
-                    return
+                    break
                 event = json.loads(payload)
                 for choice in event.get("choices", []):
                     content = choice.get("delta", {}).get("content")
-                    if content:
+                    if not content:
+                        continue
+                    if passthrough:
                         yield content
+                        continue
+                    buffer += content
+                    head = buffer.lstrip()
+                    if THINK_OPEN.startswith(head):
+                        continue
+                    if not head.startswith(THINK_OPEN):
+                        passthrough = True
+                        yield buffer
+                    elif THINK_CLOSE in buffer:
+                        passthrough = True
+                        answer = buffer.split(THINK_CLOSE, 1)[1].lstrip()
+                        if answer:
+                            yield answer
+            if not passthrough and buffer.strip() and not buffer.lstrip().startswith(THINK_OPEN):
+                yield buffer
 
 
 @lru_cache(maxsize=1)

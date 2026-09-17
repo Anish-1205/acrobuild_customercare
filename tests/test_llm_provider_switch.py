@@ -1,3 +1,4 @@
+import json
 import os
 import unittest
 from unittest.mock import MagicMock, patch
@@ -96,8 +97,39 @@ class LlmProviderSwitchTests(unittest.TestCase):
             payload = client.client.post.call_args.kwargs["json"]
             self.assertEqual(payload["model"], "sarvamai/sarvam-30b-gguf:Q4_K_M")
             self.assertEqual(payload["messages"][0]["content"], "Hi")
-            self.assertEqual(payload["reasoning_effort"], "none")
+            self.assertNotIn("reasoning_effort", payload)
             get_sarvam_client.cache_clear()
+
+    def _sarvam_client(self):
+        from sarvam_client import SarvamClient
+        with patch.dict(os.environ, {"RUNPOD_BASE_URL": "https://example.proxy.runpod.net",
+                                     "RUNPOD_API_KEY": "test-key"}, clear=False):
+            return SarvamClient()
+
+    def _stream(self, pieces):
+        client = self._sarvam_client()
+        lines = [f'data: {{"choices": [{{"delta": {{"content": {json.dumps(p)}}}}}]}}' for p in pieces]
+        response = MagicMock()
+        response.iter_lines.return_value = lines + ["data: [DONE]"]
+        client.client.stream = MagicMock()
+        client.client.stream.return_value.__enter__.return_value = response
+        return "".join(client.stream([{"role": "user", "content": "Hi"}]))
+
+    def test_chat_strips_reasoning_block(self):
+        client = self._sarvam_client()
+        response = MagicMock()
+        response.json.return_value = {"choices": [{"message": {"content": "<think>plan</think>\n\nNamaskaram!"}}]}
+        client.client.post = MagicMock(return_value=response)
+        self.assertEqual(client.chat([{"role": "user", "content": "Hi"}]), "Namaskaram!")
+
+    def test_stream_strips_reasoning_split_across_chunks(self):
+        self.assertEqual(self._stream(["<th", "ink>step 1", " step 2</thi", "nk>\n\nNamas", "karam!"]), "Namaskaram!")
+
+    def test_stream_passes_through_answer_without_reasoning(self):
+        self.assertEqual(self._stream(["Hello", " there"]), "Hello there")
+
+    def test_stream_truncated_reasoning_yields_nothing(self):
+        self.assertEqual(self._stream(["<think>still planning"]), "")
 
 
 if __name__ == "__main__":
