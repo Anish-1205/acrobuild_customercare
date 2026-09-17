@@ -1,14 +1,39 @@
-node_modules/
+# Python
 __pycache__/
-*.pyc
-dist/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# Virtual environments and local configuration
 .venv/
 venv/
-*.tsbuildinfo
+env/
 .env
-support_system.db
-data/
+.env.*
+!.env.example
+
+# JavaScript / frontend
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local databases and runtime data
 *.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+data/
+uploads/
 
 # keep compiled runtime blobs that app loads at import time
 !*_runtime.pyc
@@ -21,3 +46,18 @@ logs/
 *-preview.png
 *.xlsx
 scripts/_*.json
+
+# Local model weights (keep model configuration files tracked)
+models/**/*.bin
+models/**/*.gguf
+models/**/*.safetensors
+models/**/*.pt
+models/**/*.pth
+
+# Editors and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
