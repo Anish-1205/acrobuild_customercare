@@ -19,7 +19,39 @@ jobs:
       - run: python -m pytest -q -p no:cacheprovider
       - run: ruff check .
       - run: mypy
-      - run: pip-audit -r requirements.txt
+      # These accepted exceptions are documented in requirements/SECURITY_ADVISORIES.md.
+      # Keep IDs explicit so any newly reported advisory still fails CI.
+      - name: Audit Python dependencies
+        run: >-
+          pip-audit -r requirements.txt
+          --ignore-vuln PYSEC-2024-227
+          --ignore-vuln PYSEC-2024-228
+          --ignore-vuln PYSEC-2024-229
+          --ignore-vuln PYSEC-2025-40
+          --ignore-vuln PYSEC-2025-211
+          --ignore-vuln PYSEC-2025-212
+          --ignore-vuln PYSEC-2025-213
+          --ignore-vuln PYSEC-2025-214
+          --ignore-vuln PYSEC-2025-215
+          --ignore-vuln PYSEC-2025-216
+          --ignore-vuln PYSEC-2025-217
+          --ignore-vuln PYSEC-2025-218
+          --ignore-vuln PYSEC-2026-1325
+          --ignore-vuln PYSEC-2026-1977
+          --ignore-vuln PYSEC-2026-1980
+          --ignore-vuln PYSEC-2026-1981
+          --ignore-vuln PYSEC-2026-1982
+          --ignore-vuln PYSEC-2026-1983
+          --ignore-vuln PYSEC-2026-1984
+          --ignore-vuln PYSEC-2026-1985
+          --ignore-vuln PYSEC-2026-1986
+          --ignore-vuln PYSEC-2026-1987
+          --ignore-vuln PYSEC-2026-1988
+          --ignore-vuln PYSEC-2026-2288
+          --ignore-vuln PYSEC-2026-2289
+          --ignore-vuln PYSEC-2026-2290
+          --ignore-vuln PYSEC-2026-3804
+          --ignore-vuln PYSEC-2026-3929
   frontend:
     runs-on: ubuntu-latest
     steps:

@@ -307,8 +307,10 @@ def is_contextual_property_reply(issue: str, conversation_messages: list[dict[st
     if not previous_bot_text:
         return False
 
+    conversation_project = _conversation_project_name(conversation_messages)
     property_context = (
-        is_property_support_message(previous_bot_text)
+        bool(conversation_project)
+        or is_property_support_message(previous_bot_text)
         or "explore" in previous_bot_text
         or matches_live_company_context(previous_bot_text)
     )

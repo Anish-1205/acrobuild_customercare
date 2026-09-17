@@ -36,7 +36,13 @@ export function MicrophoneIcon() {
   return (
     <svg aria-hidden="true" className="store-chat-microphone-icon" viewBox="0 0 24 24">
       <path d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v5a3.5 3.5 0 0 0 3.5 3.5Z" fill="currentColor" />
-      <path d="M18.25 10.5v.5a6.25 6.25 0 0 1-12.5 0v-.5M12 17.25V21M9.25 21h5.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+      <path
+        d="M18.25 10.5v.5a6.25 6.25 0 0 1-12.5 0v-.5M12 17.25V21M9.25 21h5.5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
     </svg>
   );
 }
@@ -96,14 +102,7 @@ export function SearchIcon() {
         strokeLinejoin="round"
         strokeWidth="1.8"
       />
-      <circle
-        cx="10.5"
-        cy="10.5"
-        fill="none"
-        r="6.25"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
+      <circle cx="10.5" cy="10.5" fill="none" r="6.25" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
 }
@@ -238,28 +237,9 @@ export function TrackOrderIcon() {
         strokeLinejoin="round"
         strokeWidth="1.8"
       />
-      <path
-        d="M28 21.5v16"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.8"
-      />
-      <circle
-        cx="40.75"
-        cy="33.75"
-        fill="none"
-        r="6.25"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
-      <path
-        d="m45.25 38.25 4.25 4.25"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.8"
-      />
+      <path d="M28 21.5v16" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+      <circle cx="40.75" cy="33.75" fill="none" r="6.25" stroke="currentColor" strokeWidth="1.8" />
+      <path d="m45.25 38.25 4.25 4.25" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
     </svg>
   );
 }
@@ -281,21 +261,9 @@ export function CancelOrderIcon() {
         strokeLinejoin="round"
         strokeWidth="1.8"
       />
-      <path
-        d="M28 21.5v16"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.8"
-      />
+      <path d="M28 21.5v16" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
       <circle cx="41" cy="33.5" fill="currentColor" r="6.5" />
-      <path
-        d="m38.4 30.9 5.2 5.2m0-5.2-5.2 5.2"
-        fill="none"
-        stroke="#fff"
-        strokeLinecap="round"
-        strokeWidth="1.8"
-      />
+      <path d="m38.4 30.9 5.2 5.2m0-5.2-5.2 5.2" fill="none" stroke="#fff" strokeLinecap="round" strokeWidth="1.8" />
     </svg>
   );
 }
@@ -317,21 +285,9 @@ export function ReportIssueIcon() {
         strokeLinejoin="round"
         strokeWidth="1.8"
       />
-      <path
-        d="M28 21.5v16"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.8"
-      />
+      <path d="M28 21.5v16" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
       <path d="M42 26.5 49.75 41H34.25L42 26.5Z" fill="currentColor" />
-      <path
-        d="M42 31.25v4.5m0 2.65h.01"
-        fill="none"
-        stroke="#fff"
-        strokeLinecap="round"
-        strokeWidth="1.8"
-      />
+      <path d="M42 31.25v4.5m0 2.65h.01" fill="none" stroke="#fff" strokeLinecap="round" strokeWidth="1.8" />
     </svg>
   );
 }

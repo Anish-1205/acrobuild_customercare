@@ -2808,6 +2808,19 @@ def get_knowledge_documents():
 
     cursor.execute(
         """
+        SELECT 1
+        FROM sqlite_master
+        WHERE type = 'table'
+          AND name = 'knowledge_documents'
+        """
+    )
+
+    if cursor.fetchone() is None:
+        conn.close()
+        return []
+
+    cursor.execute(
+        """
         SELECT *
         FROM knowledge_documents
         ORDER BY

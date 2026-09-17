@@ -12,12 +12,28 @@ export type BrowserSpeechRecognition = {
 export type SpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
 
 export const VOICE_LANGUAGES = {
-  "as-IN": "Assamese", "bn-IN": "Bengali", "brx-IN": "Bodo", "doi-IN": "Dogri",
-  "en-IN": "English (India)", "gu-IN": "Gujarati", "hi-IN": "Hindi", "kn-IN": "Kannada",
-  "kok-IN": "Konkani", "mai-IN": "Maithili", "ml-IN": "Malayalam", "mni-IN": "Manipuri",
-  "mr-IN": "Marathi", "ne-NP": "Nepali", "or-IN": "Odia", "pa-IN": "Punjabi",
-  "sa-IN": "Sanskrit", "sat-IN": "Santali", "sd-IN": "Sindhi", "ta-IN": "Tamil",
-  "te-IN": "Telugu", "ur-IN": "Urdu"
+  "as-IN": "Assamese",
+  "bn-IN": "Bengali",
+  "brx-IN": "Bodo",
+  "doi-IN": "Dogri",
+  "en-IN": "English (India)",
+  "gu-IN": "Gujarati",
+  "hi-IN": "Hindi",
+  "kn-IN": "Kannada",
+  "kok-IN": "Konkani",
+  "mai-IN": "Maithili",
+  "ml-IN": "Malayalam",
+  "mni-IN": "Manipuri",
+  "mr-IN": "Marathi",
+  "ne-NP": "Nepali",
+  "or-IN": "Odia",
+  "pa-IN": "Punjabi",
+  "sa-IN": "Sanskrit",
+  "sat-IN": "Santali",
+  "sd-IN": "Sindhi",
+  "ta-IN": "Tamil",
+  "te-IN": "Telugu",
+  "ur-IN": "Urdu"
 } as const;
 
 export type VoiceLanguageCode = keyof typeof VOICE_LANGUAGES;
@@ -37,7 +53,7 @@ export function detectSpeechLanguage(text: string, selectedLanguage: VoiceLangua
     [/[\u0C00-\u0C7F]/, "te-IN"],
     [/[\u0C80-\u0CFF]/, "kn-IN"],
     [/[\u0D00-\u0D7F]/, "ml-IN"],
-    [/[\u0600-\u06FF]/, "ur-IN"],
+    [/[\u0600-\u06FF]/, "ur-IN"]
   ];
   return scriptLanguages.find(([pattern]) => pattern.test(text))?.[1] ?? selectedLanguage;
 }
