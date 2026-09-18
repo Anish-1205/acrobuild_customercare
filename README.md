@@ -1,12 +1,12 @@
 # AI Customer Support Ticket Agent using Haystack
 
 ## AI models and external services
-- **Qwen**: Local LLM for chat responses (Qwen/Qwen2.5-1.5B-Instruct or 0.5B-Instruct)
+- **Sarvam (via RunPod)**: Remote LLM for chat responses
 - **AI4Bharat IndicTrans2**: Indian language translation (22+ languages)
 - **AI4Bharat Indic-Parler-TTS**: Indian language text-to-speech
 - **Sentence Transformers**: Knowledge base semantic search
 
-Qwen, IndicTrans2, Indic-Parler-TTS, and sentence-transformers can run locally. Depending on configuration and feature use, the application also connects to RunPod/Sarvam, the Acrobuild CS API, SMTP, Edge TTS, Hugging Face model downloads, and administrator-supplied HTTP(S) knowledge sources.
+IndicTrans2, Indic-Parler-TTS, and sentence-transformers can run locally. Chat generation requires RunPod/Sarvam credentials. Depending on configuration and feature use, the application also connects to the Acrobuild CS API, SMTP, Edge TTS, Hugging Face model downloads, and administrator-supplied HTTP(S) knowledge sources.
 
 ## Setup
 
@@ -18,6 +18,10 @@ pip install -r requirements.txt
 
 Create/update `.env` file with:
 ```env
+# Required: RunPod/Sarvam credentials for chat generation
+RUNPOD_BASE_URL=your_runpod_proxy_url
+RUNPOD_API_KEY=your_runpod_api_key
+
 # Optional: HuggingFace token for AI4Bharat models (get from https://huggingface.co/settings/tokens)
 HF_TOKEN=your_token_here
 
@@ -25,7 +29,7 @@ HF_TOKEN=your_token_here
 INDIC_TTS_DEVICE=cpu  # or 'cuda' if GPU available
 ```
 
-Local-only chat does not require a commercial LLM API key. External integrations require their corresponding credentials and network access.
+Chat generation requires RunPod/Sarvam credentials. Other external integrations require their corresponding credentials and network access.
 
 ## Run
 

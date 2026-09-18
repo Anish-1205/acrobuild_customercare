@@ -139,7 +139,6 @@ from services.amenity_search_service import (
     scope_index_to_locality,
     resolve_named_project,
 )
-from qwen import warm_qwen_model_async
 from services.indic_translation_service import warm_translation_model_async
 from services.indic_tts_service import generate_fast_indic_speech, generate_indic_speech
 from services.otp_service import (
@@ -449,7 +448,6 @@ def warm_ai_knowledge_index():
         refresh_workspace_index_async()
     if os.getenv("ACROBUILD_WARM_LOCAL_AI_MODELS", "false").strip().lower() in {"1", "true", "yes", "on"}:
         warm_translation_model_async()
-        warm_qwen_model_async()
 # -----------------------------------
 # REQUEST MODEL
 # -----------------------------------

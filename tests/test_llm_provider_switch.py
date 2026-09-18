@@ -19,12 +19,12 @@ class LlmProviderSwitchTests(unittest.TestCase):
         state_patch.start()
         self.addCleanup(state_patch.stop)
 
-    def test_default_provider_is_qwen(self):
+    def test_provider_is_always_sarvam(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("LLM_PROVIDER", None)
-            self.assertEqual(get_llm_provider(), "qwen")
-            self.assertEqual(get_llm_source_label(), "Live local Qwen")
-            self.assertEqual(get_llm_agent_mode(success=True), "live_local_llm")
+            self.assertEqual(get_llm_provider(), "sarvam")
+            self.assertEqual(get_llm_source_label(), "RunPod Sarvam")
+            self.assertEqual(get_llm_agent_mode(success=True), "live_remote_llm")
 
     def test_sarvam_provider_labels(self):
         with patch.dict(
@@ -46,31 +46,13 @@ class LlmProviderSwitchTests(unittest.TestCase):
                 "qwen._generate_sarvam_chat_response",
                 return_value="sarvam answer",
             ) as sarvam_generate:
-                with patch("qwen._generate_local_qwen_chat_response") as local_generate:
-                    answer = generate_qwen_chat_response(
-                        system_prompt="Be helpful.",
-                        user_prompt="Hello",
-                    )
+                answer = generate_qwen_chat_response(
+                    system_prompt="Be helpful.",
+                    user_prompt="Hello",
+                )
 
         self.assertEqual(answer, "sarvam answer")
         sarvam_generate.assert_called_once()
-        local_generate.assert_not_called()
-
-    def test_generate_routes_to_local_qwen(self):
-        with patch.dict(os.environ, {"LLM_PROVIDER": "qwen"}, clear=False):
-            with patch(
-                "qwen._generate_local_qwen_chat_response",
-                return_value="qwen answer",
-            ) as local_generate:
-                with patch("qwen._generate_sarvam_chat_response") as sarvam_generate:
-                    answer = generate_qwen_chat_response(
-                        system_prompt="Be helpful.",
-                        user_prompt="Hello",
-                    )
-
-        self.assertEqual(answer, "qwen answer")
-        local_generate.assert_called_once()
-        sarvam_generate.assert_not_called()
 
     def test_sarvam_client_builds_openai_compatible_payload(self):
         with patch.dict(

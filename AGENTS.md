@@ -1,7 +1,7 @@
 # AI Coding Agent Guide
 
 ## Purpose
-This project is an AI-powered customer support ticketing agent built with FastAPI, Haystack, and a small local SQLite backing store. Chat generation uses **local Qwen** by default, with an optional **RunPod Sarvam** provider (`LLM_PROVIDER=sarvam`).
+This project is an AI-powered customer support ticketing agent built with FastAPI, Haystack, and a small local SQLite backing store. Chat generation uses **RunPod Sarvam** (`LLM_PROVIDER=sarvam`, the only supported provider).
 
 ## Quick start
 - Install dependencies: `pip install -r requirements.txt`
@@ -24,7 +24,7 @@ Chat routing is documented in [CHAT_FLOW.md](CHAT_FLOW.md).
 - `services/acrobuild_company_service.py` - AcroBuild CS API client for live property data
 - `services/indic_translation_service.py` - AI4Bharat IndicTrans2 for Indian language translation
 - `services/indic_tts_service.py` - AI4Bharat Indic-Parler-TTS for Indian language speech synthesis
-- `qwen.py` - Qwen local runtime + provider facade for Sarvam
+- `qwen.py` - LLM provider facade (dispatches to Sarvam; keeps its "qwen" names as the shared dispatch layer)
 - `sarvam_client.py` - RunPod OpenAI-compatible Sarvam client
 - `src/` - React admin workspace (Vite); run from repo root with `npm run dev`
 
@@ -36,9 +36,8 @@ Chat routing is documented in [CHAT_FLOW.md](CHAT_FLOW.md).
 
 ## AI Models Used
 
-### 1. Chat LLM (Qwen or Sarvam)
+### 1. Chat LLM (Sarvam)
 - **Facade**: `qwen.generate_qwen_chat_response`
-- **Local**: `LLM_PROVIDER=qwen` → Hugging Face Transformers + PyTorch
 - **Remote**: `LLM_PROVIDER=sarvam` → `sarvam_client.py` (`RUNPOD_BASE_URL`, `RUNPOD_API_KEY`, `MODEL_NAME`)
 - **Purpose**: Chat response generation for general questions and property LLM fallback
 
@@ -74,8 +73,6 @@ The workflow now performs context-aware classification:
 ## Environment Setup
 ```bash
 HF_TOKEN=<your_huggingface_token>  # For AI4Bharat models (optional)
-LLM_PROVIDER=qwen                  # or sarvam
-# When LLM_PROVIDER=sarvam:
 RUNPOD_BASE_URL=https://your-pod.proxy.runpod.net
 RUNPOD_API_KEY=<key>
 MODEL_NAME=sarvamai/sarvam-30b-gguf:Q4_K_M
@@ -83,7 +80,7 @@ MODEL_NAME=sarvamai/sarvam-30b-gguf:Q4_K_M
 
 ## Known caveats
 - The main backend path uses `services/database_service.py` and `support_system.db`
-- Local Qwen may require significant GPU/CPU resources; Sarvam needs a live RunPod endpoint
+- Sarvam needs a live RunPod endpoint; chat generation fails without it
 
 ## Best next customizations
 - Integrate LLM-powered classification in `graph/workflow.py` using the chat facade

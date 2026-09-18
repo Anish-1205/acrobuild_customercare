@@ -14,16 +14,17 @@ individual flats). This project is the **customer-support system** for those
 buyers. It has two halves:
 
 - A **Python FastAPI backend** that runs an AI support agent. The agent answers
-  customer questions by combining a local (or remote) large language model, a
-  searchable knowledge base of help articles, and **live property data pulled
-  from AcroBuild's "CS API"** (projects, prices, availability). It also creates
-  and routes **support tickets** into a small SQLite database.
+  customer questions by combining a remote large language model (Sarvam via
+  RunPod), a searchable knowledge base of help articles, and **live property
+  data pulled from AcroBuild's "CS API"** (projects, prices, availability). It
+  also creates and routes **support tickets** into a small SQLite database.
 - A **React admin workspace** where staff (owner / admin / agent) work those
   tickets: an inbox, analytics, canned replies ("macros"), tag rules,
   business-hours config, and knowledge-base editing. There is also a
   customer-facing chat/home page.
 
-Everything runs locally by default — no cloud AI keys required.
+Translation and text-to-speech run locally by default; chat generation
+requires RunPod/Sarvam credentials.
 
 ---
 
@@ -64,7 +65,6 @@ flowchart TD
 
   subgraph LLM["LLM layer"]
     Qwen["qwen.py — provider facade"]
-    Local["Local Qwen (transformers)"]
     Sarvam["sarvam_client.py — RunPod API"]
   end
 
@@ -94,7 +94,6 @@ flowchart TD
   Tickets --> Macro
   Assist --> RagEval
 
-  Qwen --> Local
   Qwen --> Sarvam
   Company --> ExtCS
   DB --> SQLite
@@ -125,9 +124,8 @@ npm run dev                       # http://127.0.0.1:5173  (Vite)
 
 | Var | Meaning |
 |-----|---------|
-| `LLM_PROVIDER` | `qwen` (local, default) or `sarvam` (remote RunPod) |
-| `RUNPOD_BASE_URL`, `RUNPOD_API_KEY`, `MODEL_NAME` | needed only when `LLM_PROVIDER=sarvam` |
-| `QWEN_ENABLE_CPU`, `QWEN_MAX_TOKENS`, `QWEN_MODEL_PATH` | local Qwen tuning |
+| `LLM_PROVIDER` | always resolves to `sarvam` (remote RunPod); kept for forward compatibility |
+| `RUNPOD_BASE_URL`, `RUNPOD_API_KEY`, `MODEL_NAME` | required for chat generation (Sarvam) |
 | CS API base URL + `apiKey` | for `acrobuild_company_service.py` (live property data) |
 | `HF_TOKEN` | one-time, for AI4Bharat translation/TTS models |
 | `DATABASE_PATH` | override SQLite file location |
@@ -461,25 +459,22 @@ map in `ticket_metadata_service.get_default_agent`" / "wire up
 ```mermaid
 flowchart TD
   Call["generate_qwen_chat_response(system, user, history)"] --> P{"get_llm_provider()"}
-  P -->|qwen| Local["_generate_local_qwen_chat_response\n(transformers + torch)"]
   P -->|sarvam| Remote["_generate_sarvam_chat_response\n→ sarvam_client → RunPod"]
-  Local --> Text["answer text"]
-  Remote --> Text
+  Remote --> Text["answer text"]
 ```
 
 **Key functions (all in `qwen.py`)**
-- `get_llm_provider()` — reads `LLM_PROVIDER` env (`qwen` default; `sarvam`/`runpod`/`remote` → sarvam).
+- `get_llm_provider()` — always `sarvam`; kept as a facade in case another provider is added later.
 - `generate_qwen_chat_response(...)` — **the facade every generation call uses.**
 - `stream_qwen_chat_response(...)` — token streaming variant.
 - `build_qwen_messages()` — assembles system + history + user into chat format.
 - `get_qwen_model_name` / `get_llm_source_label` / `get_llm_agent_mode` — labels
   that show up in the response payload and UI.
-- `warm_qwen_model_async()` — preload local model at startup (opt-in).
 
-**Narrative.** One facade, two backends. Swapping providers is an env change +
-restart; nothing else in the codebase knows which LLM answered. Local Qwen is
-`Qwen/Qwen2.5-1.5B-Instruct` (or 0.5B) via HuggingFace transformers; Sarvam is a
-RunPod-hosted OpenAI-compatible endpoint.
+**Narrative.** One facade, one backend (RunPod-hosted Sarvam, OpenAI-compatible
+endpoint). The local Qwen model/runtime was removed; the module keeps its
+"qwen"-prefixed function names because they're called from across the codebase
+as the generic LLM-dispatch layer.
 
 **Quiz me:** If you set `LLM_PROVIDER=sarvam` but forget `RUNPOD_BASE_URL`, where
 does it fail and what does the customer see?

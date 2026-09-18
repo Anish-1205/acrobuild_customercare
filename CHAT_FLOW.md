@@ -30,7 +30,7 @@ flowchart TD
 
 ## LLM provider switch
 
-All generative calls go through `qwen.generate_qwen_chat_response`. Set `LLM_PROVIDER=qwen` (local) or `LLM_PROVIDER=sarvam` (RunPod OpenAI-compatible API). RAG, CS API, tickets, and grounded shortcuts are unchanged.
+All generative calls go through `qwen.generate_qwen_chat_response`, which dispatches to Sarvam (RunPod OpenAI-compatible API) — the only supported provider. RAG, CS API, tickets, and grounded shortcuts are unchanged.
 
 
 ### Property selection state

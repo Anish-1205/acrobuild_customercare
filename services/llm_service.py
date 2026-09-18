@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEFAULT_LLM_PROVIDER = "qwen"
+DEFAULT_LLM_PROVIDER = "sarvam"
 
 
 def get_llm_provider():
@@ -24,7 +24,7 @@ def get_llm_model_name():
 @lru_cache(maxsize=1)
 def get_llm_client():
     """
-    Returns None for local Qwen; Sarvam uses sarvam_client.get_sarvam_client().
+    Sarvam uses sarvam_client.get_sarvam_client().
     Kept for backwards compatibility. Prefer generate_qwen_chat_response().
     """
     if get_llm_provider() == "sarvam":

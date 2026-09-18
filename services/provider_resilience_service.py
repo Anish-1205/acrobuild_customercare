@@ -1,6 +1,5 @@
 """Thread-safe circuit state; retries are restricted to failed generation calls."""
 import time
-import os
 from contextvars import ContextVar
 from threading import Lock
 
@@ -20,19 +19,6 @@ def mark_completion(primary, actual, reason=""):
 def response_provider(configured):
     result = _completion.get()
     return result.get("actual_provider", configured) if result.get("configured_provider") == configured else configured
-
-
-def provider_candidates(primary):
-    fallback = os.getenv("LLM_FALLBACK_PROVIDER", "").strip().lower()
-    if fallback not in {"qwen", "sarvam"} or fallback == primary:
-        return [primary]
-    try:
-        threshold = max(0, int(os.getenv("LLM_FALLBACK_LATENCY_MS", "0")))
-    except ValueError:
-        threshold = 0
-    with _lock:
-        latency = _states.get(primary, {}).get("last_latency_ms") or 0
-    return [fallback, primary] if threshold and latency > threshold else [primary, fallback]
 
 
 def guarded_generation(provider, operation):
