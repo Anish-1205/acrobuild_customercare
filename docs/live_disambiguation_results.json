@@ -1,0 +1,2617 @@
+{
+  "precious": [
+    {
+      "user": "vishwajeet lo amenities em em vunnai?",
+      "response": {
+        "agent_mode": "retrieval",
+        "answer": "Andubaatulo unna matching project options ive:\n\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise\n\nNenu ae project details check cheyali?",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": null,
+        "matched_chunks": [
+          {
+            "record_kind": "company_api",
+            "source_key": "live-selection-options",
+            "body_text": "Vishwajeet Heights\nVishwajeet Empire NX\nVishwajeet Prime\nVishwajeet Myspace\nVishwajeet Precious\nVishwajeet Town\nVishwajeet Empire\nVishwajeet Precious Phase-V\nVishwajeet Paradise",
+            "title": "Live project options"
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "pending_project_lookup": {
+          "kind": "selection",
+          "original_issue": "vishwajeet lo amenities em em vunnai?",
+          "entity": "project",
+          "options": [
+            "Vishwajeet Heights",
+            "Vishwajeet Empire NX",
+            "Vishwajeet Prime",
+            "Vishwajeet Myspace",
+            "Vishwajeet Precious",
+            "Vishwajeet Town",
+            "Vishwajeet Empire",
+            "Vishwajeet Precious Phase-V",
+            "Vishwajeet Paradise"
+          ],
+          "scope": {}
+        },
+        "route": "property",
+        "clarification_entity": "project",
+        "reply_language": "Telugu",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "28f36ae4963142b596aa473e60bc5cee",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 109,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:36.102853+00:00"
+          },
+          {
+            "id": "adae501f29dd43bb9fd565607792739a",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:36.102853+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "live-selection-options",
+            "title": "Live project options",
+            "retrieved_at": "2026-09-18T10:40:36.419392+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:36.102853+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:36.102853+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 1,
+            "data_api_call_count": 2,
+            "successful_data_api_call_count": 2
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.0976,
+              "percent": 9.8,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.5714,
+              "percent": 57.1,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.4286,
+              "percent": 42.9,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.6673,
+              "percent": 66.7,
+              "status": "review",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "user": "precious",
+      "response": {
+        "agent_mode": "retrieval",
+        "answer": "Vishwajeet Precious ki sambandhinchina andubatulo unna data lo ee sadupayalu unnayi:\n\n- Baby Swimming Area\n- Carrom\n- Children's Playing Area\n- Enterance Lobby\n- Gated Community\n- Gym\n- Jogging Track\n- Multipurpose Hall\n- Park\n- Party Lawn\n- Paved Walkway\n- Pool & Billards\n- Swimming Pool\n- Yoga & Meditation Area",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": null,
+        "matched_chunks": [
+          {
+            "body_text": "The available data lists these amenities for Vishwajeet Precious:\n\n- Baby Swimming Area\n- Carrom\n- Children's Playing Area\n- Enterance Lobby\n- Gated Community\n- Gym\n- Jogging Track\n- Multipurpose Hall\n- Park\n- Party Lawn\n- Paved Walkway\n- Pool & Billards\n- Swimming Pool\n- Yoga & Meditation Area",
+            "category": "AcroBuild property data",
+            "excerpt": "14 amenity record(s) checked via the project amenities endpoint",
+            "project": {
+              "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+              "city": "Thane",
+              "contact": 7718803334,
+              "countryCode": 91,
+              "estimatedEndDate": 1837967400000,
+              "estimatedStartDate": 1686681000000,
+              "id": 52,
+              "isPublished": false,
+              "latitude": "73°10'55.4\"",
+              "locality": "Varap",
+              "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Varap, Thane",
+              "longitude": "19°14'56.5\"",
+              "projectCode": null,
+              "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/52/WhatsApp%20Image%202025-12-31%20at%2016.14.28.jpeg",
+              "projectName": "Vishwajeet Precious",
+              "projectType": "26;27",
+              "propertyDetails": null,
+              "reraNo": "P51700032998",
+              "website": "https://gbkgroup.in/vishwajeet-precious/",
+              "zipcode": "421103"
+            },
+            "record_kind": "company_api",
+            "score": 100.0,
+            "source_key": "acrobuild-cs-project-52-amenities",
+            "source_name": "AcroBuild CS API",
+            "title": "Vishwajeet Precious amenities",
+            "url": "",
+            "amenities_checked": 14
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "route": "property",
+        "reply_language": "Telugu",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "edef8e53f85e4b069fb155100c618553",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 46,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:36.801472+00:00"
+          },
+          {
+            "id": "24c1311d48f94b788f186fc2e1fde718",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 14
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:36.886007+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "acrobuild-cs-project-52-amenities",
+            "title": "Vishwajeet Precious amenities",
+            "retrieved_at": "2026-09-18T10:40:37.210464+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:36.801472+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:36.886007+00:00",
+            "freshness": "live"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 1,
+            "data_api_call_count": 2,
+            "successful_data_api_call_count": 2
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.169,
+              "percent": 16.9,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.7714,
+              "percent": 77.1,
+              "status": "good",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.2286,
+              "percent": 22.9,
+              "status": "good",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.7351,
+              "percent": 73.5,
+              "status": "good",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    }
+  ],
+  "cost": [
+    {
+      "user": "What is the cost in Vishwajeet?",
+      "response": {
+        "agent_mode": "retrieval",
+        "answer": "These are the available matching project options:\n\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise\n\nWhich project would you like me to check?",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": null,
+        "matched_chunks": [
+          {
+            "record_kind": "company_api",
+            "source_key": "live-selection-options",
+            "body_text": "Vishwajeet Heights\nVishwajeet Empire NX\nVishwajeet Prime\nVishwajeet Myspace\nVishwajeet Precious\nVishwajeet Town\nVishwajeet Empire\nVishwajeet Precious Phase-V\nVishwajeet Paradise",
+            "title": "Live project options"
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "pending_project_lookup": {
+          "kind": "selection",
+          "original_issue": "What is the cost in Vishwajeet?",
+          "entity": "project",
+          "options": [
+            "Vishwajeet Heights",
+            "Vishwajeet Empire NX",
+            "Vishwajeet Prime",
+            "Vishwajeet Myspace",
+            "Vishwajeet Precious",
+            "Vishwajeet Town",
+            "Vishwajeet Empire",
+            "Vishwajeet Precious Phase-V",
+            "Vishwajeet Paradise"
+          ],
+          "scope": {}
+        },
+        "route": "property",
+        "clarification_entity": "project",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "e91fbcd3e6974cceb0fb45c1abda4561",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 47,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:37.602858+00:00"
+          },
+          {
+            "id": "e2f7fb0794da42d89e6e7a0b7c75bec4",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:37.602858+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "live-selection-options",
+            "title": "Live project options",
+            "retrieved_at": "2026-09-18T10:40:37.602858+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:37.602858+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:37.602858+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 1,
+            "data_api_call_count": 2,
+            "successful_data_api_call_count": 2
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.1715,
+              "percent": 17.2,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.7059,
+              "percent": 70.6,
+              "status": "good",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.2941,
+              "percent": 29.4,
+              "status": "good",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.7193,
+              "percent": 71.9,
+              "status": "good",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "user": "precious",
+      "response": {
+        "agent_mode": "retrieval",
+        "answer": "Live API-listed base pricing for Vishwajeet Precious:\n\n- 2BHK 1341(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 1085(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 954(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1246(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1373(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 953(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1412(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 1134(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1206(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1322(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1283(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 904(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1254(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n\nThese are the API-listed base rates, not an all-inclusive flat quotation.",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": null,
+        "matched_chunks": [
+          {
+            "body_text": "Live API-listed base pricing for Vishwajeet Precious:\n\n- 2BHK 1341(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 1085(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 954(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1246(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1373(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 953(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1412(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 1134(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1206(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1322(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1283(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 1BHK 904(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n- 2BHK 1254(SQ.FT): INR 3400.0 to INR 4300.0 (Rate Per Sq.Ft.)\n\nThese are the API-listed base rates, not an all-inclusive flat quotation.",
+            "category": "AcroBuild property data",
+            "excerpt": "1 matching projects; clarification required",
+            "projects": [
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Thane",
+                "contact": 7718803334,
+                "countryCode": 91,
+                "estimatedEndDate": 1837967400000,
+                "estimatedStartDate": 1686681000000,
+                "id": 52,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": "Varap",
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Varap, Thane",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/52/WhatsApp%20Image%202025-12-31%20at%2016.14.28.jpeg",
+                "projectName": "Vishwajeet Precious",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-precious/",
+                "zipcode": "421103"
+              }
+            ],
+            "record_kind": "company_api",
+            "score": 100.0,
+            "source_key": "acrobuild-cs-project-52-pricing",
+            "source_name": "AcroBuild CS API",
+            "title": "Projects matching pricing question",
+            "url": "",
+            "typologies": [
+              {
+                "carpetArea": 565.0,
+                "id": 214,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1341.0,
+                "typologyName": "2BHK 1341(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 437.23,
+                "id": 208,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1085.0,
+                "typologyName": "1BHK 1085(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 419.68,
+                "id": 207,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 954.0,
+                "typologyName": "1BHK 954(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 565.0,
+                "id": 211,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1246.0,
+                "typologyName": "2BHK 1246(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 595.99,
+                "id": 215,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1373.0,
+                "typologyName": "2BHK 1373(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 418.93,
+                "id": 206,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 953.0,
+                "typologyName": "1BHK 953(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 592.01,
+                "id": 216,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1412.0,
+                "typologyName": "2BHK 1412(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 437.23,
+                "id": 209,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1134.0,
+                "typologyName": "1BHK 1134(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 561.45,
+                "id": 210,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1206.0,
+                "typologyName": "2BHK 1206(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 592.01,
+                "id": 213,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1322.0,
+                "typologyName": "2BHK 1322(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 595.99,
+                "id": 212,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1283.0,
+                "typologyName": "2BHK 1283(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 419.68,
+                "id": 205,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 904.0,
+                "typologyName": "1BHK 904(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              },
+              {
+                "carpetArea": 561.45,
+                "id": 369,
+                "imageUrl": null,
+                "maxBasePrice": 4300.0,
+                "minBasePrice": 3400.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1254.0,
+                "typologyName": "2BHK 1254(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 58
+              }
+            ]
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "route": "property",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "7c7ee7fd2fec432aa91a0dbf19742835",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 63,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:37.993337+00:00"
+          },
+          {
+            "id": "a7c6fbef753a4391842ce412e5f27741",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/typologies",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 47,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 13
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:38.104444+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "acrobuild-cs-project-52-pricing",
+            "title": "Projects matching pricing question",
+            "retrieved_at": "2026-09-18T10:40:38.104444+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:37.993337+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/typologies",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:38.104444+00:00",
+            "freshness": "live"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 1,
+            "data_api_call_count": 2,
+            "successful_data_api_call_count": 2
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.1667,
+              "percent": 16.7,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.0,
+              "percent": 0.0,
+              "status": "good",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.7917,
+              "percent": 79.2,
+              "status": "good",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    }
+  ],
+  "location": [
+    {
+      "user": "Where is the project located?",
+      "response": {
+        "agent_mode": "retrieval",
+        "answer": "These are the available matching project options:\n\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise\n\nWhich project would you like me to check?",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": null,
+        "matched_chunks": [
+          {
+            "record_kind": "company_api",
+            "source_key": "live-selection-options",
+            "body_text": "Vishwajeet Heights\nVishwajeet Empire NX\nVishwajeet Prime\nVishwajeet Myspace\nVishwajeet Precious\nVishwajeet Town\nVishwajeet Empire\nVishwajeet Precious Phase-V\nVishwajeet Paradise",
+            "title": "Live project options"
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "pending_project_lookup": {
+          "kind": "selection",
+          "original_issue": "Where is the project located?",
+          "entity": "project",
+          "options": [
+            "Vishwajeet Heights",
+            "Vishwajeet Empire NX",
+            "Vishwajeet Prime",
+            "Vishwajeet Myspace",
+            "Vishwajeet Precious",
+            "Vishwajeet Town",
+            "Vishwajeet Empire",
+            "Vishwajeet Precious Phase-V",
+            "Vishwajeet Paradise"
+          ],
+          "scope": {}
+        },
+        "route": "property",
+        "clarification_entity": "project",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "75197253cecf4314a1568d451a383e87",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 62,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:38.661607+00:00"
+          },
+          {
+            "id": "4264cd3f90734f4db7ecdce76127e9de",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:38.661607+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "live-selection-options",
+            "title": "Live project options",
+            "retrieved_at": "2026-09-18T10:40:38.661607+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:38.661607+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:38.661607+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 1,
+            "data_api_call_count": 2,
+            "successful_data_api_call_count": 2
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.1715,
+              "percent": 17.2,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.7059,
+              "percent": 70.6,
+              "status": "good",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.2941,
+              "percent": 29.4,
+              "status": "good",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.7193,
+              "percent": 71.9,
+              "status": "good",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "user": "precious",
+      "response": {
+        "agent_mode": "retrieval",
+        "answer": "Vishwajeet Precious: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Varap, Thane",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": null,
+        "matched_chunks": [
+          {
+            "body_text": "Vishwajeet Heights: SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane, Ambernath, Thane\nVishwajeet Empire NX: Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501., Thane\nVishwajeet Prime: Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E), Thane\nVishwajeet Myspace: Pale Ambernath East, Thane\nVishwajeet Precious: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Varap, Thane\nVishwajeet Town: MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301., Thane\nVishwajeet Empire: S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East, Ambernath, Thane\nVishwajeet Precious Phase-V: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune\nVishwajeet Paradise: Chikhloli, Ambernath West, Chikhloli, Thane",
+            "category": "AcroBuild property data",
+            "excerpt": "9 retrieved project records",
+            "projects": [
+              {
+                "address": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane",
+                "city": "Thane",
+                "contact": 8055046000,
+                "countryCode": 91,
+                "estimatedEndDate": 1851013800000,
+                "estimatedStartDate": 1707157800000,
+                "id": 53,
+                "isPublished": false,
+                "latitude": "189.18835186222",
+                "locality": "Ambernath",
+                "location": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane, Ambernath, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/53/Vishwajeet%20Heights%20logo%2011-06-2025.png",
+                "projectName": "Vishwajeet Heights",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700054685",
+                "website": "https://gbkgroup.in/vishwajeet-heights/",
+                "zipcode": "421004"
+              },
+              {
+                "address": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1620153000000,
+                "id": 56,
+                "isPublished": false,
+                "latitude": "19.1875",
+                "locality": null,
+                "location": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501., Thane",
+                "longitude": "73.2310",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Empire NX",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700027704",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E)",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1845916200000,
+                "estimatedStartDate": 1687804200000,
+                "id": 57,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": "",
+                "location": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E), Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Prime",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700051593",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Pale Ambernath East",
+                "city": "Thane",
+                "contact": 8888724999,
+                "countryCode": 91,
+                "estimatedEndDate": 1901125800000,
+                "estimatedStartDate": 1740681000000,
+                "id": 54,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": null,
+                "location": "Pale Ambernath East, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Myspace",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700079338",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Thane",
+                "contact": 7718803334,
+                "countryCode": 91,
+                "estimatedEndDate": 1837967400000,
+                "estimatedStartDate": 1686681000000,
+                "id": 52,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": "Varap",
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Varap, Thane",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/52/WhatsApp%20Image%202025-12-31%20at%2016.14.28.jpeg",
+                "projectName": "Vishwajeet Precious",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-precious/",
+                "zipcode": "421103"
+              },
+              {
+                "address": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1864492200000,
+                "estimatedStartDate": 1748889000000,
+                "id": 58,
+                "isPublished": false,
+                "latitude": "19.18835185222",
+                "locality": null,
+                "location": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301., Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/58/Vishwajeet%20Town%20Logo%20%282%29.png",
+                "projectName": "Vishwajeet Town",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700079450",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East",
+                "city": "Thane",
+                "contact": 8055038000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1649615400000,
+                "id": 50,
+                "isPublished": false,
+                "latitude": "19.1883085",
+                "locality": "Ambernath",
+                "location": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East, Ambernath, Thane",
+                "longitude": "73.1690395",
+                "projectCode": "",
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/50/VE.png",
+                "projectName": "Vishwajeet Empire",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700034509",
+                "website": "https://gbkgroup.in/vishwajeet-empire/",
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Pune",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1903285800000,
+                "estimatedStartDate": 1787682600000,
+                "id": 89,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": null,
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Precious Phase-V",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P52100053370",
+                "website": null,
+                "zipcode": "421103"
+              },
+              {
+                "address": "Chikhloli, Ambernath West",
+                "city": "Thane",
+                "contact": 8888546999,
+                "countryCode": 91,
+                "estimatedEndDate": 1797618600000,
+                "estimatedStartDate": 1643826600000,
+                "id": 51,
+                "isPublished": false,
+                "latitude": "73°13'11.9\"",
+                "locality": "Chikhloli",
+                "location": "Chikhloli, Ambernath West, Chikhloli, Thane",
+                "longitude": "19°11'10.9\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/staging/project/51/gbk_logo.jpeg",
+                "projectName": "Vishwajeet Paradise",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-paradise-ambernath-west/",
+                "zipcode": "421501"
+              }
+            ],
+            "record_kind": "company_api",
+            "score": 100.0,
+            "source_key": "acrobuild-cs-projects",
+            "source_name": "AcroBuild CS API",
+            "title": "Company projects",
+            "url": ""
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "route": "property",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "b001e9eea8e94bfb8d0a8ff09dfe2efa",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 61,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:39.093079+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "acrobuild-cs-projects",
+            "title": "Company projects",
+            "retrieved_at": "2026-09-18T10:40:39.093079+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:39.093079+00:00",
+            "freshness": "live"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 1,
+            "data_api_call_count": 1,
+            "successful_data_api_call_count": 1
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.2774,
+              "percent": 27.7,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.0,
+              "percent": 0.0,
+              "status": "good",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.8193,
+              "percent": 81.9,
+              "status": "good",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    }
+  ],
+  "wing": [
+    {
+      "user": "Show me wings in Vishwajeet Myspace",
+      "response": {
+        "agent_mode": "retrieval",
+        "answer": "These are the available matching wing options for Vishwajeet Myspace:\n\n- Jupiter C\n- Jupiter D\n- Venus A\n- Venus B\n\nWhich wing would you like me to check?",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": "2026-09-18T10:40:39.378937+00:00",
+        "matched_chunks": [
+          {
+            "record_kind": "company_api",
+            "source_key": "live-selection-options",
+            "body_text": "Jupiter C\nJupiter D\nVenus A\nVenus B",
+            "title": "Live wing options"
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "pending_project_lookup": {
+          "kind": "selection",
+          "original_issue": "Show me wings in Vishwajeet Myspace",
+          "entity": "wing",
+          "options": [
+            "Jupiter C",
+            "Jupiter D",
+            "Venus A",
+            "Venus B"
+          ],
+          "scope": {
+            "project": "Vishwajeet Myspace"
+          }
+        },
+        "clarification_entity": "wing",
+        "route": "property",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "81b6bcaf7968416b9b0113d3ade32c8c",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 63,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:39.523757+00:00"
+          },
+          {
+            "id": "2cdfc8e69b9d46d8addd32df747ea669",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 47,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 4
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:39.625378+00:00"
+          },
+          {
+            "id": "8b940fb2c1dd4183b6103f1d839ad01e",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/typologies",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 47,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 55
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:39.736409+00:00"
+          },
+          {
+            "id": "5db6298402ea418089ddb1dd01d4dfe2",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:39.736409+00:00"
+          },
+          {
+            "id": "d8c1df0384d74be4bae705c58c6694dc",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 4
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:39.736409+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "live-selection-options",
+            "title": "Live wing options",
+            "retrieved_at": "2026-09-18T10:40:39.736409+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:39.523757+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:39.625378+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/typologies",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:39.736409+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:39.736409+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects/54/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:39.736409+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 0,
+            "data_api_call_count": 5,
+            "successful_data_api_call_count": 5
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 0.0,
+              "percent": 0.0,
+              "status": "poor",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.3482,
+              "percent": 34.8,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.3636,
+              "percent": 36.4,
+              "status": "poor",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.6364,
+              "percent": 63.6,
+              "status": "poor",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.4279,
+              "percent": 42.8,
+              "status": "poor",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "user": "Venus A",
+      "response": {
+        "clarification_entity": "floor",
+        "answer": "These are the available matching floor options for Vishwajeet Myspace, Venus A:\n\n- 0\n- 1\n- 2\n- 3\n- 4\n- 5\n- 6\n- 7\n- 8\n- 9\n- 10\n- 11\n- 12\n- 13\n- 14\n- 15\n\nWhich floor would you like me to check?",
+        "pending_project_lookup": {
+          "kind": "selection",
+          "original_issue": "Show verified details for Venus A wing in Vishwajeet Myspace",
+          "entity": "floor",
+          "options": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15"
+          ],
+          "scope": {
+            "project": "Vishwajeet Myspace",
+            "wing": "Venus A"
+          }
+        },
+        "route": "property",
+        "source_status": "live_api",
+        "used_llm": false,
+        "agent_mode": "retrieval",
+        "retrieval_mode": "live_project_records",
+        "confidence_label": "high",
+        "matched_chunks": [
+          {
+            "record_kind": "company_api",
+            "source_key": "live-selection-options",
+            "body_text": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15",
+            "title": "Live floor options"
+          }
+        ],
+        "articles": [],
+        "knowledge_documents": [],
+        "source_label": "Live Acrobuild CS API",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "0af925b83e104fddb030b4461589696d",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 62,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.071288+00:00"
+          },
+          {
+            "id": "9c578bfbc5384ec7a875e485555166e5",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 4
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.152608+00:00"
+          },
+          {
+            "id": "071be88587c54deca6ef9f5c2d3d69ed",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.152608+00:00"
+          },
+          {
+            "id": "96e4d2f116b34142a1849db02ef5cf51",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 4
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.160136+00:00"
+          },
+          {
+            "id": "c9fc66f4b7164dbc85fa384e2a4c8229",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/wings/64/inventory",
+            "method": "GET",
+            "params": {
+              "availableOnly": "true"
+            },
+            "status": "completed",
+            "duration_ms": 62,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 88
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.294699+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "live-selection-options",
+            "title": "Live floor options",
+            "retrieved_at": "2026-09-18T10:40:40.294699+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.071288+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.152608+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.152608+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects/54/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.160136+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/wings/64/inventory",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.294699+00:00",
+            "freshness": "live"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 0,
+            "data_api_call_count": 5,
+            "successful_data_api_call_count": 5
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 0.0,
+              "percent": 0.0,
+              "status": "poor",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.25,
+              "percent": 25.0,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.5,
+              "percent": 50.0,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.5,
+              "percent": 50.0,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.4375,
+              "percent": 43.8,
+              "status": "poor",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "user": "1",
+      "response": {
+        "clarification_entity": "flat",
+        "answer": "These are the available matching flat options for Vishwajeet Myspace, Venus A, 1:\n\n- 101\n- 102\n- 103\n- 104\n- 105\n- 106\n\nWhich flat would you like me to check?",
+        "pending_project_lookup": {
+          "kind": "selection",
+          "original_issue": "Show verified details for Venus A wing in Vishwajeet Myspace. Selected project: Vishwajeet Myspace. wing: Venus A. floor 1",
+          "entity": "flat",
+          "options": [
+            "101",
+            "102",
+            "103",
+            "104",
+            "105",
+            "106"
+          ],
+          "scope": {
+            "project": "Vishwajeet Myspace",
+            "wing": "Venus A",
+            "floor": "1"
+          }
+        },
+        "route": "property",
+        "source_status": "live_api",
+        "used_llm": false,
+        "agent_mode": "retrieval",
+        "retrieval_mode": "live_project_records",
+        "confidence_label": "high",
+        "matched_chunks": [
+          {
+            "record_kind": "company_api",
+            "source_key": "live-selection-options",
+            "body_text": "101\n102\n103\n104\n105\n106",
+            "title": "Live flat options"
+          }
+        ],
+        "articles": [],
+        "knowledge_documents": [],
+        "source_label": "Live Acrobuild CS API",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "7cfeb28c370c4c6aa0dbc325ee7518e8",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 62,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.637313+00:00"
+          },
+          {
+            "id": "a4aa46a7e18f472f8458c79ac9efeb45",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 4
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.717162+00:00"
+          },
+          {
+            "id": "cb43fecc1ce8477781e55fb43a2052e5",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/wings/64/inventory",
+            "method": "GET",
+            "params": {
+              "availableOnly": "true"
+            },
+            "status": "completed",
+            "duration_ms": 61,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 88
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.838843+00:00"
+          },
+          {
+            "id": "d29f281c2437473286aa9bf23895b3d3",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.838843+00:00"
+          },
+          {
+            "id": "251c9883c49247a4aa30027c1269fcb2",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 4
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.838843+00:00"
+          },
+          {
+            "id": "9394d3a5ef2a4e408eec708263073e12",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/wings/64/inventory",
+            "method": "GET",
+            "params": {
+              "availableOnly": "true"
+            },
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 88
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:40.838843+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "live-selection-options",
+            "title": "Live flat options",
+            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.637313+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.717162+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/wings/64/inventory",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects/54/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/wings/64/inventory",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 0,
+            "data_api_call_count": 6,
+            "successful_data_api_call_count": 6
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 0.0,
+              "percent": 0.0,
+              "status": "poor",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.5,
+              "percent": 50.0,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.5,
+              "percent": 50.0,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.5,
+              "percent": 50.0,
+              "status": "review",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "user": "101",
+      "response": {
+        "answer": "Live available homes in Vishwajeet Myspace, Venus A wing:\n\n- Flat 101; floor 1; configuration: 1BHK 660(SQ.FT); carpet area: 333.14 sq. ft.; saleable area: 660.0 sq. ft.; base rate: INR 2900.0 to INR 3500.0 (Rate Per Sq.Ft.)",
+        "route": "property",
+        "source_status": "live_api",
+        "retrieval_mode": "live_project_records",
+        "agent_mode": "retrieval",
+        "used_llm": false,
+        "confidence_label": "high",
+        "matched_chunks": [
+          {
+            "record_kind": "company_api",
+            "source_key": "wing-64-inventory",
+            "units": [
+              {
+                "carpetArea": 333.14,
+                "floorNumber": 1,
+                "id": 2693,
+                "saleableArea": 660.0,
+                "status": 21,
+                "statusLabel": "Available",
+                "typologyId": 285,
+                "typologyName": "1BHK 660(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitNumber": 101,
+                "wingId": 64
+              }
+            ],
+            "typologies": [
+              {
+                "carpetArea": 418.5,
+                "id": 368,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 806.0,
+                "typologyName": "2BHK 806(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 1016.44,
+                "id": 303,
+                "imageUrl": null,
+                "maxBasePrice": 20000.0,
+                "minBasePrice": 8000.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 2728.0,
+                "typologyName": "Shop 2728(SQ.FT)",
+                "typologyType": "Shop",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 489.87,
+                "id": 302,
+                "imageUrl": null,
+                "maxBasePrice": 20000.0,
+                "minBasePrice": 8000.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1087.0,
+                "typologyName": "Shop 1087(SQ.FT)",
+                "typologyType": "Shop",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 548.78,
+                "id": 301,
+                "imageUrl": null,
+                "maxBasePrice": 20000.0,
+                "minBasePrice": 8000.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1386.0,
+                "typologyName": "Shop 1386(SQ.FT)",
+                "typologyType": "Shop",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 794.03,
+                "id": 300,
+                "imageUrl": null,
+                "maxBasePrice": 20000.0,
+                "minBasePrice": 8000.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 3300.0,
+                "typologyName": "Shop 3300(SQ.FT)",
+                "typologyType": "Shop",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 837.88,
+                "id": 299,
+                "imageUrl": null,
+                "maxBasePrice": 20000.0,
+                "minBasePrice": 8000.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1057.0,
+                "typologyName": "Shop 1057(SQ.FT)",
+                "typologyType": "Shop",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 308.55,
+                "id": 298,
+                "imageUrl": null,
+                "maxBasePrice": 20000.0,
+                "minBasePrice": 8000.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 630.0,
+                "typologyName": "Shop 630(SQ.FT)",
+                "typologyType": "Shop",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 759.07,
+                "id": 297,
+                "imageUrl": null,
+                "maxBasePrice": 20000.0,
+                "minBasePrice": 8000.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 2351.0,
+                "typologyName": "Shop 2351(SQ.FT)",
+                "typologyType": "Shop",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 930.11,
+                "id": 296,
+                "imageUrl": null,
+                "maxBasePrice": 20000.0,
+                "minBasePrice": 8000.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 2317.0,
+                "typologyName": "Shop 2317(SQ.FT)",
+                "typologyType": "Shop",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 639.48,
+                "id": 295,
+                "imageUrl": null,
+                "maxBasePrice": 20000.0,
+                "minBasePrice": 8000.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1415.0,
+                "typologyName": "Shop 1415(SQ.FT)",
+                "typologyType": "Shop",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 443.48,
+                "id": 294,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1061.0,
+                "typologyName": "2BHK 1061(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 443.48,
+                "id": 293,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 994.0,
+                "typologyName": "2BHK 994(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 443.48,
+                "id": 292,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 977.0,
+                "typologyName": "2BHK 977(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 443.48,
+                "id": 291,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 973.0,
+                "typologyName": "2BHK 973(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 390.19,
+                "id": 290,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 900.0,
+                "typologyName": "2BHK 900(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 418.5,
+                "id": 289,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 806.0,
+                "typologyName": "2BHK 806(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 347.24,
+                "id": 288,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 889.0,
+                "typologyName": "1BHK 889(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 347.24,
+                "id": 287,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 778.0,
+                "typologyName": "1BHK 778(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 333.14,
+                "id": 286,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 692.0,
+                "typologyName": "1BHK 692(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              },
+              {
+                "carpetArea": 333.14,
+                "id": 285,
+                "imageUrl": null,
+                "maxBasePrice": 3500.0,
+                "minBasePrice": 2900.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 660.0,
+                "typologyName": "1BHK 660(SQ.FT)",
+                "typologyType": "1BHK",
+                "unitAmenities": "",
+                "wingId": 64
+              }
+            ],
+            "body_text": "Live available homes in Vishwajeet Myspace, Venus A wing:\n\n- Flat 101; floor 1; configuration: 1BHK 660(SQ.FT); carpet area: 333.14 sq. ft.; saleable area: 660.0 sq. ft.; base rate: INR 2900.0 to INR 3500.0 (Rate Per Sq.Ft.)"
+          }
+        ],
+        "articles": [],
+        "knowledge_documents": [],
+        "source_label": "Live Acrobuild CS API",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "f9dbab16bb5c4132a54ba896f34b6bbb",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 47,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:41.251804+00:00"
+          },
+          {
+            "id": "26965b3009f14042b88532498a72e14e",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 4
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:41.325562+00:00"
+          },
+          {
+            "id": "54b988a6a82946a6b2017ff80d63ed2d",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/wings/64/inventory",
+            "method": "GET",
+            "params": {
+              "availableOnly": "true"
+            },
+            "status": "completed",
+            "duration_ms": 46,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 88
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:41.441475+00:00"
+          },
+          {
+            "id": "19944f4dfc1b4653a0fbb7d512702285",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/wings/64/typologies",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 46,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 20
+            },
+            "error": "",
+            "created_at": "2026-09-18T10:40:41.552693+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "wing-64-inventory",
+            "title": "Evidence",
+            "retrieved_at": "2026-09-18T10:40:41.552693+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:41.251804+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:41.325562+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/wings/64/inventory",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:41.441475+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/wings/64/typologies",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-18T10:40:41.552693+00:00",
+            "freshness": "live"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 1,
+            "data_api_call_count": 4,
+            "successful_data_api_call_count": 4
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.1961,
+              "percent": 19.6,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.0,
+              "percent": 0.0,
+              "status": "good",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.799,
+              "percent": 79.9,
+              "status": "good",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    }
+  ]
+}

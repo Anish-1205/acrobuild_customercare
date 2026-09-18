@@ -91,6 +91,7 @@ type ChatMessage = {
   id: number;
   isAutomated?: boolean;
   isComplete?: boolean;
+  offerActionMenu?: boolean;
   relatedArticles: KnowledgeArticle[];
   sender: "bot" | "customer";
   showHelpfulPrompt?: boolean;
@@ -1366,11 +1367,11 @@ export function CustomerHomePage() {
     setIsSiteVisitFormVisible(false);
   }
 
-  function openFollowUpForm(issue: string) {
+  function openFollowUpForm(issue: string, prefillNote = "") {
     setActiveFollowUpIssue(issue.trim());
     setIsFollowUpFormVisible(true);
     setStorefrontError("");
-    setChatDraft("");
+    setChatDraft(prefillNote);
     window.setTimeout(() => {
       if (chatEmail.trim()) {
         chatComposeRef.current?.focus();
@@ -1647,6 +1648,7 @@ export function CustomerHomePage() {
             finalizeBotMessage(current, botMessageId, trimmedIssue, {
               feedbackState: undefined,
               isAutomated: true,
+              offerActionMenu: assistResponse.offer_action_menu ?? false,
               relatedArticles: [],
               showHelpfulPrompt: false,
               text: assistResponse.answer
@@ -1689,6 +1691,7 @@ export function CustomerHomePage() {
           finalizeBotMessage(current, botMessageId, trimmedIssue, {
             feedbackState: undefined,
             isAutomated: true,
+            offerActionMenu: assistResponse.offer_action_menu ?? false,
             relatedArticles: [],
             showHelpfulPrompt: false,
             text: assistResponse.answer
@@ -3497,6 +3500,25 @@ export function CustomerHomePage() {
                                         <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
                                       </button>
                                     ))}
+                                  </div>
+                                ) : message.offerActionMenu ? (
+                                  <div className="store-chat-guided-grid action-menu">
+                                    <button
+                                      className="store-chat-guided-button"
+                                      onClick={() => openFollowUpForm(message.contextIssue ?? "")}
+                                      type="button"
+                                    >
+                                      <span className="store-chat-guided-label">Raise a ticket</span>
+                                      <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
+                                    </button>
+                                    <button
+                                      className="store-chat-guided-button"
+                                      onClick={() => void openSiteVisitBooking()}
+                                      type="button"
+                                    >
+                                      <span className="store-chat-guided-label">Book a site visit</span>
+                                      <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
+                                    </button>
                                   </div>
                                 ) : null
                               ) : null}

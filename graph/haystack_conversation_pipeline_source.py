@@ -629,6 +629,10 @@ def validate_support_answer(issue: str, answer: str) -> list[str]:
 def validate_support_node(state: ConversationState) -> ConversationState:
     response = dict(state.get("response") or {})
     issue = normalize_text(state.get("issue", ""))
+    from services.property_clarification_service import apply_clarification_contract
+    response = apply_clarification_contract(response, issue, state.get("conversation_messages", []))
+    if response.get("pending_project_lookup"):
+        return {**state, "response": response}
     failures = validate_support_answer(issue, response.get("answer", ""))
     if not failures:
         return {**state, "response": response}

@@ -64,7 +64,7 @@ class TurnAnalysisTests(unittest.TestCase):
         self.assertEqual(
             _parse_analysis('Sure: {"intent": "general", "reply_language": "tamil", "script": "latin", '
                             '"english": "what are you doing?"}'),
-            ("general", "Tamil", "latin", "what are you doing?"),
+            ("general", "Tamil", "latin", "what are you doing?", False),
         )
         self.assertIsNone(_parse_analysis('{"intent": "weather", "reply_language": "Tamil"}'))
         self.assertIsNone(_parse_analysis("not json"))

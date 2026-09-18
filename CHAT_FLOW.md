@@ -31,3 +31,22 @@ flowchart TD
 ## LLM provider switch
 
 All generative calls go through `qwen.generate_qwen_chat_response`. Set `LLM_PROVIDER=qwen` (local) or `LLM_PROVIDER=sarvam` (RunPod OpenAI-compatible API). RAG, CS API, tickets, and grounded shortcuts are unchanged.
+
+
+### Property selection state
+
+Project, wing, floor, flat, and home-type questions use the shared contract in
+`services/property_clarification_service.py`. New builders declare
+`clarification_entity`; a compatibility detector handles existing English
+clarification prompts. Property generation stays in English until the contract
+and relevance check finish, then the response is localized. Option names must
+survive localization unchanged.
+
+The server-only `pending_project_lookup` marker also accepts a structured
+`selection` state: original question, current entity, live option names, selected
+scope, and effective retry query. Both assist endpoints restore this state before
+routing a short reply. Transient failures keep it without a one-retry cutoff;
+new questions/actions replace it. The stored marker is not truncated with long
+visible answers. Each resumed lookup re-reads live records.
+
+See `docs/DISAMBIGUATION_AUDIT.md` for the audited generators and live evidence.

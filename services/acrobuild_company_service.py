@@ -87,6 +87,14 @@ INVENTORY_TERMS = {
 }
 
 
+def customer_facing_projects(projects):
+    """Remove company/test rows that the CS API mixes into project data."""
+    return [
+        project for project in (projects or [])
+        if isinstance(project, dict) and "@" not in str(project.get("address", ""))
+    ]
+
+
 # -----------------------------------
 # INTERNAL HELPERS
 # -----------------------------------
@@ -308,7 +316,95 @@ def _matches_project(query, project):
 
 
 def _normalized_project_text(value):
-    return " ".join(re.findall(r"[a-z0-9]+", str(value or "").lower()))
+    tokens = re.findall(r"[a-z0-9]+", str(value or "").lower())
+    # Customers commonly transliterate the catalogue brand with a "v" even
+    # though the project records use "Vishwajeet". Treat that spelling as the
+    # same token without fuzzy-matching unrelated project words.
+    aliases = {
+        "vishvajeet": "vishwajeet",
+    }
+    return " ".join(aliases.get(token, token) for token in tokens)
+
+
+def resolve_project_candidates_from_text(projects, text):
+    """Return the best project-name candidates mentioned by ``text``.
+
+    A one-item result is a resolved project. Multiple items mean that the
+    supplied name fragment is ambiguous. An empty result means that no project
+    name was found. Keeping all three states prevents callers from collapsing
+    an ambiguous fragment into a blind "which project?" prompt.
+    """
+    explicit_scopes = re.findall(r"\b(?:selected|requested)\s+project:\s*([^\n.]+)", str(text or ""), re.I)
+    if explicit_scopes:
+        text = explicit_scopes[-1]
+    normalized_text = _normalized_project_text(text)
+    if not normalized_text:
+        return []
+    padded_text = f" {normalized_text} "
+    named_matches = []
+    valid_projects = [project for project in projects or [] if isinstance(project, dict)]
+    for project in valid_projects:
+        name = str(project.get("projectName", "") or "").strip()
+        normalized_name = _normalized_project_text(name)
+        if normalized_name and f" {normalized_name} " in padded_text:
+            named_matches.append((len(normalized_name.split()), len(normalized_name), project))
+    if named_matches:
+        named_matches.sort(key=lambda item: (item[0], item[1]), reverse=True)
+        # A suffixed name subsumes its base name, but two independent exact
+        # names are ambiguous and must both be offered to the customer.
+        longest = []
+        for _, _, project in named_matches:
+            name = _normalized_project_text(project.get("projectName", ""))
+            if not any(_normalized_project_text(p.get("projectName", "")).startswith(name + " ") for p in longest):
+                longest.append(project)
+        return longest
+
+    query_tokens = set(normalized_text.split())
+    generic_tokens = {"project", "projects", "property", "properties", "the", "vishwajeet"}
+    token_candidates = []
+    for project in valid_projects:
+        name_tokens = set(_normalized_project_text(project.get("projectName", "")).split())
+        distinctive = name_tokens - generic_tokens
+        overlap = query_tokens.intersection(distinctive)
+        if distinctive and overlap:
+            token_candidates.append((len(overlap), len(distinctive), project))
+    if token_candidates:
+        best_overlap = max(item[0] for item in token_candidates)
+        best = [item for item in token_candidates if item[0] == best_overlap]
+        complete = [item for item in best if item[0] == item[1]]
+        if len(complete) == 1:
+            return [complete[0][2]]
+        if len(best) == 1:
+            return [best[0][2]]
+        return [item[2] for item in best]
+
+    # Incomplete but recognizable name tokens ("preci", "mysp") narrow the
+    # option list without fuzzy-matching unrelated names.
+    partial_candidates = []
+    for project in valid_projects:
+        names = set(_normalized_project_text(project.get("projectName", "")).split()) - generic_tokens
+        if any(len(token) >= 3 and token not in generic_tokens and name.startswith(token)
+               for token in query_tokens for name in names):
+            partial_candidates.append(project)
+    if partial_candidates:
+        return partial_candidates
+
+    # A shared brand token is intentionally not distinctive enough to resolve
+    # one project, but it is exactly what we need to enumerate candidates for a
+    # clarification (for example bare "vishvajeet").
+    fallback_query_tokens = query_tokens - {
+        "project", "projects", "property", "properties", "the",
+    }
+    fallback_candidates = []
+    for project in valid_projects:
+        name_tokens = set(_normalized_project_text(project.get("projectName", "")).split())
+        overlap = fallback_query_tokens.intersection(name_tokens)
+        if overlap:
+            fallback_candidates.append((len(overlap), project))
+    if not fallback_candidates:
+        return []
+    best_overlap = max(item[0] for item in fallback_candidates)
+    return [item[1] for item in fallback_candidates if item[0] == best_overlap]
 
 
 def resolve_project_from_text(projects, text):
@@ -317,43 +413,8 @@ def resolve_project_from_text(projects, text):
     Longest-name priority is essential for catalogues that contain both a base
     project and a suffixed project, such as Empire and Empire NX.
     """
-    normalized_text = _normalized_project_text(text)
-    if not normalized_text:
-        return None
-    padded_text = f" {normalized_text} "
-    named_matches = []
-    for project in projects or []:
-        if not isinstance(project, dict):
-            continue
-        name = str(project.get("projectName", "") or "").strip()
-        normalized_name = _normalized_project_text(name)
-        if normalized_name and f" {normalized_name} " in padded_text:
-            named_matches.append((len(normalized_name.split()), len(normalized_name), project))
-    if named_matches:
-        named_matches.sort(key=lambda item: (item[0], item[1]), reverse=True)
-        return named_matches[0][2]
-
-    query_tokens = set(normalized_text.split())
-    generic_tokens = {"project", "projects", "property", "properties", "the", "vishwajeet"}
-    token_candidates = []
-    for project in projects or []:
-        if not isinstance(project, dict):
-            continue
-        name_tokens = set(_normalized_project_text(project.get("projectName", "")).split())
-        distinctive = name_tokens - generic_tokens
-        overlap = query_tokens.intersection(distinctive)
-        if distinctive and overlap:
-            token_candidates.append((len(overlap), len(distinctive), project))
-    if not token_candidates:
-        return None
-    best_overlap = max(item[0] for item in token_candidates)
-    best = [item for item in token_candidates if item[0] == best_overlap]
-    complete = [item for item in best if item[0] == item[1]]
-    if len(complete) == 1:
-        return complete[0][2]
-    if len(best) == 1:
-        return best[0][2]
-    return None
+    candidates = resolve_project_candidates_from_text(projects, text)
+    return candidates[0] if len(candidates) == 1 else None
 
 
 def _format_record(label, record, fields):
@@ -397,6 +458,16 @@ def get_company_projects():
 def get_project_wings(project_id):
     wings = _cached_request(f"/api/cs/projects/{int(project_id)}/wings")
     return wings if isinstance(wings, list) else []
+
+
+def get_project_amenities(project_id):
+    amenities = _cached_request(f"/api/cs/projects/{int(project_id)}/amenities")
+    return amenities if isinstance(amenities, list) else []
+
+
+def get_project_typologies(project_id):
+    records = _cached_request(f"/api/cs/projects/{int(project_id)}/typologies")
+    return records if isinstance(records, list) else []
 
 
 def get_wing_typologies(wing_id):
@@ -482,9 +553,7 @@ def search_company_knowledge(query, max_projects=20):
         company_chunk["score"] = 12.0
         chunks.append(company_chunk)
 
-    projects = _cached_request("/api/cs/projects")
-    if not isinstance(projects, list):
-        projects = []
+    projects = customer_facing_projects(_cached_request("/api/cs/projects"))
     project_fields = (
         ("projectName", "name"),
         ("projectCode", "code"),

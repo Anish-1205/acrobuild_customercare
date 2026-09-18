@@ -13,6 +13,12 @@ from qwen import (
 
 
 class LlmProviderSwitchTests(unittest.TestCase):
+    def setUp(self):
+        # Routing tests must not inherit an open circuit from failure tests.
+        state_patch = patch("services.provider_resilience_service._states", {})
+        state_patch.start()
+        self.addCleanup(state_patch.stop)
+
     def test_default_provider_is_qwen(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("LLM_PROVIDER", None)

@@ -91,3 +91,10 @@ MODEL_NAME=sarvamai/sarvam-30b-gguf:Q4_K_M
 - Add LLM-generated response suggestions based on issue type and customer history
 - Create admin UI for managing agent assignments and routing rules
 - Add a per-request UI model picker on top of the `LLM_PROVIDER` facade
+
+## Mandatory property clarification contract
+- Every project/wing/floor/flat/home-type clarification must use `services/property_clarification_service.py` before relevance validation, localization, and conversation persistence.
+- New answer builders must set `clarification_entity` (`project`, `wing`, `floor`, `flat`, or `home_type`). Do not generate a bare "specify the project" prompt. The contract fetches real matching names from the live CS API; an empty or unavailable catalogue must be reported honestly.
+- Preserve the complete original question, selected scope, offered options, and retry query in the server-side pending selection marker. Do not derive intent from translated bot prose. Do not expire state after a fixed number of API failures. Explicit new questions/actions replace the pending request.
+- List all applicable real options; do not silently select one of multiple matching records. A full suffixed project name takes precedence over its contained base name.
+- Test new clarification points for named options, short follow-up selection, repeated API failures, and intent preservation. Cover both assist endpoints when changing routing. Run `scripts/live_disambiguation_check.py` for live acceptance (real LLM/API, no mocks); transcripts are written to `docs/live_disambiguation_results.json`.
