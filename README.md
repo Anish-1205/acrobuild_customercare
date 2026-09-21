@@ -39,6 +39,22 @@ uvicorn app:api --reload
 
 The API will be available at `http://127.0.0.1:8000`
 
+Project guides, architecture notes, integration references, and verification reports are
+catalogued in the [documentation index](docs/README.md).
+
+## Repository layout
+
+- `routers/` — FastAPI route modules
+- `services/` — application and integration services
+- `graph/` — support orchestration and workflow logic
+- `src/` and `public/` — React application and static web assets
+- `tests/` — backend test suite
+- `scripts/` — development, evaluation, and maintenance utilities
+- `requirements/` — grouped Python dependency manifests
+- `docs/` — guides, architecture notes, and reports
+- `resources/` — source-controlled reference and evaluation data
+- `data/` — ignored runtime-generated data
+
 ## React Frontend
 
 The React admin workspace lives in `src/` and runs from the repo root.

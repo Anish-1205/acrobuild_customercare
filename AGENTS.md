@@ -11,7 +11,7 @@ This project is an AI-powered customer support ticketing agent built with FastAP
   - `POST /create_ticket` to create tickets via `graph.workflow.run_workflow`
   - `POST /api/support/assist` and `/api/support/assist/stream` for chat
 
-Chat routing is documented in [CHAT_FLOW.md](CHAT_FLOW.md).
+Chat routing is documented in [CHAT_FLOW.md](docs/CHAT_FLOW.md).
 
 ## Project structure
 - `app.py` - application entrypoint and FastAPI routes
