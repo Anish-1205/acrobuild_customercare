@@ -5,7 +5,13 @@ from services.amenity_search_service import (
     live_amenity_names,
     match_amenity_terms,
 )
-from services.property_clarification_service import apply_clarification_contract, resume_selection, continues_selection, build_inventory_selection_answer, narrow_project_choice_by_locality
+from services.property_clarification_service import (
+    apply_clarification_contract, resume_selection, continues_selection, build_inventory_selection_answer,
+    narrow_project_choice_by_locality, build_project_browse_response, is_unmatched_selection_reply,
+    build_unmatched_selection_answer,
+)
+from graph.haystack_conversation_pipeline import is_small_talk_message
+import re
 from time import monotonic
 from dataclasses import replace
 
@@ -124,16 +130,22 @@ def _grounded_property_shortcut(request, turn, failure_state=None, pending=None)
     shortcut_request = request
     if turn.property_issue != str(request.issue or "").strip():
         shortcut_request = SupportAssistRequest.model_validate({**request.model_dump(), "issue": turn.property_issue})
+    # A selected option has already been folded into an effective question.
+    # It is not an amenity/area narrowing reply to the preceding option list.
+    narrowing_pending = None if (isinstance(pending, dict) and
+                                 pending.get("effective_issue") == request.issue) else pending
     try:
         payload = (
+            build_grounded_site_visit_document_assist(shortcut_request)
             # Reverse amenity search runs first: "which projects have a gym"
             # names no project, so the forward amenities builder below would
             # otherwise answer it as a "which project did you mean?" prompt.
-            build_grounded_amenity_search_assist(shortcut_request, pending)
-            or narrow_project_choice_by_locality(pending, shortcut_request.issue)
-            or build_grounded_project_amenities_assist(request)
+            or build_grounded_amenity_search_assist(shortcut_request, narrowing_pending)
+            or narrow_project_choice_by_locality(narrowing_pending, shortcut_request.issue)
+            or (build_unmatched_selection_answer(narrowing_pending)
+                if _unmatched_selection_reply(narrowing_pending, request.issue, turn) else None)
             or build_inventory_selection_answer(request.issue, pending)
-            or build_grounded_site_visit_document_assist(shortcut_request)
+            or build_grounded_project_amenities_assist(request)
             or build_grounded_project_amenities_assist(shortcut_request)
             or build_grounded_project_cost_clarification_assist(shortcut_request)
             or build_grounded_project_location_assist(shortcut_request)
@@ -158,6 +170,22 @@ def _pending_project_lookup(conversation_messages):
     if not messages or str(messages[-1].sender or "").lower() != "bot":
         return None
     return get_pending_project_lookup(messages[-1].text)
+
+
+def _is_broad_project_request(*issues):
+    """Only unscoped catalogue requests; named and location questions use normal routing."""
+    allowed = {"what", "which", "show", "list", "browse", "tell", "me", "us", "all",
+               "the", "your", "you", "do", "does", "have", "has", "are", "is", "any",
+               "available", "projects", "project", "there", "at", "acrobuild", "our",
+               "hi", "hello", "mee", "kada", "em", "emi", "vunnai", "unnai", "unnayi",
+               "ikkada", "enni", "konni", "lo", "e", "unnaya"}
+    for issue in issues:
+        words = re.findall(r"[a-z]+", str(issue or "").lower())
+        if not words or not set(words).intersection({"project", "projects"}):
+            continue
+        if set(words) <= allowed and (set(words) & {"what", "which", "show", "list", "browse", "available", "have", "has", "em", "emi", "vunnai", "unnai", "unnayi"}):
+            return True
+    return False
 
 
 def _resume_project_lookup_request(request, pending, customer_issue):
@@ -198,19 +226,33 @@ def _narrows_selection_by_amenity(pending, english_issue):
     return bool(match_amenity_terms(english_issue, names))
 
 
+def _unmatched_selection_reply(pending, issue, turn):
+    """A short reply that selects no offered option and is not small talk or a
+    new request: re-ask the choice rather than answer it from general chat."""
+    return bool(is_unmatched_selection_reply(pending, issue)
+                and not is_small_talk_message(issue)
+                and not is_small_talk_message(turn.analysis.english or ""))
+
+
 def _prepare_lookup_turn(request, cleaned_issue):
     turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
     pending = _pending_project_lookup(request.conversation_messages)
+    selection_reply = bool(pending and continues_selection(pending, cleaned_issue))
+    can_narrow = bool(pending and not selection_reply
+                      and turn.analysis.intent not in {"call_booking", "human_contact"})
+    narrows_by_amenity = bool(can_narrow and _narrows_selection_by_amenity(pending, turn.property_issue))
+    narrows_by_locality = bool(can_narrow and _narrows_selection_by_locality(pending, turn.property_issue))
+    unmatched_reply = bool(can_narrow and not (narrows_by_amenity or narrows_by_locality)
+                           and _unmatched_selection_reply(pending, cleaned_issue, turn))
     if pending and (turn.analysis.intent in {"call_booking", "human_contact"}
-                    or not continues_selection(pending, cleaned_issue)):
+                    or not (selection_reply or narrows_by_amenity or narrows_by_locality or unmatched_reply)):
         pending = None
     # An amenity reply to "which project did you mean?" is a narrowing answer,
     # not a project selection: the disambiguation message explicitly invites it
     # ("tell me an amenity that matters to you"). Resuming the selection here
     # would find no matching option and just re-ask the same question, so leave
     # the issue untouched and let the amenity shortcut handle it.
-    if pending and (_narrows_selection_by_amenity(pending, turn.property_issue)
-                    or _narrows_selection_by_locality(pending, turn.property_issue)):
+    if pending and (narrows_by_amenity or narrows_by_locality or unmatched_reply):
         processing_request, processing_issue = request, cleaned_issue
     else:
         processing_request, processing_issue = _resume_project_lookup_request(request, pending, cleaned_issue)
@@ -289,7 +331,12 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
         # (regex-matched phrasing) — the LLM's fuzzy "unsure" judgement must
         # not divert either to the generic action menu instead of their own
         # phone/time or name/phone prompt below.
-        if turn.analysis.unsure and turn.analysis.intent not in {"call_booking", "human_contact"}:
+        # Checked on the resumed issue too, so "retry" after a catalogue outage
+        # re-offers the catalogue instead of falling into generic routing.
+        if _is_broad_project_request(processing_issue, turn.property_issue):
+            turn_logger.info("turn branch %s", kv(branch="project_browse"))
+            response_payload = build_project_browse_response(processing_issue)
+        elif turn.analysis.unsure and turn.analysis.intent not in {"call_booking", "human_contact"}:
             turn_logger.info("turn branch %s", kv(branch="confusion_action_menu"))
             response_payload = build_confusion_response(turn.analysis)
         else:
@@ -377,6 +424,15 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
         try:
             pending_lookup, processing_request, processing_issue, turn = _prepare_lookup_turn(request, cleaned_issue)
             shortcut_failure = {}
+            if _is_broad_project_request(processing_issue, turn.property_issue):
+                turn_logger.info("turn branch %s", kv(branch="project_browse"))
+                response_payload = _complete_payload(build_project_browse_response(processing_issue), cleaned_issue, turn)
+                marker = _project_lookup_marker(response_payload, None, cleaned_issue)
+                session.append(cleaned_issue, response_payload.get("answer"), marker=marker)
+                yield json.dumps({"text": response_payload["answer"], "type": "delta"}, ensure_ascii=True) + "\n"
+                yield json.dumps({"response": response_payload, "type": "done"}, ensure_ascii=True) + "\n"
+                _log_turn_result("stream", cleaned_issue, response_payload, started)
+                return
             if turn.analysis.unsure and turn.analysis.intent not in {"call_booking", "human_contact"}:
                 turn_logger.info("turn branch %s", kv(branch="confusion_action_menu"))
                 response_payload = _complete_payload(build_confusion_response(turn.analysis), cleaned_issue, turn)

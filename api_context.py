@@ -128,7 +128,7 @@ from graph.main_orchestrator import (
     stream_support_orchestration_events,
 )
 from graph.haystack_conversation_pipeline import is_property_support_message
-from services.property_clarification_service import build_project_choice_answer
+from services.property_clarification_service import build_area_no_match_response, build_project_choice_answer
 from services.amenity_search_service import (
     is_amenity_lookup_query,
     is_reverse_amenity_query,
@@ -253,11 +253,9 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
     )
     response_payload.update({
         "agent_mode": "live_data_error",
-        "answer": (
-            f"Live property data is unavailable: {reason}. "
-            "I did not use cached responses, server memory, snapshots, local knowledge, or predefined data. "
-            "Please try again shortly, or I can connect you with the sales team."
-        ),
+        "answer": ("I couldn't verify that from live property data. Please try again shortly."
+                   if source_status == "unverified" else
+                   "Live property data is unavailable right now. Please try again shortly."),
         "articles": [],
         "confidence_label": "low",
         "handoff_recommended": True,
@@ -267,6 +265,7 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
         "source_label": "Acrobuild CS API",
         "source_status": source_status,
         "used_llm": False,
+        "quick_replies": [],
     })
     return response_payload
 
@@ -1402,11 +1401,23 @@ def build_grounded_project_location_assist(request):
         ))
         or inherits_project_subject
     )
-    if not asks_location:
+    # "What is there / what's available / what do you have in <area>?" names an
+    # area but no project word (the English rendering of e.g. "Kompally lo em
+    # unnai?" varies between these forms). It is only an area question when it
+    # names no project ("what is there in Vishwajeet Heights?" is about that
+    # project, not a place).
+    asks_area = not asks_location and bool(re.search(
+        r"^(?:what(?:'s|\s+is|\s+are|\s+all)*|anything)"
+        r"(?:\s+(?:there|available|do\s+you\s+have|you\s+have|have\s+you\s+got))*\s+in\s+[a-z]",
+        cleaned_issue,
+    ))
+    if not (asks_location or asks_area):
         return None
 
     projects = _customer_facing_projects(get_company_projects())
     if not projects:
+        return None
+    if asks_area and resolve_project_candidates_from_text(projects, issue):
         return None
 
     selected_project, ambiguous_candidates = _resolve_project_selection(
@@ -1452,7 +1463,7 @@ def build_grounded_project_location_assist(request):
 
         resolved_location = _resolve_known_location(candidate_text, _known_localities(projects))
         if resolved_location is None:
-            return _build_ambiguous_project_response(projects, "location")
+            return build_area_no_match_response(issue, projects)
         else:
             matching_projects = []
             for project in projects:

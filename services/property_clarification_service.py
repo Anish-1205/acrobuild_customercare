@@ -50,32 +50,24 @@ def _shared_name_prefix(names):
     return " ".join(shared)
 
 
-def build_project_choice_answer(names, lookup_label=""):
+def build_project_choice_answer(names, lookup_label="", issue=None):
     """Customer-facing "which project?" message. ``names`` are live project
-    names only (never generated), so the list is always real."""
+    names only (never generated), so the list is always real. When ``issue`` is
+    given, the family name is only used if the customer actually wrote it: a
+    catalogue that happens to share a prefix must not be framed as that brand."""
     names = [str(name).strip() for name in names if str(name or "").strip()]
     family = _shared_name_prefix(names)
+    if family and issue is not None and family.lower() not in str(issue).lower():
+        family = ""
     subject = _LOOKUP_PHRASES.get(str(lookup_label or "").strip().lower(), "")
-    opening = (
-        f"We have a few {family} projects"
-        if family else "A few of our projects could match that"
-    )
-    purpose = f", so I want to be sure I check {subject} for the right one" if subject else \
-        ", so I want to be sure I check the right one"
-    lines = [
-        f"{opening}{purpose}. You don't need to know the exact name — here they are:",
-        "",
-        *[f"- {name}" for name in names],
-        "",
-        # Only alternatives the bot can actually act on are offered. Budget is
-        # deliberately NOT one of them: the live API publishes per-sq-ft rate
-        # bands, not total prices, so "shortlist what fits 50 lakhs" could only
-        # be answered by inventing totals.
-        "If one of those is the one you mean, just tell me which. Not sure? I can narrow it "
-        "down for you instead — tell me the area you're looking in, or an amenity that "
-        "matters to you (a gym or a swimming pool, say), and I'll shortlist the ones that fit.",
-    ]
-    return "\n".join(lines)
+    if issue is not None and not family:
+        # The options may be the whole catalogue, so do not claim they "match".
+        question = f"Which project should I check for {subject}?" if subject else "Which project should I check?"
+        return "\n".join([question, *[f"- {name}" for name in names]])
+    opening = f"Several {family} projects match." if family else "Several projects match."
+    purpose = f" Which should I check for {subject}?" if subject else " Which should I check?"
+    return "\n".join([opening + purpose,
+                      *[f"- {name}" for name in names]])
 
 
 def build_entity_choice_answer(label, options, context=""):
@@ -84,14 +76,8 @@ def build_entity_choice_answer(label, options, context=""):
     project names, so the narrowing offers above do not apply."""
     options = [str(option).strip() for option in options if str(option or "").strip()]
     where = f" in {context}" if context else ""
-    return "\n".join([
-        f"Just so I pull the right details, here are the {label} options available{where}:",
-        "",
-        *[f"- {option}" for option in options],
-        "",
-        f"Which {label} should I check? If you're not sure, tell me what you're looking for "
-        "and I'll suggest one.",
-    ])
+    return "\n".join([f"Which {label} should I check{where}?",
+                      *[f"- {option}" for option in options]])
 
 
 def _project_locality_values(project):
@@ -124,18 +110,18 @@ def narrow_project_choice_by_locality(pending, text):
     )
     if not matched:
         return None
+    # Same rule as build_grounded_project_location_assist(): a project is in
+    # the area when its city/locality is that area or its address names it, so
+    # "Ambernath lo em unnai?" gives the same projects with or without a
+    # pending choice.
     names = [str(project["projectName"]).strip() for project in projects
-             if matched in _project_locality_values(project)]
+             if matched in _project_locality_values(project)
+             or matched.lower() in " ".join(str(project.get(key, "") or "")
+                                            for key in ("address", "location")).lower()]
     if not names:
         return None
-    answer = "\n".join([
-        f"Of those, {'this one is' if len(names) == 1 else 'these are'} in {matched}:",
-        "",
-        *[f"- {name}" for name in names],
-        "",
-        "Shall I go ahead with " + (f"{names[0]}?" if len(names) == 1
-                                    else "one of these? Just tell me which."),
-    ])
+    answer = "\n".join([f"We have {len(names)} project{'s' if len(names) != 1 else ''} in {matched}. Which one would you like to explore?",
+                        *[f"- {name}" for name in names]])
     return {
         "agent_mode": "knowledge_retrieval",
         "answer": answer,
@@ -155,6 +141,7 @@ def narrow_project_choice_by_locality(pending, text):
         "used_llm": False,
         # Keep the customer's original request pending on the shorter list.
         "pending_project_lookup": {**pending, "options": names},
+        "quick_replies": [{"label": name, "value": name} for name in names],
     }
 
 
@@ -251,7 +238,7 @@ def apply_clarification_contract(payload, issue, history=None):
              "options": options, "scope": scope}
     label = {"home_type": "home type"}.get(entity, entity)
     if options and entity == "project":
-        answer = build_project_choice_answer(options, payload.get("pending_project_lookup") or "")
+        answer = build_project_choice_answer(options, payload.get("pending_project_lookup") or "", issue)
     elif options:
         context = ", ".join(str(value) for value in scope.values())
         answer = build_entity_choice_answer(label, options, context)
@@ -261,9 +248,138 @@ def apply_clarification_contract(payload, issue, history=None):
     result.update(answer=answer, pending_project_lookup=state, clarification_entity=entity,
                   route="property", source_status="live_api", used_llm=False,
                   agent_mode="knowledge_retrieval", retrieval_mode="live_project_records", confidence_label="high")
+    result["quick_replies"] = [{"label": option, "value": option} for option in options]
     result["matched_chunks"] = [{"record_kind": "company_api", "source_key": "live-selection-options",
                                  "body_text": "\n".join(options), "title": "Live " + label + " options"}]
     return result
+
+
+def _project_names(projects):
+    return list(dict.fromkeys(str(project.get("projectName") or "").strip()
+                              for project in projects if str(project.get("projectName") or "").strip()))
+
+
+def _explore_project_payload(issue, names, answer):
+    """Short answer + every live project as a quick reply, pending as a project
+    choice so a click, a typed name or a typed area all continue naturally."""
+    # The bullets are the plain-text fallback for API clients; the chat UI
+    # renders the quick replies instead.
+    return {"answer": "\n".join([answer, *[f"- {name}" for name in names]]),
+            "route": "property", "source_status": "live_api", "used_llm": False,
+            "agent_mode": "knowledge_retrieval", "retrieval_mode": "live_project_records",
+            "confidence_label": "high", "clarification_entity": "project",
+            "quick_replies": [{"label": name, "value": name} for name in names],
+            "pending_project_lookup": {"kind": "selection", "original_issue": issue,
+                                       "entity": "project", "options": names, "scope": {},
+                                       "purpose": "explore_project"},
+            "matched_chunks": [{"record_kind": "company_api", "source_key": "live-selection-options",
+                                "body_text": "\n".join(names), "title": "Live project options"}]}
+
+
+def build_project_browse_response(issue):
+    """Offer the complete live catalogue for an unscoped project question."""
+    try:
+        projects = customer_facing_projects(get_company_projects())
+    except (RuntimeError, TimeoutError):
+        return {"answer": "Live project data is unavailable right now. Please try again.",
+                "route": "property", "source_status": "failed", "used_llm": False,
+                "clarification_entity": "project",
+                "pending_project_lookup": {"kind": "selection", "original_issue": issue,
+                                           "entity": "project", "options": [], "scope": {},
+                                           "purpose": "explore_project"}}
+    names = _project_names(projects)
+    if not names:
+        return {"answer": "The live catalogue has no projects to show right now.",
+                "route": "property", "source_status": "live_api", "used_llm": False,
+                "quick_replies": []}
+    return _explore_project_payload(
+        issue, names, f"We have {len(names)} projects. Which one would you like to explore?")
+
+
+def build_area_no_match_response(issue, projects):
+    """An area question naming no live city/locality: say so in one line, name
+    where the projects actually are, and offer them as the next choice."""
+    names = _project_names(projects)
+    if not names:
+        return None
+    cities = list(dict.fromkeys(str(project.get("city") or "").strip()
+                                for project in projects if str(project.get("city") or "").strip()))
+    where = ""
+    if cities:
+        where = " Our projects are in " + (
+            cities[0] if len(cities) == 1 else ", ".join(cities[:-1]) + " and " + cities[-1]) + "."
+    return _explore_project_payload(
+        issue, names, f"I couldn't find a project in that area.{where} Which one would you like to explore?")
+
+
+# A reply containing any of these is a question or a new request, never an
+# option selection.
+_NEW_REQUEST_RE = re.compile(
+    r"[?]|\b(?:what|where|when|why|how|weather|instead|call|callback|human|agent|representative|cancel|"
+    r"which|show|list|available|unnai|unnayi|emi|em|lo|mein)\b"
+)
+# Topics that start a new request even in a two-word reply ("site visit",
+# "2bhk price"); they route normally instead of re-asking the pending choice.
+_TOPIC_RE = re.compile(
+    r"amenit|facilit|pric|cost|rate|visit|book|brochure|document|ticket|contact|location|address|bhk"
+)
+
+
+def is_unmatched_selection_reply(state, reply):
+    """A very short reply to an offered choice that selects nothing and is not
+    a new question either (e.g. "A" when the wings are IRIS and TULIP).
+    Callers re-ask the same choice instead of sending it to general chat."""
+    if not isinstance(state, dict) or state.get("kind") != "selection" or not state.get("options"):
+        return False
+    text = str(reply or "").strip().lower()
+    if not text or len(text.split()) > 2 or continues_selection(state, reply):
+        return False
+    return not (_NEW_REQUEST_RE.search(text) or _TOPIC_RE.search(text)
+                or text in {"cancel", "never mind", "nevermind", "stop", "forget it"})
+
+
+def build_unmatched_selection_answer(state):
+    """Re-ask the pending choice briefly. The offered options are re-read from
+    the live CS API (keeping any earlier narrowing), so the re-ask is grounded
+    like every other clarification; None when none of them is still live."""
+    entity, live, _ = live_options(state.get("entity"), state.get("original_issue", ""), [])
+    live = set(live) if entity == state.get("entity") else set()
+    options = [str(option) for option in state.get("options") or [] if str(option) in live]
+    if not options:
+        return None
+    label = {"home_type": "home type"}.get(state.get("entity"), state.get("entity") or "option")
+    context = ", ".join(str(value) for value in (state.get("scope") or {}).values())
+    answer = f"That doesn't match any {label} option. " + build_entity_choice_answer(label, options, context)
+    return {"answer": answer,
+            "route": "property", "source_status": "live_api", "used_llm": False,
+            "agent_mode": "knowledge_retrieval", "retrieval_mode": "live_project_records",
+            "confidence_label": "high", "clarification_entity": state.get("entity"),
+            "quick_replies": [{"label": option, "value": option} for option in options],
+            "pending_project_lookup": {**{key: value for key, value in state.items() if key != "effective_issue"},
+                                       "options": options},
+            "matched_chunks": [{"record_kind": "company_api", "source_key": "live-selection-options",
+                                "body_text": "\n".join(options), "title": f"Live {label} options"}]}
+
+
+def _matching_options(state, reply):
+    """Offered options a reply selects. Shared by resume_selection() and
+    continues_selection() so "is this a selection?" and "which one?" agree."""
+    options = state.get("options") or []
+    normalized = re.sub(r"[^a-z0-9]+", " ", reply.lower()).strip()
+    normalized = re.sub(r"^(?:let s |lets |let us )?(?:go with|go for|choose|select|pick|take)\s+", "", normalized)
+    label = state.get("entity", "").replace("_", " ")
+    if label:
+        normalized = re.sub(r"^(?:the )?" + re.escape(label) + r"\s+|\s+" + re.escape(label) + r"$", "", normalized).strip()
+    if label == "floor":
+        normalized = re.sub(r"\b(\d+)(?:st|nd|rd|th)\b", r"\1", normalized)
+    matches = [name for name in options if normalized == re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()]
+    if not matches and state.get("entity") == "project":
+        candidates = resolve_project_candidates_from_text([{"projectName": name} for name in options], reply)
+        if len(candidates) == 1:
+            matches = [candidates[0]["projectName"]]
+    if not matches and normalized:
+        matches = [name for name in options if re.search(r"\b" + re.escape(normalized) + r"\b", name, re.I)]
+    return matches
 
 
 def resume_selection(state, reply):
@@ -277,23 +393,17 @@ def resume_selection(state, reply):
         effective = state["original_issue"] + f". Requested {state['entity']}: {reply}"
         state["effective_issue"] = effective
         return effective
-    normalized = re.sub(r"[^a-z0-9]+", " ", reply.lower()).strip()
-    normalized = re.sub(r"^(?:let s |lets |let us )?(?:go with|go for|choose|select|pick|take)\s+", "", normalized)
-    label = state.get("entity", "").replace("_", " ")
-    if label:
-        normalized = re.sub(r"^(?:the )?" + re.escape(label) + r"\s+|\s+" + re.escape(label) + r"$", "", normalized).strip()
-    matches = [name for name in options if normalized == re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()]
-    if not matches and state.get("entity") == "project":
-        candidates = resolve_project_candidates_from_text([{"projectName": name} for name in options], reply)
-        if len(candidates) == 1:
-            matches = [candidates[0]["projectName"]]
-    if not matches and normalized:
-        matches = [name for name in options if re.search(r"\b" + re.escape(normalized) + r"\b", name, re.I)]
+    matches = _matching_options(state, reply)
     if len(matches) != 1:
         # Keep the original intent for an invalid or still-ambiguous answer.
         return state["original_issue"]
     scope = dict(state.get("scope") or {})
     scope[state["entity"]] = matches[0]
+    if state.get("purpose") == "explore_project" and state["entity"] == "project":
+        effective = f"Tell me about project {matches[0]}"
+        state["effective_issue"] = effective
+        state["scope"] = scope
+        return effective
     context = ". ".join(
         f"{key.replace('_', ' ')}{' ' if key in {'floor', 'flat'} else ': '}{value}"
         for key, value in scope.items()
@@ -316,9 +426,18 @@ def continues_selection(state, reply):
         return False
     if text in {"retry", "try again", "again", "yes", "yes please"}:
         return True
-    if re.search(r"\b(?:what|where|when|why|how|weather|instead|call|callback|human|agent|representative|cancel)\b", text):
+    options = state.get("options") or []
+    # An exact option (e.g. a clicked quick reply) is always a selection.
+    normalized = re.sub(r"[^a-z0-9]+", " ", text).strip()
+    if any(normalized == re.sub(r"[^a-z0-9]+", " ", str(option).lower()).strip() for option in options):
+        return True
+    if _NEW_REQUEST_RE.search(text):
         return False
-    return len(text.split()) <= 8
+    if not options:
+        return len(text.split()) <= 3
+    # Free text naming none of the offered options is a new message: route it
+    # normally rather than re-asking the same choice.
+    return bool(_matching_options(state, reply))
 
 
 def build_inventory_selection_answer(issue, pending):

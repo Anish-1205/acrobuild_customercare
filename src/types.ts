@@ -436,6 +436,7 @@ export interface SupportAssistResponse {
   model?: string;
   offer_action_menu?: boolean;
   phone_rejection_reason?: string;
+  quick_replies?: { label: string; value: string }[];
   rag_evaluation?: RagEvaluation;
   reply_language?: string;
   reply_script?: "latin" | "native";
@@ -446,4 +447,3 @@ export interface SupportAssistResponse {
   sync_error?: string;
   used_llm?: boolean;
 }
-

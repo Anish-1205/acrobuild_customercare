@@ -4,7 +4,7 @@
       "user": "vishwajeet lo amenities em em vunnai?",
       "response": {
         "agent_mode": "retrieval",
-        "answer": "Andubaatulo unna matching project options ive:\n\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise\n\nNenu ae project details check cheyali?",
+        "answer": "Maa daggara Vishwajeet projects chaala match avuthunnayi. Amenities kosam nenu deni details check cheyali?\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise",
         "articles": [],
         "assist_error": "",
         "confidence_label": "high",
@@ -45,27 +45,65 @@
         },
         "route": "property",
         "clarification_entity": "project",
+        "quick_replies": [
+          {
+            "label": "Vishwajeet Heights",
+            "value": "Vishwajeet Heights"
+          },
+          {
+            "label": "Vishwajeet Empire NX",
+            "value": "Vishwajeet Empire NX"
+          },
+          {
+            "label": "Vishwajeet Prime",
+            "value": "Vishwajeet Prime"
+          },
+          {
+            "label": "Vishwajeet Myspace",
+            "value": "Vishwajeet Myspace"
+          },
+          {
+            "label": "Vishwajeet Precious",
+            "value": "Vishwajeet Precious"
+          },
+          {
+            "label": "Vishwajeet Town",
+            "value": "Vishwajeet Town"
+          },
+          {
+            "label": "Vishwajeet Empire",
+            "value": "Vishwajeet Empire"
+          },
+          {
+            "label": "Vishwajeet Precious Phase-V",
+            "value": "Vishwajeet Precious Phase-V"
+          },
+          {
+            "label": "Vishwajeet Paradise",
+            "value": "Vishwajeet Paradise"
+          }
+        ],
         "reply_language": "Telugu",
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "28f36ae4963142b596aa473e60bc5cee",
+            "id": "7d32c8c7e7184d6cb2c38b1da36b288e",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 109,
+            "duration_ms": 186,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:36.102853+00:00"
+            "created_at": "2026-09-21T08:25:11.255088+00:00"
           },
           {
-            "id": "adae501f29dd43bb9fd565607792739a",
+            "id": "f335b1c0898e45f5bec2ca48b3012b6e",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
@@ -78,27 +116,27 @@
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:36.102853+00:00"
+            "created_at": "2026-09-21T08:25:11.255088+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "live-selection-options",
             "title": "Live project options",
-            "retrieved_at": "2026-09-18T10:40:36.419392+00:00",
+            "retrieved_at": "2026-09-21T08:25:11.576858+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:36.102853+00:00",
+            "retrieved_at": "2026-09-21T08:25:11.255088+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:36.102853+00:00",
+            "retrieved_at": "2026-09-21T08:25:11.255088+00:00",
             "freshness": "cached"
           }
         ],
@@ -128,26 +166,26 @@
               "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
             },
             "answer_relevance": {
-              "score": 0.0976,
-              "percent": 9.8,
+              "score": 0.1865,
+              "percent": 18.6,
               "status": "poor",
               "explanation": "Lexical similarity proxy between the customer question and final answer."
             },
             "groundedness": {
-              "score": 0.5714,
-              "percent": 57.1,
-              "status": "review",
+              "score": 0.4348,
+              "percent": 43.5,
+              "status": "poor",
               "explanation": "Share of meaningful answer terms supported by retrieved context."
             },
             "hallucination_risk": {
-              "score": 0.4286,
-              "percent": 42.9,
-              "status": "review",
+              "score": 0.5652,
+              "percent": 56.5,
+              "status": "poor",
               "explanation": "Unsupported-answer-term proxy; lower is better."
             },
             "overall_quality": {
-              "score": 0.6673,
-              "percent": 66.7,
+              "score": 0.6553,
+              "percent": 65.5,
               "status": "review",
               "explanation": "Average of the available online proxy scores."
             },
@@ -177,7 +215,7 @@
       "user": "precious",
       "response": {
         "agent_mode": "retrieval",
-        "answer": "Vishwajeet Precious ki sambandhinchina andubatulo unna data lo ee sadupayalu unnayi:\n\n- Baby Swimming Area\n- Carrom\n- Children's Playing Area\n- Enterance Lobby\n- Gated Community\n- Gym\n- Jogging Track\n- Multipurpose Hall\n- Park\n- Party Lawn\n- Paved Walkway\n- Pool & Billards\n- Swimming Pool\n- Yoga & Meditation Area",
+        "answer": "Vishwajeet Precious ki sambandhinchina andubatulo unna data lo ee amenities unnayi:\n\n- Baby Swimming Area\n- Carrom\n- Children's Playing Area\n- Enterance Lobby\n- Gated Community\n- Gym\n- Jogging Track\n- Multipurpose Hall\n- Park\n- Party Lawn\n- Paved Walkway\n- Pool & Billards\n- Swimming Pool\n- Yoga & Meditation Area",
         "articles": [],
         "assist_error": "",
         "confidence_label": "high",
@@ -232,56 +270,56 @@
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "edef8e53f85e4b069fb155100c618553",
+            "id": "7dfbb189b76243fe8e413d5932c8290e",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 46,
+            "duration_ms": 186,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:36.801472+00:00"
+            "created_at": "2026-09-21T08:25:12.087913+00:00"
           },
           {
-            "id": "24c1311d48f94b788f186fc2e1fde718",
+            "id": "ab2c06d06be54cca9f7f3f35bb20c53d",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects/52/amenities",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 30,
+            "duration_ms": 61,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 14
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:36.886007+00:00"
+            "created_at": "2026-09-21T08:25:12.210491+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "acrobuild-cs-project-52-amenities",
             "title": "Vishwajeet Precious amenities",
-            "retrieved_at": "2026-09-18T10:40:37.210464+00:00",
+            "retrieved_at": "2026-09-21T08:25:12.642191+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:36.801472+00:00",
+            "retrieved_at": "2026-09-21T08:25:12.087913+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects/52/amenities",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:36.886007+00:00",
+            "retrieved_at": "2026-09-21T08:25:12.210491+00:00",
             "freshness": "live"
           }
         ],
@@ -317,20 +355,20 @@
               "explanation": "Lexical similarity proxy between the customer question and final answer."
             },
             "groundedness": {
-              "score": 0.7714,
-              "percent": 77.1,
+              "score": 0.8,
+              "percent": 80.0,
               "status": "good",
               "explanation": "Share of meaningful answer terms supported by retrieved context."
             },
             "hallucination_risk": {
-              "score": 0.2286,
-              "percent": 22.9,
+              "score": 0.2,
+              "percent": 20.0,
               "status": "good",
               "explanation": "Unsupported-answer-term proxy; lower is better."
             },
             "overall_quality": {
-              "score": 0.7351,
-              "percent": 73.5,
+              "score": 0.7423,
+              "percent": 74.2,
               "status": "good",
               "explanation": "Average of the available online proxy scores."
             },
@@ -362,7 +400,7 @@
       "user": "What is the cost in Vishwajeet?",
       "response": {
         "agent_mode": "retrieval",
-        "answer": "These are the available matching project options:\n\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise\n\nWhich project would you like me to check?",
+        "answer": "Several Vishwajeet projects match. Which should I check for the pricing?\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise",
         "articles": [],
         "assist_error": "",
         "confidence_label": "high",
@@ -403,13 +441,67 @@
         },
         "route": "property",
         "clarification_entity": "project",
+        "quick_replies": [
+          {
+            "label": "Vishwajeet Heights",
+            "value": "Vishwajeet Heights"
+          },
+          {
+            "label": "Vishwajeet Empire NX",
+            "value": "Vishwajeet Empire NX"
+          },
+          {
+            "label": "Vishwajeet Prime",
+            "value": "Vishwajeet Prime"
+          },
+          {
+            "label": "Vishwajeet Myspace",
+            "value": "Vishwajeet Myspace"
+          },
+          {
+            "label": "Vishwajeet Precious",
+            "value": "Vishwajeet Precious"
+          },
+          {
+            "label": "Vishwajeet Town",
+            "value": "Vishwajeet Town"
+          },
+          {
+            "label": "Vishwajeet Empire",
+            "value": "Vishwajeet Empire"
+          },
+          {
+            "label": "Vishwajeet Precious Phase-V",
+            "value": "Vishwajeet Precious Phase-V"
+          },
+          {
+            "label": "Vishwajeet Paradise",
+            "value": "Vishwajeet Paradise"
+          }
+        ],
         "reply_language": "English",
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "e91fbcd3e6974cceb0fb45c1abda4561",
+            "id": "e3d4482ba73640e28fe19688b9727abd",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 93,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.107975+00:00"
+          },
+          {
+            "id": "99c69ef2feed4a87891cfd4fc63a535f",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/53/amenities",
             "method": "GET",
             "params": {},
             "status": "completed",
@@ -417,13 +509,141 @@
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
-              "record_count": 10
+              "record_count": 22
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:37.602858+00:00"
+            "created_at": "2026-09-21T08:25:13.219321+00:00"
           },
           {
-            "id": "e2f7fb0794da42d89e6e7a0b7c75bec4",
+            "id": "2ee7ce1dc72f4c6bbde4a711b0e830ec",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/56/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 46,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.331738+00:00"
+          },
+          {
+            "id": "37d3adf081cf44d0a1ea92eef205dccb",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/57/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 5
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.427539+00:00"
+          },
+          {
+            "id": "b1fe7811d9a44f1da5a03d1f9252c4f7",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.525241+00:00"
+          },
+          {
+            "id": "b2a671aa90074a2c96b574054151b9d7",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 14
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.597536+00:00"
+          },
+          {
+            "id": "f15df93685c945fab51977546b312b99",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/58/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 3
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.675216+00:00"
+          },
+          {
+            "id": "7d98a5ccf6924c349a0c9ad572b7e766",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/50/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 47,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 26
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.781298+00:00"
+          },
+          {
+            "id": "e3176fb6ef4346b89c32cc797a8e9520",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.853783+00:00"
+          },
+          {
+            "id": "8e4f6d3ef98e4d3985ecc569e8aad25e",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/51/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 25
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.925922+00:00"
+          },
+          {
+            "id": "4982026e761941da8d9c280f220acfd7",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
@@ -436,27 +656,103 @@
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:37.602858+00:00"
+            "created_at": "2026-09-21T08:25:13.925922+00:00"
+          },
+          {
+            "id": "035f24ae6da245b8b92dac21d8b24fbf",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:13.925922+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "live-selection-options",
             "title": "Live project options",
-            "retrieved_at": "2026-09-18T10:40:37.602858+00:00",
+            "retrieved_at": "2026-09-21T08:25:13.925922+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:37.602858+00:00",
+            "retrieved_at": "2026-09-21T08:25:13.107975+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/53/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.219321+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/56/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.331738+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/57/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.427539+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.525241+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.597536+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/58/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.675216+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/50/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.781298+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.853783+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/51/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.925922+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:37.602858+00:00",
+            "retrieved_at": "2026-09-21T08:25:13.925922+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:13.925922+00:00",
             "freshness": "cached"
           }
         ],
@@ -469,8 +765,8 @@
           "evidence": {
             "matched_chunk_count": 1,
             "relevant_chunk_count": 1,
-            "data_api_call_count": 2,
-            "successful_data_api_call_count": 2
+            "data_api_call_count": 12,
+            "successful_data_api_call_count": 12
           },
           "metrics": {
             "retrieval_hit_rate": {
@@ -486,26 +782,26 @@
               "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
             },
             "answer_relevance": {
-              "score": 0.1715,
-              "percent": 17.2,
+              "score": 0.1768,
+              "percent": 17.7,
               "status": "poor",
               "explanation": "Lexical similarity proxy between the customer question and final answer."
             },
             "groundedness": {
-              "score": 0.7059,
-              "percent": 70.6,
-              "status": "good",
+              "score": 0.625,
+              "percent": 62.5,
+              "status": "review",
               "explanation": "Share of meaningful answer terms supported by retrieved context."
             },
             "hallucination_risk": {
-              "score": 0.2941,
-              "percent": 29.4,
-              "status": "good",
+              "score": 0.375,
+              "percent": 37.5,
+              "status": "review",
               "explanation": "Unsupported-answer-term proxy; lower is better."
             },
             "overall_quality": {
-              "score": 0.7193,
-              "percent": 71.9,
+              "score": 0.7004,
+              "percent": 70.0,
               "status": "good",
               "explanation": "Average of the available online proxy scores."
             },
@@ -762,7 +1058,7 @@
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "7c7ee7fd2fec432aa91a0dbf19742835",
+            "id": "b92e15b2904841b6818edf19f0c0d1ee",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
@@ -775,12 +1071,60 @@
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:37.993337+00:00"
+            "created_at": "2026-09-21T08:25:14.281659+00:00"
           },
           {
-            "id": "a7c6fbef753a4391842ce412e5f27741",
+            "id": "51ae57651931495ca6005fde9b2cd2c7",
             "provider": "Acrobuild CS API",
-            "endpoint": "/api/cs/projects/52/typologies",
+            "endpoint": "/api/cs/projects/53/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 22
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:14.387121+00:00"
+          },
+          {
+            "id": "ea66e3e6184d4d0188c2138261d32299",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/56/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:14.463482+00:00"
+          },
+          {
+            "id": "b136473ba5e5423ea1adabf61f29bab2",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/57/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 5
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:14.543552+00:00"
+          },
+          {
+            "id": "339b3f69be834aacb848477b76339c2e",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/amenities",
             "method": "GET",
             "params": {},
             "status": "completed",
@@ -788,30 +1132,202 @@
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:14.665982+00:00"
+          },
+          {
+            "id": "7f37330cd9084630a0641f9f20a77829",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 14
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:14.773820+00:00"
+          },
+          {
+            "id": "e449d5783c2e4bfba38c25cbbd0dec39",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/58/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 3
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:14.857233+00:00"
+          },
+          {
+            "id": "013f2d4102b24b318e0efdd2cf31a593",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/50/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 26
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:14.950352+00:00"
+          },
+          {
+            "id": "d7fa371de64f4dc9b78215d66949828d",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:15.058217+00:00"
+          },
+          {
+            "id": "a7328d429fcc493f91c6c865b233551e",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/51/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 61,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 25
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:15.173251+00:00"
+          },
+          {
+            "id": "1cf6b8a7f5c0474b91a7c4decb18a01b",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:15.173584+00:00"
+          },
+          {
+            "id": "472c9986e7eb4200aa939ca893499dd8",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/typologies",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 63,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
               "record_count": 13
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:38.104444+00:00"
+            "created_at": "2026-09-21T08:25:15.286848+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "acrobuild-cs-project-52-pricing",
             "title": "Projects matching pricing question",
-            "retrieved_at": "2026-09-18T10:40:38.104444+00:00",
+            "retrieved_at": "2026-09-21T08:25:15.287453+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:37.993337+00:00",
+            "retrieved_at": "2026-09-21T08:25:14.281659+00:00",
             "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/53/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:14.387121+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/56/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:14.463482+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/57/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:14.543552+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:14.665982+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:14.773820+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/58/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:14.857233+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/50/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:14.950352+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:15.058217+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/51/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:15.173251+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:15.173584+00:00",
+            "freshness": "cached"
           },
           {
             "source_id": "/api/cs/projects/52/typologies",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:38.104444+00:00",
+            "retrieved_at": "2026-09-21T08:25:15.286848+00:00",
             "freshness": "live"
           }
         ],
@@ -824,8 +1340,8 @@
           "evidence": {
             "matched_chunk_count": 1,
             "relevant_chunk_count": 1,
-            "data_api_call_count": 2,
-            "successful_data_api_call_count": 2
+            "data_api_call_count": 12,
+            "successful_data_api_call_count": 12
           },
           "metrics": {
             "retrieval_hit_rate": {
@@ -892,7 +1408,7 @@
       "user": "Where is the project located?",
       "response": {
         "agent_mode": "retrieval",
-        "answer": "These are the available matching project options:\n\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise\n\nWhich project would you like me to check?",
+        "answer": "Which project should I check for the location?\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise",
         "articles": [],
         "assist_error": "",
         "confidence_label": "high",
@@ -933,27 +1449,209 @@
         },
         "route": "property",
         "clarification_entity": "project",
+        "quick_replies": [
+          {
+            "label": "Vishwajeet Heights",
+            "value": "Vishwajeet Heights"
+          },
+          {
+            "label": "Vishwajeet Empire NX",
+            "value": "Vishwajeet Empire NX"
+          },
+          {
+            "label": "Vishwajeet Prime",
+            "value": "Vishwajeet Prime"
+          },
+          {
+            "label": "Vishwajeet Myspace",
+            "value": "Vishwajeet Myspace"
+          },
+          {
+            "label": "Vishwajeet Precious",
+            "value": "Vishwajeet Precious"
+          },
+          {
+            "label": "Vishwajeet Town",
+            "value": "Vishwajeet Town"
+          },
+          {
+            "label": "Vishwajeet Empire",
+            "value": "Vishwajeet Empire"
+          },
+          {
+            "label": "Vishwajeet Precious Phase-V",
+            "value": "Vishwajeet Precious Phase-V"
+          },
+          {
+            "label": "Vishwajeet Paradise",
+            "value": "Vishwajeet Paradise"
+          }
+        ],
         "reply_language": "English",
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "75197253cecf4314a1568d451a383e87",
+            "id": "ac94ec7f56894f89996400aab7efd1c5",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 62,
+            "duration_ms": 31,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:38.661607+00:00"
+            "created_at": "2026-09-21T08:25:15.585200+00:00"
           },
           {
-            "id": "4264cd3f90734f4db7ecdce76127e9de",
+            "id": "76228fb63a8849fc8ba1121984641a63",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/53/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 47,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 22
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:15.688843+00:00"
+          },
+          {
+            "id": "85a69cf035db4118bb9d6e3539c327eb",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/56/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:15.780976+00:00"
+          },
+          {
+            "id": "c0da34e34e6640b995e54f850bee9799",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/57/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 5
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:15.865120+00:00"
+          },
+          {
+            "id": "2e44c30f75104d0e981df836a3d4ec99",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:15.974625+00:00"
+          },
+          {
+            "id": "94c8b1cba9c34508963a5488b5b45799",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 14
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:16.050894+00:00"
+          },
+          {
+            "id": "cfaed9bb81494a72aa813dbb9bda8318",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/58/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 3
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:16.136396+00:00"
+          },
+          {
+            "id": "affc1c32d5024eee9222e1638ce6011a",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/50/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 26
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:16.231734+00:00"
+          },
+          {
+            "id": "c1f867d9072d48a3b3c41b6d939389b5",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:16.306400+00:00"
+          },
+          {
+            "id": "09b69bca1d804753a51e1d78cbc214fd",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/51/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 25
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:16.410703+00:00"
+          },
+          {
+            "id": "25c006cbf9fd4a24b24d25ab4910ad8c",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
@@ -966,27 +1664,103 @@
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:38.661607+00:00"
+            "created_at": "2026-09-21T08:25:16.410703+00:00"
+          },
+          {
+            "id": "6ffc951894e74911bd481219950e36fe",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:16.410703+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "live-selection-options",
             "title": "Live project options",
-            "retrieved_at": "2026-09-18T10:40:38.661607+00:00",
+            "retrieved_at": "2026-09-21T08:25:16.410703+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:38.661607+00:00",
+            "retrieved_at": "2026-09-21T08:25:15.585200+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/53/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:15.688843+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/56/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:15.780976+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/57/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:15.865120+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:15.974625+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:16.050894+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/58/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:16.136396+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/50/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:16.231734+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:16.306400+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/51/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:16.410703+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:38.661607+00:00",
+            "retrieved_at": "2026-09-21T08:25:16.410703+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:16.410703+00:00",
             "freshness": "cached"
           }
         ],
@@ -999,8 +1773,8 @@
           "evidence": {
             "matched_chunk_count": 1,
             "relevant_chunk_count": 1,
-            "data_api_call_count": 2,
-            "successful_data_api_call_count": 2
+            "data_api_call_count": 12,
+            "successful_data_api_call_count": 12
           },
           "metrics": {
             "retrieval_hit_rate": {
@@ -1016,26 +1790,26 @@
               "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
             },
             "answer_relevance": {
-              "score": 0.1715,
-              "percent": 17.2,
+              "score": 0.189,
+              "percent": 18.9,
               "status": "poor",
               "explanation": "Lexical similarity proxy between the customer question and final answer."
             },
             "groundedness": {
-              "score": 0.7059,
-              "percent": 70.6,
+              "score": 0.7857,
+              "percent": 78.6,
               "status": "good",
               "explanation": "Share of meaningful answer terms supported by retrieved context."
             },
             "hallucination_risk": {
-              "score": 0.2941,
-              "percent": 29.4,
+              "score": 0.2143,
+              "percent": 21.4,
               "status": "good",
               "explanation": "Unsupported-answer-term proxy; lower is better."
             },
             "overall_quality": {
-              "score": 0.7193,
-              "percent": 71.9,
+              "score": 0.7437,
+              "percent": 74.4,
               "status": "good",
               "explanation": "Average of the available online proxy scores."
             },
@@ -1297,35 +2071,255 @@
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "b001e9eea8e94bfb8d0a8ff09dfe2efa",
+            "id": "6c9cadf8f8544cf39f7b6d98d4d3eb10",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 61,
+            "duration_ms": 30,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:39.093079+00:00"
+            "created_at": "2026-09-21T08:25:16.720556+00:00"
+          },
+          {
+            "id": "a53adfa6199148b0bad0ec88d222534e",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/53/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 22
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:16.801003+00:00"
+          },
+          {
+            "id": "98a6df6cbf39426084aa49a9c9c7cdc1",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/56/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:16.877866+00:00"
+          },
+          {
+            "id": "835715ca361e43e491c7a7b771a0e378",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/57/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 5
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:16.979550+00:00"
+          },
+          {
+            "id": "fb2d85439d0b455db8f47a9327e2e367",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 16,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:17.070846+00:00"
+          },
+          {
+            "id": "569737254df5483497006201ad23be8d",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 14
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:17.165774+00:00"
+          },
+          {
+            "id": "9fedef545ee54f03b61e7ef7028e23d9",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/58/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 3
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:17.243717+00:00"
+          },
+          {
+            "id": "03713a3b4ad6426d80d65a6d9c3c0150",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/50/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 26
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:17.331774+00:00"
+          },
+          {
+            "id": "ec0c6e546d544c149abc2822017b6559",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:17.423414+00:00"
+          },
+          {
+            "id": "72be60b08c1745dcbaea71385a6abbc3",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/51/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 25
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:17.515424+00:00"
+          },
+          {
+            "id": "cad446ee8d0e4274bf1e8ece15f06bca",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:17.515424+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "acrobuild-cs-projects",
             "title": "Company projects",
-            "retrieved_at": "2026-09-18T10:40:39.093079+00:00",
+            "retrieved_at": "2026-09-21T08:25:17.515975+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:39.093079+00:00",
+            "retrieved_at": "2026-09-21T08:25:16.720556+00:00",
             "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/53/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:16.801003+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/56/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:16.877866+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/57/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:16.979550+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:17.070846+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:17.165774+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/58/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:17.243717+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/50/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:17.331774+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:17.423414+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/51/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:17.515424+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:17.515424+00:00",
+            "freshness": "cached"
           }
         ],
         "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
@@ -1337,8 +2331,8 @@
           "evidence": {
             "matched_chunk_count": 1,
             "relevant_chunk_count": 1,
-            "data_api_call_count": 1,
-            "successful_data_api_call_count": 1
+            "data_api_call_count": 11,
+            "successful_data_api_call_count": 11
           },
           "metrics": {
             "retrieval_hit_rate": {
@@ -1405,13 +2399,13 @@
       "user": "Show me wings in Vishwajeet Myspace",
       "response": {
         "agent_mode": "retrieval",
-        "answer": "These are the available matching wing options for Vishwajeet Myspace:\n\n- Jupiter C\n- Jupiter D\n- Venus A\n- Venus B\n\nWhich wing would you like me to check?",
+        "answer": "Which wing should I check in Vishwajeet Myspace?\n- Jupiter C\n- Jupiter D\n- Venus A\n- Venus B",
         "articles": [],
         "assist_error": "",
         "confidence_label": "high",
         "handoff_recommended": false,
         "knowledge_documents": [],
-        "last_synced_at": "2026-09-18T10:40:39.378937+00:00",
+        "last_synced_at": "2026-09-21T08:25:17.730039+00:00",
         "matched_chunks": [
           {
             "record_kind": "company_api",
@@ -1443,59 +2437,77 @@
         },
         "clarification_entity": "wing",
         "route": "property",
+        "quick_replies": [
+          {
+            "label": "Jupiter C",
+            "value": "Jupiter C"
+          },
+          {
+            "label": "Jupiter D",
+            "value": "Jupiter D"
+          },
+          {
+            "label": "Venus A",
+            "value": "Venus A"
+          },
+          {
+            "label": "Venus B",
+            "value": "Venus B"
+          }
+        ],
         "reply_language": "English",
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "81b6bcaf7968416b9b0113d3ade32c8c",
+            "id": "620e2508a4b64cf79694a3d22ca2f7de",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 63,
+            "duration_ms": 61,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:39.523757+00:00"
+            "created_at": "2026-09-21T08:25:17.876723+00:00"
           },
           {
-            "id": "2cdfc8e69b9d46d8addd32df747ea669",
+            "id": "6dd52529be52402da47d3fcf4330c50b",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects/54/wings",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 47,
+            "duration_ms": 30,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 4
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:39.625378+00:00"
+            "created_at": "2026-09-21T08:25:17.968522+00:00"
           },
           {
-            "id": "8b940fb2c1dd4183b6103f1d839ad01e",
+            "id": "eb8a0c34ed524bd284ef9617f08bdae3",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects/54/typologies",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 47,
+            "duration_ms": 31,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 55
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:39.736409+00:00"
+            "created_at": "2026-09-21T08:25:18.069867+00:00"
           },
           {
-            "id": "5db6298402ea418089ddb1dd01d4dfe2",
+            "id": "dda55faa611240fab368e94dbd7a0558",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
@@ -1508,10 +2520,10 @@
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:39.736409+00:00"
+            "created_at": "2026-09-21T08:25:18.076744+00:00"
           },
           {
-            "id": "d8c1df0384d74be4bae705c58c6694dc",
+            "id": "d2fca8a77e524a1aad1edde49110d005",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects/54/wings",
             "method": "GET",
@@ -1524,45 +2536,45 @@
               "record_count": 4
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:39.736409+00:00"
+            "created_at": "2026-09-21T08:25:18.076744+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "live-selection-options",
             "title": "Live wing options",
-            "retrieved_at": "2026-09-18T10:40:39.736409+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.076744+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:39.523757+00:00",
+            "retrieved_at": "2026-09-21T08:25:17.876723+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects/54/wings",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:39.625378+00:00",
+            "retrieved_at": "2026-09-21T08:25:17.968522+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects/54/typologies",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:39.736409+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.069867+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:39.736409+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.076744+00:00",
             "freshness": "cached"
           },
           {
             "source_id": "/api/cs/projects/54/wings",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:39.736409+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.076744+00:00",
             "freshness": "cached"
           }
         ],
@@ -1592,27 +2604,27 @@
               "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
             },
             "answer_relevance": {
-              "score": 0.3482,
-              "percent": 34.8,
+              "score": 0.4364,
+              "percent": 43.6,
               "status": "poor",
               "explanation": "Lexical similarity proxy between the customer question and final answer."
             },
             "groundedness": {
-              "score": 0.3636,
-              "percent": 36.4,
+              "score": 0.4286,
+              "percent": 42.9,
               "status": "poor",
               "explanation": "Share of meaningful answer terms supported by retrieved context."
             },
             "hallucination_risk": {
-              "score": 0.6364,
-              "percent": 63.6,
+              "score": 0.5714,
+              "percent": 57.1,
               "status": "poor",
               "explanation": "Unsupported-answer-term proxy; lower is better."
             },
             "overall_quality": {
-              "score": 0.4279,
-              "percent": 42.8,
-              "status": "poor",
+              "score": 0.4663,
+              "percent": 46.6,
+              "status": "review",
               "explanation": "Average of the available online proxy scores."
             },
             "context_recall": {
@@ -1641,7 +2653,7 @@
       "user": "Venus A",
       "response": {
         "clarification_entity": "floor",
-        "answer": "These are the available matching floor options for Vishwajeet Myspace, Venus A:\n\n- 0\n- 1\n- 2\n- 3\n- 4\n- 5\n- 6\n- 7\n- 8\n- 9\n- 10\n- 11\n- 12\n- 13\n- 14\n- 15\n\nWhich floor would you like me to check?",
+        "answer": "Which floor should I check in Vishwajeet Myspace, Venus A?\n- 0\n- 1\n- 2\n- 3\n- 4\n- 5\n- 6\n- 7\n- 8\n- 9\n- 10\n- 11\n- 12\n- 13\n- 14\n- 15",
         "pending_project_lookup": {
           "kind": "selection",
           "original_issue": "Show verified details for Venus A wing in Vishwajeet Myspace",
@@ -1675,6 +2687,72 @@
         "agent_mode": "retrieval",
         "retrieval_mode": "live_project_records",
         "confidence_label": "high",
+        "quick_replies": [
+          {
+            "label": "0",
+            "value": "0"
+          },
+          {
+            "label": "1",
+            "value": "1"
+          },
+          {
+            "label": "2",
+            "value": "2"
+          },
+          {
+            "label": "3",
+            "value": "3"
+          },
+          {
+            "label": "4",
+            "value": "4"
+          },
+          {
+            "label": "5",
+            "value": "5"
+          },
+          {
+            "label": "6",
+            "value": "6"
+          },
+          {
+            "label": "7",
+            "value": "7"
+          },
+          {
+            "label": "8",
+            "value": "8"
+          },
+          {
+            "label": "9",
+            "value": "9"
+          },
+          {
+            "label": "10",
+            "value": "10"
+          },
+          {
+            "label": "11",
+            "value": "11"
+          },
+          {
+            "label": "12",
+            "value": "12"
+          },
+          {
+            "label": "13",
+            "value": "13"
+          },
+          {
+            "label": "14",
+            "value": "14"
+          },
+          {
+            "label": "15",
+            "value": "15"
+          }
+        ],
         "matched_chunks": [
           {
             "record_kind": "company_api",
@@ -1690,39 +2768,39 @@
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "0af925b83e104fddb030b4461589696d",
+            "id": "ccde0dfe25c1446580eae1f8bd5e7bcf",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 62,
+            "duration_ms": 46,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.071288+00:00"
+            "created_at": "2026-09-21T08:25:18.589269+00:00"
           },
           {
-            "id": "9c578bfbc5384ec7a875e485555166e5",
+            "id": "8e14022878ba4ef588005f6f8336ce95",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects/54/wings",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 15,
+            "duration_ms": 30,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 4
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.152608+00:00"
+            "created_at": "2026-09-21T08:25:18.680050+00:00"
           },
           {
-            "id": "071be88587c54deca6ef9f5c2d3d69ed",
+            "id": "2ff24bc8c7f04cdb8db0807e1f1ca4a6",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
@@ -1735,10 +2813,10 @@
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.152608+00:00"
+            "created_at": "2026-09-21T08:25:18.680050+00:00"
           },
           {
-            "id": "96e4d2f116b34142a1849db02ef5cf51",
+            "id": "48cc0cd64a53457a9a6e8e50acbf5672",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects/54/wings",
             "method": "GET",
@@ -1751,10 +2829,10 @@
               "record_count": 4
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.160136+00:00"
+            "created_at": "2026-09-21T08:25:18.680050+00:00"
           },
           {
-            "id": "c9fc66f4b7164dbc85fa384e2a4c8229",
+            "id": "f2db152656204ac3ab2c330665e1a997",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/wings/64/inventory",
             "method": "GET",
@@ -1762,52 +2840,52 @@
               "availableOnly": "true"
             },
             "status": "completed",
-            "duration_ms": 62,
+            "duration_ms": 47,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 88
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.294699+00:00"
+            "created_at": "2026-09-21T08:25:18.793248+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "live-selection-options",
             "title": "Live floor options",
-            "retrieved_at": "2026-09-18T10:40:40.294699+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.793248+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.071288+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.589269+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects/54/wings",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.152608+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.680050+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.152608+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.680050+00:00",
             "freshness": "cached"
           },
           {
             "source_id": "/api/cs/projects/54/wings",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.160136+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.680050+00:00",
             "freshness": "cached"
           },
           {
             "source_id": "/api/cs/wings/64/inventory",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.294699+00:00",
+            "retrieved_at": "2026-09-21T08:25:18.793248+00:00",
             "freshness": "live"
           }
         ],
@@ -1837,27 +2915,27 @@
               "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
             },
             "answer_relevance": {
-              "score": 0.25,
-              "percent": 25.0,
+              "score": 0.2887,
+              "percent": 28.9,
               "status": "poor",
               "explanation": "Lexical similarity proxy between the customer question and final answer."
             },
             "groundedness": {
-              "score": 0.5,
-              "percent": 50.0,
+              "score": 0.5833,
+              "percent": 58.3,
               "status": "review",
               "explanation": "Share of meaningful answer terms supported by retrieved context."
             },
             "hallucination_risk": {
-              "score": 0.5,
-              "percent": 50.0,
+              "score": 0.4167,
+              "percent": 41.7,
               "status": "review",
               "explanation": "Unsupported-answer-term proxy; lower is better."
             },
             "overall_quality": {
-              "score": 0.4375,
-              "percent": 43.8,
-              "status": "poor",
+              "score": 0.468,
+              "percent": 46.8,
+              "status": "review",
               "explanation": "Average of the available online proxy scores."
             },
             "context_recall": {
@@ -1886,7 +2964,7 @@
       "user": "1",
       "response": {
         "clarification_entity": "flat",
-        "answer": "These are the available matching flat options for Vishwajeet Myspace, Venus A, 1:\n\n- 101\n- 102\n- 103\n- 104\n- 105\n- 106\n\nWhich flat would you like me to check?",
+        "answer": "Which flat should I check in Vishwajeet Myspace, Venus A, 1?\n- 101\n- 102\n- 103\n- 104\n- 105\n- 106",
         "pending_project_lookup": {
           "kind": "selection",
           "original_issue": "Show verified details for Venus A wing in Vishwajeet Myspace. Selected project: Vishwajeet Myspace. wing: Venus A. floor 1",
@@ -1911,6 +2989,32 @@
         "agent_mode": "retrieval",
         "retrieval_mode": "live_project_records",
         "confidence_label": "high",
+        "quick_replies": [
+          {
+            "label": "101",
+            "value": "101"
+          },
+          {
+            "label": "102",
+            "value": "102"
+          },
+          {
+            "label": "103",
+            "value": "103"
+          },
+          {
+            "label": "104",
+            "value": "104"
+          },
+          {
+            "label": "105",
+            "value": "105"
+          },
+          {
+            "label": "106",
+            "value": "106"
+          }
+        ],
         "matched_chunks": [
           {
             "record_kind": "company_api",
@@ -1926,25 +3030,153 @@
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "7cfeb28c370c4c6aa0dbc325ee7518e8",
+            "id": "3415f224d5d54bc39e41986493f2f07b",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 62,
+            "duration_ms": 31,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.637313+00:00"
+            "created_at": "2026-09-21T08:25:19.209722+00:00"
           },
           {
-            "id": "a4aa46a7e18f472f8458c79ac9efeb45",
+            "id": "415b09009e024de9bf8c350313dad943",
             "provider": "Acrobuild CS API",
-            "endpoint": "/api/cs/projects/54/wings",
+            "endpoint": "/api/cs/projects/53/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 22
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:19.304394+00:00"
+          },
+          {
+            "id": "d1b7f2c4ebca47f2994af8bdab652899",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/56/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:19.411343+00:00"
+          },
+          {
+            "id": "5f00638d1b454717b830702557164922",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/57/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 5
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:19.510420+00:00"
+          },
+          {
+            "id": "99fc05bdaf1141f2ad580320d4bfdc0e",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:19.594017+00:00"
+          },
+          {
+            "id": "5002ea6191eb4c60922d4cf06c77da35",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 14
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:19.696434+00:00"
+          },
+          {
+            "id": "b4b7d2362ee2478a9190de2720cb3a86",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/58/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 3
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:19.795773+00:00"
+          },
+          {
+            "id": "c7939b44d86a42709eaa653a5586d939",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/50/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 26
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:19.890539+00:00"
+          },
+          {
+            "id": "846b6e051e7a49979816e6c63c6027d8",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:19.985411+00:00"
+          },
+          {
+            "id": "ddb23926c439426c9501c43c296de7c8",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/51/amenities",
             "method": "GET",
             "params": {},
             "status": "completed",
@@ -1952,31 +3184,13 @@
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
-              "record_count": 4
+              "record_count": 25
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.717162+00:00"
+            "created_at": "2026-09-21T08:25:20.084573+00:00"
           },
           {
-            "id": "cb43fecc1ce8477781e55fb43a2052e5",
-            "provider": "Acrobuild CS API",
-            "endpoint": "/api/cs/wings/64/inventory",
-            "method": "GET",
-            "params": {
-              "availableOnly": "true"
-            },
-            "status": "completed",
-            "duration_ms": 61,
-            "cache_hit": false,
-            "response_summary": {
-              "kind": "list",
-              "record_count": 88
-            },
-            "error": "",
-            "created_at": "2026-09-18T10:40:40.838843+00:00"
-          },
-          {
-            "id": "d29f281c2437473286aa9bf23895b3d3",
+            "id": "158b35916b464d53940d7fce498ce52b",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
@@ -1989,10 +3203,60 @@
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.838843+00:00"
+            "created_at": "2026-09-21T08:25:20.084573+00:00"
           },
           {
-            "id": "251c9883c49247a4aa30027c1269fcb2",
+            "id": "8e2785faeaf045e39a65956ee86b5b82",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 47,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 4
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:20.196133+00:00"
+          },
+          {
+            "id": "b416fe024b4642d3bbda593bf23c7c31",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/wings/64/inventory",
+            "method": "GET",
+            "params": {
+              "availableOnly": "true"
+            },
+            "status": "completed",
+            "duration_ms": 77,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 88
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:20.328526+00:00"
+          },
+          {
+            "id": "ffa360bd0bf24001b0a5f20dee89e8fc",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:20.328526+00:00"
+          },
+          {
+            "id": "f7d2f026d63a4bd2a8cd7cc07ad49026",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects/54/wings",
             "method": "GET",
@@ -2005,10 +3269,10 @@
               "record_count": 4
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.838843+00:00"
+            "created_at": "2026-09-21T08:25:20.328526+00:00"
           },
           {
-            "id": "9394d3a5ef2a4e408eec708263073e12",
+            "id": "e588dee2a26b46e39baf24124a726fe7",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/wings/64/inventory",
             "method": "GET",
@@ -2023,51 +3287,111 @@
               "record_count": 88
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:40.838843+00:00"
+            "created_at": "2026-09-21T08:25:20.328526+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "live-selection-options",
             "title": "Live flat options",
-            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "retrieved_at": "2026-09-21T08:25:20.328526+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.637313+00:00",
+            "retrieved_at": "2026-09-21T08:25:19.209722+00:00",
             "freshness": "live"
           },
           {
-            "source_id": "/api/cs/projects/54/wings",
+            "source_id": "/api/cs/projects/53/amenities",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.717162+00:00",
+            "retrieved_at": "2026-09-21T08:25:19.304394+00:00",
             "freshness": "live"
           },
           {
-            "source_id": "/api/cs/wings/64/inventory",
+            "source_id": "/api/cs/projects/56/amenities",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "retrieved_at": "2026-09-21T08:25:19.411343+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/57/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:19.510420+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:19.594017+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:19.696434+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/58/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:19.795773+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/50/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:19.890539+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:19.985411+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/51/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:20.084573+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "retrieved_at": "2026-09-21T08:25:20.084573+00:00",
             "freshness": "cached"
           },
           {
             "source_id": "/api/cs/projects/54/wings",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "retrieved_at": "2026-09-21T08:25:20.196133+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/wings/64/inventory",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:20.328526+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:20.328526+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects/54/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:20.328526+00:00",
             "freshness": "cached"
           },
           {
             "source_id": "/api/cs/wings/64/inventory",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:40.838843+00:00",
+            "retrieved_at": "2026-09-21T08:25:20.328526+00:00",
             "freshness": "cached"
           }
         ],
@@ -2080,8 +3404,8 @@
           "evidence": {
             "matched_chunk_count": 1,
             "relevant_chunk_count": 0,
-            "data_api_call_count": 6,
-            "successful_data_api_call_count": 6
+            "data_api_call_count": 16,
+            "successful_data_api_call_count": 16
           },
           "metrics": {
             "retrieval_hit_rate": {
@@ -2103,20 +3427,20 @@
               "explanation": "Lexical similarity proxy between the customer question and final answer."
             },
             "groundedness": {
-              "score": 0.5,
-              "percent": 50.0,
+              "score": 0.5833,
+              "percent": 58.3,
               "status": "review",
               "explanation": "Share of meaningful answer terms supported by retrieved context."
             },
             "hallucination_risk": {
-              "score": 0.5,
-              "percent": 50.0,
+              "score": 0.4167,
+              "percent": 41.7,
               "status": "review",
               "explanation": "Unsupported-answer-term proxy; lower is better."
             },
             "overall_quality": {
-              "score": 0.5,
-              "percent": 50.0,
+              "score": 0.5278,
+              "percent": 52.8,
               "status": "review",
               "explanation": "Average of the available online proxy scores."
             },
@@ -2443,7 +3767,7 @@
         "reply_script": "latin",
         "data_api_calls": [
           {
-            "id": "f9dbab16bb5c4132a54ba896f34b6bbb",
+            "id": "f325ef2220704f14a0efe3f411b65aa8",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects",
             "method": "GET",
@@ -2456,26 +3780,186 @@
               "record_count": 10
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:41.251804+00:00"
+            "created_at": "2026-09-21T08:25:20.664941+00:00"
           },
           {
-            "id": "26965b3009f14042b88532498a72e14e",
+            "id": "d0fbeddf139b4f61b6eef793bfd07e17",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/53/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 22
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:20.778271+00:00"
+          },
+          {
+            "id": "4d0a5015cd004266ba72f9e0e31f6058",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/56/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:20.861672+00:00"
+          },
+          {
+            "id": "7fa89042e5f44382a45d40776408b64e",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/57/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 16,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 5
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:20.948447+00:00"
+          },
+          {
+            "id": "f7e432bbb7f9470ba321c31f1b8e5591",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:21.034302+00:00"
+          },
+          {
+            "id": "2c0f920e968b480eb93eedd330be86d5",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 14
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:21.118637+00:00"
+          },
+          {
+            "id": "f62cdb57e5274c858af8e1ed1dd3c445",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/58/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 30,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 3
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:21.217347+00:00"
+          },
+          {
+            "id": "4bb82d02c65c453097533fab6c348fd5",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/50/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 26
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:21.311933+00:00"
+          },
+          {
+            "id": "ddb6aa6baf2f4a90a3e72c323d60ef76",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:21.397672+00:00"
+          },
+          {
+            "id": "c35633e3ee33442faa616c14d265d8e9",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/51/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 25
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:21.507201+00:00"
+          },
+          {
+            "id": "dff1ac344e8d4e0db2162ea1841f5aaa",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-21T08:25:21.507201+00:00"
+          },
+          {
+            "id": "63080f50468841f6a1c3b6b573cb6615",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/projects/54/wings",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 0,
+            "duration_ms": 30,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 4
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:41.325562+00:00"
+            "created_at": "2026-09-21T08:25:21.606266+00:00"
           },
           {
-            "id": "54b988a6a82946a6b2017ff80d63ed2d",
+            "id": "2495ee5174054422bb5d925a954abd45",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/wings/64/inventory",
             "method": "GET",
@@ -2483,62 +3967,122 @@
               "availableOnly": "true"
             },
             "status": "completed",
-            "duration_ms": 46,
+            "duration_ms": 63,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 88
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:41.441475+00:00"
+            "created_at": "2026-09-21T08:25:21.739631+00:00"
           },
           {
-            "id": "19944f4dfc1b4653a0fbb7d512702285",
+            "id": "833d31812ed441139a0d91a3b77c82df",
             "provider": "Acrobuild CS API",
             "endpoint": "/api/cs/wings/64/typologies",
             "method": "GET",
             "params": {},
             "status": "completed",
-            "duration_ms": 46,
+            "duration_ms": 16,
             "cache_hit": false,
             "response_summary": {
               "kind": "list",
               "record_count": 20
             },
             "error": "",
-            "created_at": "2026-09-18T10:40:41.552693+00:00"
+            "created_at": "2026-09-21T08:25:21.814341+00:00"
           }
         ],
         "citations": [
           {
             "source_id": "wing-64-inventory",
             "title": "Evidence",
-            "retrieved_at": "2026-09-18T10:40:41.552693+00:00",
+            "retrieved_at": "2026-09-21T08:25:21.814341+00:00",
             "freshness": "workspace",
             "updated_at": null
           },
           {
             "source_id": "/api/cs/projects",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:41.251804+00:00",
+            "retrieved_at": "2026-09-21T08:25:20.664941+00:00",
             "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/53/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:20.778271+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/56/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:20.861672+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/57/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:20.948447+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:21.034302+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:21.118637+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/58/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:21.217347+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/50/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:21.311933+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:21.397672+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/51/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:21.507201+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-21T08:25:21.507201+00:00",
+            "freshness": "cached"
           },
           {
             "source_id": "/api/cs/projects/54/wings",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:41.325562+00:00",
+            "retrieved_at": "2026-09-21T08:25:21.606266+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/wings/64/inventory",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:41.441475+00:00",
+            "retrieved_at": "2026-09-21T08:25:21.739631+00:00",
             "freshness": "live"
           },
           {
             "source_id": "/api/cs/wings/64/typologies",
             "title": "Acrobuild CS API",
-            "retrieved_at": "2026-09-18T10:40:41.552693+00:00",
+            "retrieved_at": "2026-09-21T08:25:21.814341+00:00",
             "freshness": "live"
           }
         ],
@@ -2551,8 +4095,8 @@
           "evidence": {
             "matched_chunk_count": 1,
             "relevant_chunk_count": 1,
-            "data_api_call_count": 4,
-            "successful_data_api_call_count": 4
+            "data_api_call_count": 14,
+            "successful_data_api_call_count": 14
           },
           "metrics": {
             "retrieval_hit_rate": {

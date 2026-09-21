@@ -89,7 +89,11 @@ class LocationShortcutRegressionTests(unittest.TestCase):
         self.assertNotIn("no projects", answer.lower())
         self.assertIn("Vishwajeet Heights", answer)
         self.assertIn("Vishwajeet Paradise", answer)
-        self.assertEqual(response["pending_project_lookup"], "location")
+        # One concise line, then every live project as a choice.
+        self.assertLess(len(answer.splitlines()[0]), 120)
+        self.assertEqual([choice["value"] for choice in response["quick_replies"]],
+                         [project["projectName"] for project in _PROJECTS])
+        self.assertEqual(response["pending_project_lookup"]["entity"], "project")
 
 
 if __name__ == "__main__":

@@ -92,6 +92,7 @@ type ChatMessage = {
   isAutomated?: boolean;
   isComplete?: boolean;
   offerActionMenu?: boolean;
+  quickReplies?: { label: string; value: string }[];
   relatedArticles: KnowledgeArticle[];
   sender: "bot" | "customer";
   showHelpfulPrompt?: boolean;
@@ -114,7 +115,7 @@ function createDefaultChatMessages(): ChatMessage[] {
 
 import { MessageLauncherIcon, PaperPlaneIcon, MicrophoneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
 import { type BrowserSpeechRecognition, type SpeechRecognitionConstructor, VOICE_LANGUAGES, type VoiceLanguageCode, detectSpeechLanguage } from "../lib/voiceLanguage";
-import { FLOW_TEXT, type ChatLanguage, chatLanguageFromReply, detectChatLanguage, extractLocationHint, isProjectBrowseRequest } from "../lib/chatLanguage";
+import { FLOW_TEXT, type ChatLanguage, chatLanguageFromReply, detectChatLanguage } from "../lib/chatLanguage";
 
 const helpCenterArticlesPath = "/home";
 const helpCenterHomePath = "/home";
@@ -1079,6 +1080,11 @@ function getNumberedProjectSelection(messages: ChatMessage[], value: string) {
   const selectedNumber = Number(selectionMatch[1]);
   return numberedProjects.find((match) => Number(match[1]) === selectedNumber)?.[2]?.trim() ?? "";
 }
+// The answer's bullet list is the plain-text fallback for API clients; when the
+// same options are shown as quick-reply buttons, show and speak only the prompt.
+function visibleMessageText(message: ChatMessage) {
+  return message.quickReplies?.length ? message.text.split(/\n\s*[-•*]\s/)[0].trim() : message.text;
+}
 function getNamedProjectSelection(messages: ChatMessage[], value: string) {
   const normalizedValue = value.trim().toLowerCase();
   if (!normalizedValue) return "";
@@ -1569,6 +1575,7 @@ export function CustomerHomePage() {
 
     setStorefrontError("");
     setIsTypingReply(true);
+    setPropertyFlow(null);
     setIsChatOpen(true);
     setIsFollowUpFormVisible(false);
     setActiveFollowUpIssue("");
@@ -1649,6 +1656,7 @@ export function CustomerHomePage() {
               feedbackState: undefined,
               isAutomated: true,
               offerActionMenu: assistResponse.offer_action_menu ?? false,
+              quickReplies: assistResponse.quick_replies ?? [],
               relatedArticles: [],
               showHelpfulPrompt: false,
               text: assistResponse.answer
@@ -1692,6 +1700,7 @@ export function CustomerHomePage() {
             feedbackState: undefined,
             isAutomated: true,
             offerActionMenu: assistResponse.offer_action_menu ?? false,
+            quickReplies: assistResponse.quick_replies ?? [],
             relatedArticles: [],
             showHelpfulPrompt: false,
             text: assistResponse.answer
@@ -2322,7 +2331,7 @@ export function CustomerHomePage() {
     }
 
     lastSpokenMessageIdRef.current = latestBotMessage.id;
-    const spokenText = prepareConversationalSpeech(latestBotMessage.text);
+    const spokenText = prepareConversationalSpeech(visibleMessageText(latestBotMessage));
     const utterance = new SpeechSynthesisUtterance(spokenText);
     speechUtteranceRef.current = utterance;
     const availableVoices = window.speechSynthesis.getVoices();
@@ -3397,12 +3406,27 @@ export function CustomerHomePage() {
                                     isCustomerMessage ? undefined : "store-chat-automated-card"
                                   }
                                 >
-                                  <div className="store-chat-message-text">{message.text}</div>
+                                  <div className="store-chat-message-text">{visibleMessageText(message)}</div>
                                 </div>
                               ) : null}
 
                               {!isCustomerMessage && message.id === latestCompletedBotMessageId && !isSiteVisitFormVisible ? (
-                                propertyFlow?.messageId === message.id ? (
+                                message.quickReplies?.length ? (
+                                  <div className="store-chat-guided-grid project-grid store-chat-quick-replies">
+                                    {message.quickReplies.map((option) => (
+                                      <button
+                                        className="store-chat-guided-button"
+                                        disabled={isTypingReply}
+                                        key={option.value}
+                                        onClick={() => void queueBotResponse(option.value, undefined, false)}
+                                        type="button"
+                                      >
+                                        <span className="store-chat-guided-label">{option.label}</span>
+                                        <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                ) : propertyFlow?.messageId === message.id ? (
                                   <div className="store-chat-guided-grid project-grid">
                                     {propertyFlow.level === "projects"
                                       ? propertyFlow.projects.map((project, index) => (
@@ -3801,7 +3825,8 @@ export function CustomerHomePage() {
                     return;
                   }
 
-                  const namedProject = getNamedProjectSelection(chatMessages, chatDraft);
+                  const hasServerChoices = [...chatMessages].reverse().find((message) => message.sender === "bot")?.quickReplies?.length;
+                  const namedProject = hasServerChoices ? null : getNamedProjectSelection(chatMessages, chatDraft);
                   if (namedProject) {
                     const customerSelection = chatDraft.trim();
                     setChatDraft("");
@@ -3809,7 +3834,7 @@ export function CustomerHomePage() {
                     return;
                   }
 
-                  const numberedProject = getNumberedProjectSelection(chatMessages, chatDraft);
+                  const numberedProject = hasServerChoices ? null : getNumberedProjectSelection(chatMessages, chatDraft);
                   if (numberedProject) {
                     const customerSelection = chatDraft.trim();
                     setChatDraft("");
@@ -3817,13 +3842,6 @@ export function CustomerHomePage() {
                     return;
                   }
 
-                  if (isProjectBrowseRequest(chatDraft, (propertyFlow?.projects ?? siteVisitProjects).map((project) => project.projectName))) {
-                    const projectRequest = chatDraft.trim();
-                    const location = extractLocationHint(chatDraft);
-                    setChatDraft("");
-                    void startProjectsFlow(projectRequest, location);
-                    return;
-                  }
                   if (isSiteVisitBookingRequest(chatDraft)) {
                     setChatDraft("");
                     void openSiteVisitBooking();

@@ -361,7 +361,8 @@ def _localize_answer(answer, analysis):
                     f"Translate the English support message below into {target}. Keep project names, place names, "
                     "numbers, prices, INR amounts, RERA numbers, dates, URLs, email addresses and real-estate terms "
                     "(BHK, wing, floor, site visit, carpet area, sq. ft.) exactly as they are. Keep the same line "
-                    "breaks and bullets. Keep each bulleted item exactly as written. Do not add or remove information. Output only the translation.\n\n"
+                    "breaks and bullets. Keep each bulleted item exactly as written. Do not add bullets, lines, or repeated sentences. "
+                    "Do not add or remove information. Output only the translation.\n\n"
                     f"ENGLISH MESSAGE:\n{answer}"
                 ),
                 conversation_messages=[],
@@ -371,7 +372,12 @@ def _localize_answer(answer, analysis):
             logger.warning("answer localization failed %s", kv(error=error, language=analysis.reply_language))
             return answer
         localized_numbers = {number.replace(",", "") for number in _NUMBER_RE.findall(localized)}
-        if (localized and localized != answer and source_numbers <= localized_numbers
+        # A one-line answer must stay one line: the translator sometimes pads
+        # it with invented bullets or repeated sentences.
+        added_lines = len(answer.splitlines()) == 1 and (
+            len(localized.splitlines()) != 1 or " * " in localized or " • " in localized
+        )
+        if (localized and localized != answer and not added_lines and source_numbers <= localized_numbers
                 and all(item in localized for item in source_items)):
             return localized
         logger.warning(
