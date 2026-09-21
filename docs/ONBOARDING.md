@@ -1,7 +1,10 @@
 # ONBOARDING — AcroBuild Customer Support Agent
 
-> New-engineer reference. Read Part A first, then use Part C as a lookup table.
-> Goal: know the real names of things so you can ask for changes precisely.
+> Historical, detailed walkthrough. Some claims below about authentication,
+> compiled modules, configuration, and older integrations no longer match the
+> current code. For a new handoff, read [AI_CONTEXT.md](AI_CONTEXT.md) and
+> [AGENTS.md](../AGENTS.md), then inspect the relevant source files. Treat this
+> document as background, not a current operational or security reference.
 
 ---
 

@@ -1,5 +1,9 @@
 # Customer support chat flow
 
+See [AI_CONTEXT.md](AI_CONTEXT.md) for the current architecture and file map.
+`prefer_qwen_response` and `generate_qwen_chat_response` are retained names in
+the code; the only supported generative provider is Sarvam.
+
 Primary path: widget → `/api/support/assist/stream` → orchestrator → (LLM | property/RAG/CS API).
 
 ```mermaid
@@ -30,7 +34,11 @@ flowchart TD
 
 ## LLM provider switch
 
-All generative calls go through `qwen.generate_qwen_chat_response`, which dispatches to Sarvam (RunPod OpenAI-compatible API) — the only supported provider. RAG, CS API, tickets, and grounded shortcuts are unchanged.
+All generative calls go through the `qwen.py` facade, which dispatches to
+`sarvam_client.py`. It uses the configured OpenAI-compatible endpoint, either
+direct Sarvam or a RunPod-hosted deployment. The live CS API is a separate
+connection used for property data. RAG, tickets, and grounded shortcuts do not
+switch chat providers.
 
 
 ### Property selection state
