@@ -90,3 +90,17 @@ npm run dev
 ```
 
 With the backend running on `http://127.0.0.1:8000`, the React app will be available through Vite on `http://127.0.0.1:5173`.
+
+## Demo tickets
+
+To replace all tickets in the local SQLite workspace with five synthetic
+AcroBuild support tickets, run:
+
+```bash
+python scripts/seed_demo_tickets.py --apply
+```
+
+This deletes existing ticket messages, notes, tags, feedback, and proposals as
+well as the tickets. Other workspace data stays intact. The ignored
+`support_system.db` is local to each checkout, so run the script separately in
+each environment where demo tickets are wanted.
