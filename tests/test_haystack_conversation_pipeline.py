@@ -284,7 +284,8 @@ class HaystackConversationPipelineTests(unittest.TestCase):
             },
         )
         self.assertEqual(response["agent_mode"], "relevance_clarification")
-        self.assertIn("will not substitute unrelated", response["answer"])
+        self.assertIn("couldn't confirm", response["answer"])
+        self.assertNotIn("detail you want me to relax", response["answer"])
 
     def test_relevant_single_option_answer_passes(self):
         issue = "Recommend one best 2BHK flat on 3rd floor"

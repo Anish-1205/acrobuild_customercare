@@ -27,6 +27,7 @@ CS_API_BASE_URL = os.getenv(
     "http://10.10.1.23:8081",
 ).rstrip("/")
 CS_API_KEY = os.getenv("ACROBUILD_CS_API_KEY", "").strip()
+CS_API_COMPANY_ID = os.getenv("ACROBUILD_CS_API_COMPANY_ID", "").strip()
 CS_API_TIMEOUT_SECONDS = float(
     os.getenv("ACROBUILD_CS_API_TIMEOUT_SECONDS", "2.5")
 )
@@ -96,6 +97,59 @@ def customer_facing_projects(projects):
 
 
 # -----------------------------------
+# CATALOGUE-WIDE FIELD FILTERING
+# -----------------------------------
+# Shared by every "which projects have X?" question (home type, amenity, and
+# any future field the CS API exposes per project), so each one does not need
+# its own project-loop-and-match code.
+
+def build_project_record_index(record_fetcher, projects=None):
+    """{project_id: {"project": record, "records": [...]}}, calling
+    ``record_fetcher(project_id)`` once per live project.
+
+    A single project's live-and-snapshot fetch failure is skipped, not fatal:
+    the CS API can add a project before the on-disk snapshot is regenerated
+    for it (no local fallback data yet), and that project's own timeout must
+    not abort a catalogue-wide scan of every other project. Returns
+    ``(index, failed)`` where ``failed`` lists the ``(project, error)`` pairs
+    that were skipped, so callers can disclose partial coverage honestly
+    instead of silently presenting an incomplete scan as a complete one.
+    """
+    index = {}
+    failed = []
+    for project in (projects if projects is not None else customer_facing_projects(get_company_projects())):
+        try:
+            index[project["id"]] = {"project": project, "records": record_fetcher(project["id"])}
+        except (RuntimeError, TimeoutError) as error:
+            failed.append((project, error))
+    return index, failed
+
+
+def filter_project_index(index, value_extractor, requested_values):
+    """(matches, per_value) over a {project_id: {"project": ..., ...}} index
+    (build_project_record_index()'s shape, or any per-project dict that has a
+    "project" key alongside whatever field data the caller keeps).
+
+    ``value_extractor(entry)`` turns one project's index entry into the set
+    of field values it has. ``matches`` are projects whose values cover every
+    requested value; ``per_value`` maps each requested value to the projects
+    that have it, for an honest per-value breakdown when nothing matches all
+    of them.
+    """
+    requested_values = list(dict.fromkeys(requested_values))
+    matches = []
+    per_value = {value: [] for value in requested_values}
+    for entry in index.values():
+        values = value_extractor(entry)
+        present = [value for value in requested_values if value in values]
+        for value in present:
+            per_value[value].append(entry["project"])
+        if requested_values and len(present) == len(requested_values):
+            matches.append(entry["project"])
+    return matches, per_value
+
+
+# -----------------------------------
 # INTERNAL HELPERS
 # -----------------------------------
 
@@ -111,11 +165,19 @@ def _response_summary(value):
     return {"kind": type(value).__name__}
 
 
+def _company_scoped_path(path):
+    if not CS_API_COMPANY_ID.isdecimal() or int(CS_API_COMPANY_ID) <= 0:
+        raise RuntimeError("ACROBUILD_CS_API_COMPANY_ID must be a positive integer.")
+    if not path.startswith("/api/cs/"):
+        raise ValueError(f"Unexpected CS API path: {path}")
+    return f"/api/cs/{CS_API_COMPANY_ID}/{path.removeprefix('/api/cs/')}"
+
+
 def _request_json(path, params=None):
     if not CS_API_KEY:
         raise RuntimeError("ACROBUILD_CS_API_KEY is not configured.")
 
-    url = f"{CS_API_BASE_URL}{path}"
+    url = f"{CS_API_BASE_URL}{_company_scoped_path(path)}"
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
 
@@ -173,6 +235,8 @@ def _load_snapshot_fallback(path, params=None):
     try:
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
+        return None
+    if not CS_API_COMPANY_ID.isdecimal() or snapshot.get("company", {}).get("id") != int(CS_API_COMPANY_ID):
         return None
     if path == "/api/cs/company":
         return snapshot.get("company")
@@ -265,8 +329,6 @@ def _cached_request(path, params=None, ttl_seconds=None):
     try:
         value = _request_json(path, params=params)
     except RuntimeError:
-        if cached is not None:
-            return cached["value"]
         fallback_value = _load_snapshot_fallback(path, params=params)
         if fallback_value is not None:
             log_data_api_call(
@@ -279,6 +341,8 @@ def _cached_request(path, params=None, ttl_seconds=None):
                 response_summary=_response_summary(fallback_value),
             )
             return fallback_value
+        if cached is not None:
+            return cached["value"]
         raise
     with _CACHE_LOCK:
         _CACHE[cache_key] = {
@@ -371,9 +435,8 @@ def resolve_project_candidates_from_text(projects, text):
     if token_candidates:
         best_overlap = max(item[0] for item in token_candidates)
         best = [item for item in token_candidates if item[0] == best_overlap]
-        complete = [item for item in best if item[0] == item[1]]
-        if len(complete) == 1:
-            return [complete[0][2]]
+        # A fragment such as "Empire" also matches "Empire NX". Only a
+        # full catalogue name (handled above) can prefer the base project.
         if len(best) == 1:
             return [best[0][2]]
         return [item[2] for item in best]
@@ -447,7 +510,8 @@ def _knowledge_chunk(title, excerpt, source_key):
 # -----------------------------------
 
 def is_cs_api_configured():
-    return bool(CS_API_BASE_URL and CS_API_KEY)
+    return bool(CS_API_BASE_URL and CS_API_KEY and CS_API_COMPANY_ID.isdecimal()
+                and int(CS_API_COMPANY_ID) > 0)
 
 
 def get_company_projects():

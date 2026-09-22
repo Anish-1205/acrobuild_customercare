@@ -24,6 +24,7 @@ _MARKER_CHAR = "⁣"
 PENDING_CALL_BOOKING_MARKER = f"{_MARKER_CHAR}pending_call_booking{_MARKER_CHAR}"
 PENDING_HUMAN_CONTACT_MARKER = f"{_MARKER_CHAR}pending_human_contact{_MARKER_CHAR}"
 _PENDING_PROJECT_LOOKUP_PREFIX = f"{_MARKER_CHAR}pending_project_lookup:"
+_CURRENT_PROJECT_PREFIX = f"{_MARKER_CHAR}current_project:"
 
 
 def has_pending_call_booking_marker(message_text):
@@ -55,6 +56,29 @@ def get_pending_project_lookup(message_text):
         if payload.get("kind") not in {"amenities", "pricing", "location", "selection"}:
             return None
         return payload
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def build_current_project_marker(project_name=""):
+    """Persist project scope independently of visible answer wording.
+
+    An empty value explicitly resets scope for a new catalogue search.
+    """
+    payload = json.dumps({"project": str(project_name or "").strip()}, separators=(",", ":")).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+    return f"{_CURRENT_PROJECT_PREFIX}{encoded}{_MARKER_CHAR}"
+
+
+def get_current_project_context(message_text):
+    text = str(message_text or "")
+    match = re.search(re.escape(_CURRENT_PROJECT_PREFIX) + r"([A-Za-z0-9_-]+)" + re.escape(_MARKER_CHAR), text)
+    if not match:
+        return None
+    try:
+        encoded = match.group(1)
+        payload = json.loads(base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
+        return {"project": str(payload.get("project") or "").strip()}
     except (ValueError, TypeError, json.JSONDecodeError):
         return None
 

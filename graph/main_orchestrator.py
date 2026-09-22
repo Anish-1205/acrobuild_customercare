@@ -104,6 +104,14 @@ def prepare_turn(issue, conversation_id="", conversation_messages=None, language
     english_issue = issue
     if analysis.english and analysis.reply_language != ENGLISH:
         english_issue = analysis.english
+    # Keep every explicit configuration even if translation drops a conjunct.
+    # "s?" -- a plural mention ("3bhks") names the type as specifically as
+    # the singular form and must not be dropped here either.
+    requested_types = list(dict.fromkeys(re.findall(r"\b([1-6])\s*b(?:h)?ks?\b", issue, re.I)))
+    english_issue = re.sub(r"\b([1-6])\s*b(?:h)?ks?\b", r"\1BHK", english_issue, flags=re.I)
+    missing_types = [value for value in requested_types if not re.search(rf"\b{value}\s*bhk\b", english_issue, re.I)]
+    if missing_types:
+        english_issue += "\nAlso requested: " + ", ".join(f"{value}BHK" for value in missing_types)
     resolved_issue = resolve_contextual_support_issue(english_issue, merged)
     if resolved_issue != english_issue:
         logger.info("issue resolved from context %s", kv(raw=preview(issue, 120), resolved=preview(resolved_issue, 120)))

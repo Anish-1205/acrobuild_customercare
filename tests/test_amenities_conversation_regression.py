@@ -58,11 +58,13 @@ def test_two_turn_amenities_on_both_endpoints():
 
 
 def test_unspecified_project_lists_catalogue():
-    with patch.object(api_context, "get_company_projects", return_value=PROJECTS):
+    index = {p["id"]: {"project": p, "amenities": ["Gym"] if p["id"] == 57 else []} for p in PROJECTS}
+    with patch.object(api_context, "get_company_projects", return_value=PROJECTS), \
+            patch.object(api_context, "live_amenity_index", return_value=index):
         result = api_context.build_grounded_project_amenities_assist(
             api_context.SupportAssistRequest(issue="What amenities are available?"))
-    assert all(p["projectName"] in result["answer"] for p in PROJECTS)
-    assert result["pending_project_lookup"] == "amenities"
+    assert result["pending_project_lookup"]["options"] == ["Vishwajeet Prime"]
+    assert "Vishwajeet Myspace" not in result["answer"]
 
 
 def test_translation_cannot_discard_retrieved_list():

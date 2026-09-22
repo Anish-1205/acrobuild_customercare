@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { lazy, Suspense, type ReactElement } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useRole, type RoleId } from "./contexts/RoleContext";
 import { AppShell } from "./components/AppShell";
@@ -7,15 +7,15 @@ import {
   getRolePanelPath,
   type WorkspacePanelId
 } from "./lib/roleNavigation";
-import { AdminInboxPage } from "./pages/AdminInboxPage";
-import { OwnerInboxPage } from "./pages/OwnerInboxPage";
-import { AgentInboxPage } from "./pages/AgentInboxPage";
-import { CustomerHomePage } from "./pages/CustomerHomePage";
-import { ApiActivityPage } from "./pages/ApiActivityPage";
-import { DataApiLogsPage } from "./pages/DataApiLogsPage";
-import { CustomerLookupPage } from "./pages/CustomerLookupPage";
-import { LoginPage } from "./pages/LoginPage";
-import { AutomationPage } from "./pages/AutomationPage";
+const AdminInboxPage = lazy(() => import("./pages/AdminInboxPage").then((module) => ({ default: module.AdminInboxPage })));
+const OwnerInboxPage = lazy(() => import("./pages/OwnerInboxPage").then((module) => ({ default: module.OwnerInboxPage })));
+const AgentInboxPage = lazy(() => import("./pages/AgentInboxPage").then((module) => ({ default: module.AgentInboxPage })));
+const CustomerHomePage = lazy(() => import("./pages/CustomerHomePage").then((module) => ({ default: module.CustomerHomePage })));
+const ApiActivityPage = lazy(() => import("./pages/ApiActivityPage").then((module) => ({ default: module.ApiActivityPage })));
+const DataApiLogsPage = lazy(() => import("./pages/DataApiLogsPage").then((module) => ({ default: module.DataApiLogsPage })));
+const CustomerLookupPage = lazy(() => import("./pages/CustomerLookupPage").then((module) => ({ default: module.CustomerLookupPage })));
+const LoginPage = lazy(() => import("./pages/LoginPage").then((module) => ({ default: module.LoginPage })));
+const AutomationPage = lazy(() => import("./pages/AutomationPage").then((module) => ({ default: module.AutomationPage })));
 
 function RoleRoute({
   allowedRole,
@@ -69,6 +69,7 @@ function LoginRoute() {
 
 export default function App() {
   return (
+    <Suspense fallback={<div className="app-loading">Loading page…</div>}>
     <Routes>
       <Route element={<CustomerHomePage />} path="/home" />
       <Route element={<CustomerHomePage />} path="/home/about" />
@@ -107,5 +108,6 @@ export default function App() {
         <Route element={<RoleRedirect />} path="*" />
       </Route>
     </Routes>
+    </Suspense>
   );
 }

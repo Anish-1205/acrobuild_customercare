@@ -92,7 +92,7 @@ type ChatMessage = {
   isAutomated?: boolean;
   isComplete?: boolean;
   offerActionMenu?: boolean;
-  quickReplies?: { label: string; value: string }[];
+  quickReplies?: { label: string; value: string; action?: "ticket" | "site_visit" | "call" | "browse_projects"; project_name?: string }[];
   relatedArticles: KnowledgeArticle[];
   sender: "bot" | "customer";
   showHelpfulPrompt?: boolean;
@@ -1083,7 +1083,8 @@ function getNumberedProjectSelection(messages: ChatMessage[], value: string) {
 // The answer's bullet list is the plain-text fallback for API clients; when the
 // same options are shown as quick-reply buttons, show and speak only the prompt.
 function visibleMessageText(message: ChatMessage) {
-  return message.quickReplies?.length ? message.text.split(/\n\s*[-•*]\s/)[0].trim() : message.text;
+  return message.quickReplies?.length && message.quickReplies.every((option) => !option.action)
+    ? message.text.split(/\n\s*[-•*]\s/)[0].trim() : message.text;
 }
 function getNamedProjectSelection(messages: ChatMessage[], value: string) {
   const normalizedValue = value.trim().toLowerCase();
@@ -2029,7 +2030,7 @@ export function CustomerHomePage() {
     }
   }
 
-  async function openSiteVisitBooking() {
+  async function openSiteVisitBooking(projectName?: string) {
     setStorefrontError("");
     let projects = propertyFlow?.projects ?? siteVisitProjects;
     if (!projects.length) {
@@ -2041,12 +2042,12 @@ export function CustomerHomePage() {
         return;
       }
     }
-    const selectedProjectName = propertyFlow?.selectedProject?.projectName ?? "";
+    const selectedProjectName = projectName ?? propertyFlow?.selectedProject?.projectName ?? "";
     setSiteVisitProjects(projects);
     setSiteVisitForm((current) => ({
       ...current,
       customer_email: current.customer_email || chatEmail,
-      project_name: selectedProjectName || current.project_name
+      project_name: projectName !== undefined ? projectName : selectedProjectName || current.project_name
     }));
     setIsSiteVisitFormVisible(true);
     setIsFollowUpFormVisible(false);
@@ -3418,7 +3419,20 @@ export function CustomerHomePage() {
                                         className="store-chat-guided-button"
                                         disabled={isTypingReply}
                                         key={option.value}
-                                        onClick={() => void queueBotResponse(option.value, undefined, false)}
+                                        onClick={() => {
+                                          if (option.action === "ticket") {
+                                            openFollowUpForm(message.contextIssue || message.text);
+                                          } else if (option.action === "site_visit") {
+                                            void openSiteVisitBooking(option.project_name ?? "");
+                                          } else if (option.action === "browse_projects") {
+                                            // Fresh catalogue browse: starts a new
+                                            // conversation so no stale project scope
+                                            // carries over, same as the guided-flow menu.
+                                            void queueBotResponse(option.value, undefined, true, option.label);
+                                          } else {
+                                            void queueBotResponse(option.value, undefined, false);
+                                          }
+                                        }}
                                         type="button"
                                       >
                                         <span className="store-chat-guided-label">{option.label}</span>
@@ -3789,7 +3803,7 @@ export function CustomerHomePage() {
                     ref={chatContactComposeRef}
                     value={chatDraft}
                   />
-                  <button
+                  {/* <button
                     aria-label={isVoiceConversation ? "Stop voice conversation" : "Start voice conversation"}
                     aria-pressed={isVoiceConversation}
                     className={`store-chat-voice-button${isListening ? " listening" : ""}${isVoiceConversation ? " active" : ""}`}
@@ -3799,7 +3813,8 @@ export function CustomerHomePage() {
                     type="button"
                   >
                     <MicrophoneIcon />
-                  </button>                  <button
+                  </button>                   */}
+                  <button
                     aria-label="Send message"
                     className="store-chat-compose-submit"
                     disabled={isCreatingTicket || !chatDraft.trim()}
@@ -3866,7 +3881,7 @@ export function CustomerHomePage() {
                     placeholder={hasActiveConversation ? "Reply to the assistant" : "Ask a support question"}
                     value={chatDraft}
                   />
-                  <button
+                  {/* <button
                     aria-label={isVoiceConversation ? "Stop voice conversation" : "Start voice conversation"}
                     aria-pressed={isVoiceConversation}
                     className={`store-chat-voice-button${isListening ? " listening" : ""}${isVoiceConversation ? " active" : ""}`}
@@ -3876,7 +3891,8 @@ export function CustomerHomePage() {
                     type="button"
                   >
                     <MicrophoneIcon />
-                  </button>                  <button
+                  </button>                   */}
+                  <button
                     aria-label="Send message"
                     className="store-chat-compose-submit"
                     disabled={isTypingReply || !chatDraft.trim()}

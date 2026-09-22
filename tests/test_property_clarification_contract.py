@@ -81,14 +81,22 @@ def test_all_clarification_locations_list_real_options_and_keep_intent(prompt, e
     (api_context.build_grounded_project_location_assist, "Where is the project located?", "location"),
 ])
 def test_missing_project_in_all_three_shortcuts(builder, question, kind):
-    result = builder(api_context.SupportAssistRequest(issue=question))
+    index = {p["id"]: {"project": p, "amenities": ["Gym"] if p["id"] == 2 else []} for p in PROJECTS}
+    with patch.object(api_context, "live_amenity_index", return_value=index):
+        result = builder(api_context.SupportAssistRequest(issue=question))
+    if kind == "amenities":
+        assert result["pending_project_lookup"]["options"] == ["Vishwajeet Precious"]
+        assert result["pending_project_lookup"]["original_issue"] == question
+        assert "Myspace" not in result["answer"]
+        return
     assert result["pending_project_lookup"] == kind
     assert all(p["projectName"] in result["answer"] for p in PROJECTS)
 
 
-def test_precious_selects_base_project_not_phase_five():
+def test_precious_fragment_is_ambiguous_but_full_base_name_selects():
     state = service.apply_clarification_contract({"clarification_entity": "project"}, "What amenities in Vishwajeet?")["pending_project_lookup"]
-    query = service.resume_selection(state, "precious")
+    assert service.resume_selection(dict(state), "precious") == state["original_issue"]
+    query = service.resume_selection(state, "Vishwajeet Precious")
     assert "project: Vishwajeet Precious" in query
     assert "Phase-V" not in query
 

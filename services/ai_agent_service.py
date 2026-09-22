@@ -890,7 +890,9 @@ def build_company_api_direct_answer(issue, matched_chunks, conversation_messages
     if "acrobuild" in cleaned_issue and any(phrase in cleaned_issue for phrase in ("about acrobuild", "what is acrobuild", "who is acrobuild", "acrobuild company")):
         return _build_acrobuild_overview(matched_chunks)
     requested_project = _find_requested_project(cleaned_issue, matched_chunks)
-    asks_project_overview = requested_project is not None and any(phrase in cleaned_issue for phrase in ("about", "overview", "details", "deep dive", "project of", "projects of"))
+    asks_project_overview = (requested_project is not None
+                            and not _NON_LOCATION_SPECIFIC_RE.search(cleaned_issue)
+                            and any(phrase in cleaned_issue for phrase in ("about", "overview", "details", "deep dive", "project of", "projects of")))
     effective_issue = f"Tell me more about project {normalize_ai_text(requested_project.get('project_name', ''))}" if asks_project_overview else issue
     answer = _legacy_build_company_api_direct_answer(effective_issue, matched_chunks, conversation_messages=conversation_messages)
     if isinstance(answer, str):

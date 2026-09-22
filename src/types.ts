@@ -436,7 +436,7 @@ export interface SupportAssistResponse {
   model?: string;
   offer_action_menu?: boolean;
   phone_rejection_reason?: string;
-  quick_replies?: { label: string; value: string }[];
+  quick_replies?: { label: string; value: string; action?: "ticket" | "site_visit" | "call"; project_name?: string }[];
   rag_evaluation?: RagEvaluation;
   reply_language?: string;
   reply_script?: "latin" | "native";

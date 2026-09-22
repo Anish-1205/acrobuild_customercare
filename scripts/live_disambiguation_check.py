@@ -8,9 +8,9 @@ from fastapi.testclient import TestClient
 from app import api
 
 scenarios = {
-    "precious": ["vishwajeet lo amenities em em vunnai?", "precious"],
-    "cost": ["What is the cost in Vishwajeet?", "precious"],
-    "location": ["Where is the project located?", "precious"],
+    "precious": ["vishwajeet lo amenities em em vunnai?", "Vishwajeet Precious"],
+    "cost": ["What is the cost in Vishwajeet?", "Vishwajeet Precious"],
+    "location": ["Where is the project located?", "Vishwajeet Precious"],
     "wing": ["Show me wings in Vishwajeet Myspace", "Venus A", "1", "__first_flat__"],
 }
 results = {}

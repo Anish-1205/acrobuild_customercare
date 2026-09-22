@@ -164,10 +164,24 @@ def clarification_entity(payload):
             "home type": "home_type", "configuration": "home_type"}.get(match[1].lower(), match[1].lower())
 
 
+# "What about other projects?" (and similar) explicitly asks to leave the
+# project already in scope; matches the exclusionary wording the contextual
+# resolver recognizes for BHK follow-ups (graph/haystack_conversation_pipeline.py).
+_EXCLUDES_CURRENT_PROJECT_RE = re.compile(r"\b(?:other|another|across|any|which|all|different)\s+projects?\b", re.I)
+
+
 def _scope(projects, issue, history):
-    for text in [issue, *[m.get("text", "") for m in reversed(history or [])
-                           if m.get("sender") == "customer"]]:
-        candidates = resolve_project_candidates_from_text(projects, text)
+    candidates = resolve_project_candidates_from_text(projects, issue)
+    if candidates:
+        return candidates
+    if _EXCLUDES_CURRENT_PROJECT_RE.search(str(issue or "")):
+        # Do not let history hand back the very project the customer is
+        # trying to move away from; fall through to the full catalogue.
+        return []
+    for message in reversed(history or []):
+        if message.get("sender") != "customer":
+            continue
+        candidates = resolve_project_candidates_from_text(projects, message.get("text", ""))
         if candidates:
             return candidates
     return []
@@ -274,6 +288,53 @@ def _explore_project_payload(issue, names, answer):
                                        "purpose": "explore_project"},
             "matched_chunks": [{"record_kind": "company_api", "source_key": "live-selection-options",
                                 "body_text": "\n".join(names), "title": "Live project options"}]}
+
+
+def build_amenity_project_choices(issue, index, locality=""):
+    """Offer only projects with recorded amenities, preserving the lookup for selection."""
+    entries = [entry for entry in index.values() if entry["amenities"]]
+    names = _project_names([entry["project"] for entry in entries])
+    where = f" in {locality}" if locality else ""
+    opening = (
+        f"These projects{where} have listed amenities. Choose one to see its amenities, "
+        "or tell me a specific amenity to narrow the list:"
+        if names else
+        f"No projects{where} currently have amenity details listed in the available records. "
+        "This does not mean they have no amenities; the sales team can confirm the details."
+    )
+    payload = _explore_project_payload(issue, names, opening)
+    payload["pending_project_lookup"]["purpose"] = "amenities"
+    payload["matched_chunks"][0]["body_text"] = "\n".join(
+        f"{entry['project']['projectName']}: {', '.join(entry['amenities'])}" for entry in entries
+    )
+    return payload
+
+
+def project_detail_followup(state, issue):
+    """Change the requested details while retaining an offered project scope."""
+    if not isinstance(state, dict) or state.get("entity") != "project" or not state.get("options"):
+        return None
+    if not re.search(r"amenit|facilit|location|address|pricing|price|cost", issue, re.I):
+        return None
+    if re.search(r"\b(?:instead|other|all projects|another|cancel|forget|visit|book|call|contact|ticket)\b", issue, re.I):
+        return None
+    # Explicit project names start their own request; never trap them in the shortlist.
+    projects = customer_facing_projects(get_company_projects())
+    if resolve_project_candidates_from_text(projects, issue):
+        return None
+    state = {key: value for key, value in state.items() if key != "effective_issue"}
+    state.update(original_issue=issue, purpose="project_details", scope={})
+    return state
+
+
+def build_project_detail_choice(state):
+    projects = customer_facing_projects(get_company_projects())
+    live_names = set(_project_names(projects))
+    names = [name for name in state["options"] if name in live_names]
+    payload = _explore_project_payload(state["original_issue"], names,
+                                     "Which of these projects should I check for those details?")
+    payload["pending_project_lookup"] = {**state, "options": names}
+    return payload
 
 
 def build_project_browse_response(issue):
@@ -399,6 +460,21 @@ def resume_selection(state, reply):
         return state["original_issue"]
     scope = dict(state.get("scope") or {})
     scope[state["entity"]] = matches[0]
+    if state.get("purpose") == "amenity_search" and state["entity"] == "project":
+        effective = f"Show the full amenities for {matches[0]}"
+        state["effective_issue"] = effective
+        state["scope"] = scope
+        return effective
+    if state.get("purpose") == "home_type_search" and state["entity"] == "project":
+        # "s?" -- a plural mention ("3bhks") names the type as specifically as
+        # the singular form and must not be dropped here either.
+        requested = list(dict.fromkeys(re.findall(
+            r"\b([1-6])\s*b(?:h)?ks?\b", state.get("original_issue", ""), re.I,
+        )))
+        effective = f"Show {' and '.join(f'{number}BHK' for number in requested)} details in project {matches[0]}"
+        state["effective_issue"] = effective
+        state["scope"] = scope
+        return effective
     if state.get("purpose") == "explore_project" and state["entity"] == "project":
         effective = f"Tell me about project {matches[0]}"
         state["effective_issue"] = effective

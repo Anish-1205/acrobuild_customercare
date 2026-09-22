@@ -16,7 +16,9 @@ occur in a live amenity name*, so an alias can never invent an amenity.
 import re
 
 from services.acrobuild_company_service import (
+    build_project_record_index,
     customer_facing_projects,
+    filter_project_index,
     get_company_projects,
     get_project_amenities,
     resolve_project_candidates_from_text,
@@ -97,16 +99,27 @@ def _significant_tokens(normalized_name):
 
 def live_amenity_index():
     """{project_id: {"project": record, "amenities": [canonical names]}} built
-    from the live catalogue. Every name here came off the CS API."""
-    index = {}
-    for project in customer_facing_projects(get_company_projects()):
-        names = list(dict.fromkeys(
-            str(record.get("iconName", "")).strip()
-            for record in get_project_amenities(project["id"])
-            if isinstance(record, dict) and str(record.get("iconName", "")).strip()
-        ))
-        index[project["id"]] = {"project": project, "amenities": names}
-    return index
+    from the live catalogue. Every name here came off the CS API.
+
+    Uses the shared, per-project-resilient fetcher (services/acrobuild_company_service.py):
+    a project whose live amenities cannot be fetched right now (e.g. it was
+    added to the catalogue after the on-disk snapshot was last regenerated,
+    so there is no fallback for it yet) is left out of the index instead of
+    aborting the whole reverse-amenity search."""
+    raw_index, _failed = build_project_record_index(
+        get_project_amenities, projects=customer_facing_projects(get_company_projects()),
+    )
+    return {
+        project_id: {
+            "project": entry["project"],
+            "amenities": list(dict.fromkeys(
+                str(record.get("iconName", "")).strip()
+                for record in entry["records"]
+                if isinstance(record, dict) and str(record.get("iconName", "")).strip()
+            )),
+        }
+        for project_id, entry in raw_index.items()
+    }
 
 
 def live_amenity_names(index):
@@ -203,17 +216,10 @@ def scope_index_to_locality(index, text):
 
 def projects_with_amenities(index, terms):
     """Projects whose live amenity list contains every requested term, plus a
-    per-term breakdown used when nothing has all of them."""
-    all_of = []
-    per_term = {term: [] for term in terms}
-    for entry in index.values():
-        names = entry["amenities"]
-        present = [term for term in terms if term in names]
-        for term in present:
-            per_term[term].append(entry["project"])
-        if terms and len(present) == len(terms):
-            all_of.append(entry["project"])
-    return all_of, per_term
+    per-term breakdown used when nothing has all of them. A thin wrapper
+    around the shared filter_project_index() (services/acrobuild_company_service.py)
+    that every "which projects have X?" question now goes through."""
+    return filter_project_index(index, lambda entry: entry["amenities"], terms)
 
 
 def resolve_named_project(text):

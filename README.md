@@ -39,6 +39,7 @@ MODEL_NAME=your_deployed_model_id
 # For live property answers
 ACROBUILD_CS_API_BASE_URL=http://your-cs-api-host:port
 ACROBUILD_CS_API_KEY=your_cs_api_key
+ACROBUILD_CS_API_COMPANY_ID=your_company_id
 ```
 
 The `RUNPOD_*` names are retained for compatibility and can point to a direct

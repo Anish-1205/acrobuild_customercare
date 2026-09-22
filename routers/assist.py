@@ -8,9 +8,13 @@ from services.amenity_search_service import (
 from services.property_clarification_service import (
     apply_clarification_contract, resume_selection, continues_selection, build_inventory_selection_answer,
     narrow_project_choice_by_locality, build_project_browse_response, is_unmatched_selection_reply,
-    build_unmatched_selection_answer,
+    build_unmatched_selection_answer, project_detail_followup, build_project_detail_choice,
 )
 from graph.haystack_conversation_pipeline import is_small_talk_message
+from services.project_home_type_service import (
+    build_catalogue_home_type_answer, build_generic_home_type_answer,
+    build_project_home_type_answer, requested_home_types,
+)
 import re
 from time import monotonic
 from dataclasses import replace
@@ -21,6 +25,7 @@ from services.conversation_store_service import (
     PENDING_CALL_BOOKING_MARKER,
     PENDING_HUMAN_CONTACT_MARKER,
     ConversationSession,
+    build_current_project_marker,
     build_pending_project_lookup_marker,
     get_pending_project_lookup,
 )
@@ -137,15 +142,28 @@ def _grounded_property_shortcut(request, turn, failure_state=None, pending=None)
     try:
         payload = (
             build_grounded_site_visit_document_assist(shortcut_request)
+            # A catalogue home-type filter is also shaped like a reverse
+            # amenity query ("what properties have ..."). Handle the explicit
+            # BHK signal first so an amenity lookup cannot intercept it or,
+            # on failure, prevent the home-type search from running.
+            or build_catalogue_home_type_answer(shortcut_request.issue)
+            or build_project_home_type_answer(shortcut_request.issue, turn.conversation_messages)
+            # A numberless BHK question ("what bhks are available") names no
+            # specific type, so neither builder above matches it; without this,
+            # it fell through to the general pipeline, which could re-ask for
+            # the project even when one was already unambiguous from context.
+            or build_generic_home_type_answer(shortcut_request.issue, turn.conversation_messages)
             # Reverse amenity search runs first: "which projects have a gym"
             # names no project, so the forward amenities builder below would
             # otherwise answer it as a "which project did you mean?" prompt.
-            or build_grounded_amenity_search_assist(shortcut_request, narrowing_pending)
+            or (build_grounded_amenity_search_assist(shortcut_request, narrowing_pending)
+                if not requested_home_types(shortcut_request.issue) else None)
             or narrow_project_choice_by_locality(narrowing_pending, shortcut_request.issue)
+            or (build_project_detail_choice(narrowing_pending)
+                if narrowing_pending and narrowing_pending.get("purpose") == "project_details" else None)
             or (build_unmatched_selection_answer(narrowing_pending)
                 if _unmatched_selection_reply(narrowing_pending, request.issue, turn) else None)
             or build_inventory_selection_answer(request.issue, pending)
-            or build_grounded_project_amenities_assist(request)
             or build_grounded_project_amenities_assist(shortcut_request)
             or build_grounded_project_cost_clarification_assist(shortcut_request)
             or build_grounded_project_location_assist(shortcut_request)
@@ -176,8 +194,8 @@ def _is_broad_project_request(*issues):
     """Only unscoped catalogue requests; named and location questions use normal routing."""
     allowed = {"what", "which", "show", "list", "browse", "tell", "me", "us", "all",
                "the", "your", "you", "do", "does", "have", "has", "are", "is", "any",
-               "available", "projects", "project", "there", "at", "acrobuild", "our",
-               "hi", "hello", "mee", "kada", "em", "emi", "vunnai", "unnai", "unnayi",
+               "available", "projects", "project", "there", "at", "with", "acrobuild", "our",
+               "hi", "hello", "mee", "kada", "em", "emi", "vunnai", "vunnayi", "unnai", "unnayi",
                "ikkada", "enni", "konni", "lo", "e", "unnaya"}
     for issue in issues:
         words = re.findall(r"[a-z]+", str(issue or "").lower())
@@ -192,6 +210,11 @@ def _resume_project_lookup_request(request, pending, customer_issue):
     if not pending:
         return request, customer_issue
     if pending.get("kind") == "selection":
+        # Older/fallback discovery replies stored a generic selection instead
+        # of explore_project. A click must become an overview request, not the
+        # original catalogue question with a selected name appended to it.
+        if pending.get("entity") == "project" and _is_broad_project_request(pending.get("original_issue")):
+            pending["purpose"] = "explore_project"
         effective_issue = resume_selection(pending, customer_issue)
         return SupportAssistRequest.model_validate({**request.model_dump(), "issue": effective_issue}), effective_issue
     selector = str(pending.get("selector") or customer_issue).strip()
@@ -244,21 +267,39 @@ def _prepare_lookup_turn(request, cleaned_issue):
     narrows_by_locality = bool(can_narrow and _narrows_selection_by_locality(pending, turn.property_issue))
     unmatched_reply = bool(can_narrow and not (narrows_by_amenity or narrows_by_locality)
                            and _unmatched_selection_reply(pending, cleaned_issue, turn))
+    detail_followup = None
+    if can_narrow and not (narrows_by_amenity or narrows_by_locality or unmatched_reply):
+        try:
+            detail_followup = project_detail_followup(pending, turn.analysis.english or turn.property_issue)
+        except (RuntimeError, TimeoutError):
+            # Keep the offered scope and complete new request available for retry.
+            if re.search(r"amenit|facilit|location|address|pricing|price|cost", cleaned_issue, re.I):
+                detail_followup = {**pending, "original_issue": cleaned_issue, "purpose": "project_details"}
+    if detail_followup:
+        pending = detail_followup
     if pending and (turn.analysis.intent in {"call_booking", "human_contact"}
-                    or not (selection_reply or narrows_by_amenity or narrows_by_locality or unmatched_reply)):
+                    or not (selection_reply or narrows_by_amenity or narrows_by_locality or unmatched_reply or detail_followup)):
         pending = None
     # An amenity reply to "which project did you mean?" is a narrowing answer,
     # not a project selection: the disambiguation message explicitly invites it
     # ("tell me an amenity that matters to you"). Resuming the selection here
     # would find no matching option and just re-ask the same question, so leave
     # the issue untouched and let the amenity shortcut handle it.
-    if pending and (narrows_by_amenity or narrows_by_locality or unmatched_reply):
+    if pending and (narrows_by_amenity or narrows_by_locality or unmatched_reply or detail_followup):
         processing_request, processing_issue = request, cleaned_issue
     else:
         processing_request, processing_issue = _resume_project_lookup_request(request, pending, cleaned_issue)
     if turn.analysis.intent not in {"call_booking", "human_contact"}:
-        if pending or any(term in cleaned_issue.lower() for term in ("amenit", "facilit")):
-            turn = replace(turn, resolved_issue=processing_issue, property_issue=processing_issue,
+        if pending:
+            turn = replace(turn, resolved_issue=processing_issue, property_issue=(turn.analysis.english or processing_issue) if detail_followup else processing_issue,
+                           analysis=replace(turn.analysis, intent="property", unsure=False))
+        elif any(term in cleaned_issue.lower() for term in ("amenit", "facilit")):
+            # Preserve the English rendering and resolved project context. Only
+            # use the customer's text if analysis dropped the explicit topic.
+            property_issue = turn.property_issue if any(
+                term in turn.property_issue.lower() for term in ("amenit", "facilit")
+            ) else cleaned_issue
+            turn = replace(turn, property_issue=property_issue,
                            analysis=replace(turn.analysis, intent="property", unsure=False))
         # An amenity search ("which projects have a gym") is a property turn
         # even though it names no project and need not contain the word
@@ -290,6 +331,41 @@ def _project_lookup_marker(response_payload, pending=None, customer_issue="", sh
     return ""
 
 
+def _current_project_marker(response_payload, pending=None):
+    """Store resolved project scope even after clarification state is gone."""
+    if response_payload.get("route") != "property":
+        return ""
+    response_pending = response_payload.get("pending_project_lookup")
+    if response_payload.get("catalogue_home_type_search") or (
+        isinstance(response_pending, dict)
+        and response_pending.get("entity") == "project"
+        and not (response_pending.get("scope") or {}).get("project")
+    ):
+        return build_current_project_marker("")
+
+    names = []
+    for state in (response_pending, pending):
+        if isinstance(state, dict):
+            name = str((state.get("scope") or {}).get("project") or "").strip()
+            if name:
+                names.append(name)
+    for chunk in response_payload.get("matched_chunks") or []:
+        project = chunk.get("project")
+        name = str(project.get("projectName") or "").strip() if isinstance(project, dict) else ""
+        name = name or str(chunk.get("project_name") or "").strip()
+        if name:
+            names.append(name)
+    names = list(dict.fromkeys(names))
+    return build_current_project_marker(names[0]) if len(names) == 1 else ""
+
+
+def _conversation_state_marker(response_payload, pending=None, customer_issue="", shortcut_failed=False):
+    return (
+        _project_lookup_marker(response_payload, pending, customer_issue, shortcut_failed)
+        + _current_project_marker(response_payload, pending)
+    )
+
+
 def _complete_payload(response_payload, cleaned_issue, turn):
     """Shared post-processing: live-data enforcement, then localization last so any
     replacement text (e.g. the live-data fallback) is in the customer's language.
@@ -303,6 +379,32 @@ def _complete_payload(response_payload, cleaned_issue, turn):
         response_payload = {**response_payload, "source_status": "failed"}
     data_api_calls = get_current_data_api_logs()
     response_payload = _enforce_live_property_data(response_payload, cleaned_issue, data_api_calls)
+    if (turn.analysis.is_property and response_payload.get("source_status") in {"live_api", "snapshot"}
+            and not response_payload.get("pending_project_lookup")
+            and not response_payload.get("clarification_entity")
+            and not response_payload.get("quick_replies")):
+        project_names = set()
+        for chunk in response_payload.get("matched_chunks", []):
+            if isinstance(chunk.get("project"), dict):
+                project_names.add(str(chunk["project"].get("projectName") or "").strip())
+            # The main orchestration pipeline's chunks (pricing, location,
+            # overview, availability, wing/floor/flat inventory) name the
+            # project with a plain "project_name" string instead of the
+            # amenities builder's nested "project" dict.
+            project_names.add(str(chunk.get("project_name") or "").strip())
+            # The cost/location grounded shortcuts evidence a resolved single
+            # project as a one-entry "projects" list rather than either shape
+            # above.
+            chunk_projects = chunk.get("projects")
+            if isinstance(chunk_projects, list) and len(chunk_projects) == 1 and isinstance(chunk_projects[0], dict):
+                project_names.add(str(chunk_projects[0].get("projectName") or "").strip())
+        project_names.discard("")
+        project_name = next(iter(project_names)) if len(project_names) == 1 else ""
+        response_payload["quick_replies"] = [
+            {"label": "Browse all projects", "value": "Show me all projects", "action": "browse_projects"},
+            {"label": "Book a site visit", "value": "Book a site visit", "action": "site_visit", "project_name": project_name},
+            {"label": "Raise a support ticket", "value": "Raise a support ticket", "action": "ticket"},
+        ]
     response_payload = localize_response(response_payload, turn.analysis)
     response_payload["data_api_calls"] = data_api_calls
     response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
@@ -364,7 +466,7 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
         pending_marker = (
             PENDING_CALL_BOOKING_MARKER if response_payload.get("pending_call_booking")
             else PENDING_HUMAN_CONTACT_MARKER if response_payload.get("pending_human_contact")
-            else _project_lookup_marker(response_payload, pending_lookup, cleaned_issue, shortcut_failure.get("failed", False))
+            else _conversation_state_marker(response_payload, pending_lookup, cleaned_issue, shortcut_failure.get("failed", False))
         )
         session.append(cleaned_issue, response_payload.get("answer"), marker=pending_marker)
         return response_payload
@@ -427,7 +529,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
             if _is_broad_project_request(processing_issue, turn.property_issue):
                 turn_logger.info("turn branch %s", kv(branch="project_browse"))
                 response_payload = _complete_payload(build_project_browse_response(processing_issue), cleaned_issue, turn)
-                marker = _project_lookup_marker(response_payload, None, cleaned_issue)
+                marker = _conversation_state_marker(response_payload, None, cleaned_issue)
                 session.append(cleaned_issue, response_payload.get("answer"), marker=marker)
                 yield json.dumps({"text": response_payload["answer"], "type": "delta"}, ensure_ascii=True) + "\n"
                 yield json.dumps({"response": response_payload, "type": "done"}, ensure_ascii=True) + "\n"
@@ -449,7 +551,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
             if shortcut_payload is not None:
                 turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
                 response_payload = _complete_payload(shortcut_payload, cleaned_issue, turn)
-                session.append(cleaned_issue, response_payload.get("answer"), marker=_project_lookup_marker(response_payload, pending_lookup, cleaned_issue, shortcut_failure.get("failed", False)))
+                session.append(cleaned_issue, response_payload.get("answer"), marker=_conversation_state_marker(response_payload, pending_lookup, cleaned_issue, shortcut_failure.get("failed", False)))
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
                 }, ensure_ascii=True) + "\n"
@@ -496,7 +598,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                     pending_marker = (
                         PENDING_CALL_BOOKING_MARKER if response_payload.get("pending_call_booking")
                         else PENDING_HUMAN_CONTACT_MARKER if response_payload.get("pending_human_contact")
-                        else _project_lookup_marker(response_payload, pending_lookup, cleaned_issue, shortcut_failure.get("failed", False))
+                        else _conversation_state_marker(response_payload, pending_lookup, cleaned_issue, shortcut_failure.get("failed", False))
                     )
                     session.append(cleaned_issue, response_payload.get("answer"), marker=pending_marker)
                 if property_request:

@@ -38,7 +38,8 @@ flowchart LR
    by that endpoint. The `RUNPOD_*` names are historical; the URL may be a
    direct Sarvam endpoint or a
    RunPod-hosted OpenAI-compatible endpoint. Live property answers require
-   `ACROBUILD_CS_API_BASE_URL` and `ACROBUILD_CS_API_KEY`, plus network access
+   `ACROBUILD_CS_API_BASE_URL`, `ACROBUILD_CS_API_KEY`, and
+   `ACROBUILD_CS_API_COMPANY_ID`, plus network access
    to that API. The two external services can fail independently.
 
 ## File map for another AI

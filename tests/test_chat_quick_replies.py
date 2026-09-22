@@ -21,6 +21,7 @@ PROJECTS = [
 @pytest.mark.parametrize("issue", [
     "What projects do you have?", "What projects are available?",
     "hi mee kada em projects vunnai ?", "Browse all projects",
+    "mee kada em projects vunnayi?", "What projects do you have with you?",
 ])
 def test_broad_project_requests_are_neutral(issue, monkeypatch):
     monkeypatch.setattr(clarification, "get_company_projects", lambda: PROJECTS)
@@ -129,6 +130,33 @@ def test_selection_marker_survives_and_new_question_replaces_it(monkeypatch):
     changed = SupportAssistRequest(issue="What is the weather today?", conversation_messages=history)
     pending, _, issue, _ = assist._prepare_lookup_turn(changed, changed.issue)
     assert pending is None and issue == changed.issue
+
+
+@pytest.mark.parametrize("original", ["mee kada em projects vunnayi ?", "What projects do you have with you?"])
+def test_generic_discovery_marker_resumes_as_overview(original, monkeypatch):
+    from api_context import SupportAssistRequest
+    name = "Vishwajeet Precious Phase-V"
+    state = {"kind": "selection", "entity": "project", "options": ["Vishwajeet Precious", name],
+             "scope": {}, "original_issue": original}
+    monkeypatch.setattr(assist, "prepare_turn", lambda issue, *_args: TurnContext(
+        [], issue, TurnAnalysis("property", "Telugu", "latin", "test"), issue))
+    request = SupportAssistRequest(issue=name, conversation_messages=[
+        {"sender": "bot", "text": "Nenu ae project check cheyali?" + build_pending_project_lookup_marker(state)}])
+    pending, _, issue, turn = assist._prepare_lookup_turn(request, name)
+    assert issue == f"Tell me about project {name}"
+    assert turn.property_issue == issue
+    assert pending["scope"]["project"] == name
+    assert pending["original_issue"] == original
+
+
+def test_discovery_translation_cannot_drop_catalogue_framing(monkeypatch):
+    from graph import main_orchestrator
+    monkeypatch.setattr(clarification, "get_company_projects", lambda: PROJECTS)
+    payload = clarification.build_project_browse_response("mee kada em projects vunnayi?")
+    monkeypatch.setattr(main_orchestrator, "generate_qwen_chat_response", lambda **kwargs:
+                        "Nenu ae project check cheyali?\n" + "\n".join(f"- {p['projectName']}" for p in PROJECTS))
+    result = localize_response(payload, TurnAnalysis("property", "Telugu", "latin", "test"))
+    assert result["answer"] == payload["answer"]
 
 
 @pytest.mark.parametrize("entity,options,reply,expected", [

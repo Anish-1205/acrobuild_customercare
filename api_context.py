@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,7 @@ from services.acrobuild_company_service import (
     resolve_project_candidates_from_text,
     resolve_project_from_text,
     get_cs_api_status,
+    get_company_data_snapshot_path,
 )
 from services.internal_api_log_service import (
     begin_data_api_trace,
@@ -128,7 +130,7 @@ from graph.main_orchestrator import (
     stream_support_orchestration_events,
 )
 from graph.haystack_conversation_pipeline import is_property_support_message
-from services.property_clarification_service import build_area_no_match_response, build_project_choice_answer
+from services.property_clarification_service import build_area_no_match_response, build_project_choice_answer, build_amenity_project_choices
 from services.amenity_search_service import (
     is_amenity_lookup_query,
     is_reverse_amenity_query,
@@ -197,9 +199,30 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
     # "ticket" or "agent".
     if route in {"general", "call_booking", "human_contact"} or (route != "property" and not is_property_support_message(issue)):
         return response_payload
+    # A resource can be requested more than once within a single turn (e.g.
+    # get_company_projects() is called from several independent steps); an
+    # earlier timeout that a later call to the SAME resource resolved live
+    # must not still make the final answer look like it used stale data.
+    # data_api_calls is chronological, so keeping only the last entry per
+    # (endpoint, params) keeps each resource's most recent, authoritative
+    # outcome -- the one that actually fed the answer below.
+    latest_calls = {}
+    for call in data_api_calls:
+        key = (call.get("endpoint"), tuple(sorted((call.get("params") or {}).items())))
+        latest_calls[key] = call
+    data_api_calls = list(latest_calls.values())
     failed_live_calls = [
         call for call in data_api_calls
         if call.get("provider") == "Acrobuild CS API" and call.get("status") == "failed"
+    ]
+    snapshot_calls = [
+        call for call in data_api_calls
+        if "snapshot" in str(call.get("provider", "")).lower()
+        and call.get("status") in {"cached", "completed"}
+    ]
+    snapshot_endpoints = {call.get("endpoint") for call in snapshot_calls}
+    uncovered_failures = [
+        call for call in failed_live_calls if call.get("endpoint") not in snapshot_endpoints
     ]
     non_live_calls = [
         call for call in data_api_calls
@@ -210,6 +233,10 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
         call for call in data_api_calls
         if call.get("provider") == "Acrobuild CS API" and call.get("status") == "completed"
         and (not call.get("cache_hit") or str((call.get("response_summary") or {}).get("kind")) == "turn_cache")
+    ]
+    cached_live_calls = [
+        call for call in data_api_calls
+        if call.get("provider") == "Acrobuild CS API" and call.get("status") == "cached"
     ]
 
     company_api_chunks = [
@@ -224,12 +251,28 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
         not company_api_chunks or bool(_HEDGE_RE.search(answer_text))
     )
 
-    if completed_live_calls and not failed_live_calls and not non_live_calls and not ungrounded_answer:
+    if (completed_live_calls or cached_live_calls) and not failed_live_calls and not snapshot_calls and not ungrounded_answer:
         response_payload["articles"] = []
         response_payload["knowledge_documents"] = []
         response_payload["matched_chunks"] = company_api_chunks
         response_payload["source_label"] = "Live Acrobuild CS API"
         response_payload["source_status"] = "live_api"
+        response_payload["agent_mode"] = normalize_agent_mode(response_payload.get("agent_mode"))
+        return response_payload
+
+    if snapshot_calls and not uncovered_failures and not ungrounded_answer:
+        snapshot_path = Path(get_company_data_snapshot_path()).with_suffix(".json")
+        saved_at = datetime.fromtimestamp(snapshot_path.stat().st_mtime)
+        saved_date = f"{saved_at.day} {saved_at:%B %Y}"
+        answer = answer_text.replace("Availability is live and may change.", "Availability may have changed.")
+        answer = re.sub(r"\blive (?:Acrobuild CS API|project data|property data|data|inventory|API)\b",
+                        "saved property data", answer, flags=re.IGNORECASE)
+        response_payload["answer"] = (
+            f"Live property data is unavailable. This answer uses saved data from {saved_date}; "
+            "prices and availability may have changed.\n\n" + answer
+        )
+        response_payload["source_label"] = f"Acrobuild property snapshot ({saved_date})"
+        response_payload["source_status"] = "snapshot"
         response_payload["agent_mode"] = normalize_agent_mode(response_payload.get("agent_mode"))
         return response_payload
 
@@ -991,8 +1034,11 @@ def build_grounded_project_amenities_assist(request):
 
     projects = _customer_facing_projects(get_company_projects())
     customer_history = [str(message.text or "").strip() for message in request.conversation_messages if str(message.sender or "").lower() == "customer" and str(message.text or "").strip()]
+    catalogue_request = is_reverse_amenity_query(issue) and not re.search(
+        r"\b(?:this|that|it|its|these|those|selected)\b", issue, re.I,
+    )
     selected_project, ambiguous_candidates = _resolve_project_selection(
-        projects, [issue, *reversed(customer_history)],
+        projects, [issue, *([] if catalogue_request else reversed(customer_history))],
     )
     if ambiguous_candidates:
         return _build_ambiguous_project_response(
@@ -1000,7 +1046,8 @@ def build_grounded_project_amenities_assist(request):
         )
     if selected_project is None:
         if projects:
-            return _build_ambiguous_project_response(projects, "amenities")
+            index, locality = scope_index_to_locality(live_amenity_index(), issue)
+            return build_amenity_project_choices(issue, index, locality)
         answer = (
             "The live catalogue currently lists no projects to select. Please try again later."
         )
@@ -1041,7 +1088,7 @@ def build_grounded_project_amenities_assist(request):
         }
 
     project_name = str(selected_project.get("projectName", "Project")).strip()
-    # GET /api/cs/projects/{id}/amenities is the real, curated amenity list for
+    # GET /api/cs/{companyId}/projects/{id}/amenities is the curated amenity list for
     # the project ({iconName, type, url}, type is "Amenities" or "Facilities").
     # typology.get("unitAmenities") (the old source) is empty on every
     # typology of every project in the catalogue and can never return data.
@@ -1067,6 +1114,11 @@ def build_grounded_project_amenities_assist(request):
             f"The available project data does not currently list amenities for {project_name}. "
             "Please contact the sales team for the latest confirmed amenity details."
         )
+
+    if re.search(r"\b(location|address|located|where)\b", issue, re.I):
+        location = str(selected_project.get("location") or selected_project.get("address") or selected_project.get("city") or "").strip()
+        answer += f"\n\nLocation: {location or 'Not listed in the live project record.'}"
+    answer += "\n\nWould you like to raise a support ticket, book a site visit, or request a call?"
 
     evidence = {
         "body_text": answer,
@@ -1156,7 +1208,7 @@ def build_grounded_amenity_search_assist(request, pending=None):
 
     Every project name and amenity name in the answer comes from the live CS
     API (services/amenity_search_service.py builds the index off
-    /api/cs/projects and /api/cs/projects/{id}/amenities). If the customer's
+    /api/cs/{companyId}/projects and /api/cs/{companyId}/projects/{id}/amenities). If the customer's
     words do not resolve to an amenity that actually exists in that live data,
     this returns None and the turn continues down the normal path -- it never
     guesses a match.
@@ -1283,6 +1335,17 @@ def build_grounded_amenity_search_assist(request, pending=None):
             **pending,
             "options": names or narrowing_options,
         }
+    elif names:
+        payload["pending_project_lookup"] = {
+            "kind": "selection", "entity": "project", "options": names,
+            "scope": {}, "original_issue": issue, "purpose": "amenity_search",
+        }
+    if payload.get("pending_project_lookup"):
+        payload["clarification_entity"] = "project"
+        payload["quick_replies"] = [
+            {"label": name, "value": name}
+            for name in payload["pending_project_lookup"]["options"]
+        ]
     return payload
 
 
