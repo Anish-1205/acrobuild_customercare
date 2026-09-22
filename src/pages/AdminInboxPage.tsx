@@ -14,9 +14,12 @@ import { useRole } from "../contexts/RoleContext";
 import { useSearch } from "../contexts/SearchContext";
 import type { TicketSearchSuggestion } from "../contexts/SearchContext";
 import { AdminAnalyticsPage } from "./AdminAnalyticsPage";
+import { ApiActivityPage } from "./ApiActivityPage";
 import { AIAgentPage } from "./AIAgentPage";
 import { ArticlesPage } from "./ArticlesPage";
 import { BusinessHoursPage } from "./BusinessHoursPage";
+import { CSApiSettingsPage } from "./CSApiSettingsPage";
+import { DataApiLogsPage } from "./DataApiLogsPage";
 import { ChatWidgetPage } from "./ChatWidgetPage";
 import { MacrosPage } from "./MacrosPage";
 import { ManageTagsPage } from "./ManageTagsPage";
@@ -44,6 +47,7 @@ import {
 } from "../lib/ticketPresentation";
 import {
   getRoleHomePath,
+  canRoleAccessPanel,
   getRolePanelPath,
   type WorkspacePanelId
 } from "../lib/roleNavigation";
@@ -180,6 +184,21 @@ const workspacePanelItems: WorkspacePanelItem[] = [
     id: "users",
     label: "Users",
     copy: "Owner, admin, and agent access with role management."
+  },
+  {
+    id: "api-activity",
+    label: "API activity",
+    copy: "Review chatbot requests and answers."
+  },
+  {
+    id: "data-api-logs",
+    label: "Data APIs",
+    copy: "Review property data used by the chatbot."
+  },
+  {
+    id: "cs-api-settings",
+    label: "CS API settings",
+    copy: "Configure the property data connection."
   }
 ];
 
@@ -696,7 +715,8 @@ function SharedManagerInboxPage() {
   const deferredTicketSearch = useDeferredValue(ticketSearchQuery);
   const deferredCustomerEmail = useDeferredValue(customerEmailQuery);
   const defaultWorkspacePanel = getDefaultWorkspacePanel(role, location.pathname);
-  const activePanel = getWorkspacePanelId(searchParams.get("panel"), defaultWorkspacePanel);
+  const requestedPanel = getWorkspacePanelId(searchParams.get("panel"), defaultWorkspacePanel);
+  const activePanel = canRoleAccessPanel(role, requestedPanel) ? requestedPanel : defaultWorkspacePanel;
   const isTeachAiActive = teachAiPanelIds.has(activePanel);
   const workspaceSurfacePanel = simplifiedTeachAiPanelIds.has(activePanel) ? "ai-agent" : activePanel;
   const isInboxPanel = activePanel === "inbox";
@@ -705,7 +725,8 @@ function SharedManagerInboxPage() {
     workspacePanelItems.find((item) => item.id === workspaceSurfacePanel) ??
     workspacePanelItems[0];
   const visibleWorkspacePanelItems = workspacePanelItems.filter(
-    (item) => !hiddenWorkspaceSidebarPanels.has(item.id)
+    (item) => !hiddenWorkspaceSidebarPanels.has(item.id) &&
+      (role === "admin" || !["api-activity", "data-api-logs", "cs-api-settings"].includes(item.id))
   );
   const viewerAssignmentLabel = getViewerAssignmentLabel(role);
 
@@ -1484,6 +1505,18 @@ function SharedManagerInboxPage() {
   }
 
   function renderWorkspaceSurface() {
+    if (activePanel === "api-activity" && role === "admin") {
+      return <ApiActivityPage basePath="/admin" />;
+    }
+
+    if (activePanel === "data-api-logs" && role === "admin") {
+      return <DataApiLogsPage basePath="/admin" />;
+    }
+
+    if (activePanel === "cs-api-settings" && role === "admin") {
+      return <CSApiSettingsPage embedded />;
+    }
+
     if (simplifiedTeachAiPanelIds.has(activePanel)) {
       return <AIAgentPage embedded />;
     }

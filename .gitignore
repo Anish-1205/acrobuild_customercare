@@ -45,6 +45,7 @@ logs/
 /uvicorn
 *-preview.png
 *.xlsx
+!resources/evaluation/customer_support_chatbot_200_prompt_evaluation.xlsx
 scripts/_*.json
 
 # Local model weights (keep model configuration files tracked)

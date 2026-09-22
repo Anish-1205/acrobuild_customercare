@@ -1,0 +1,3995 @@
+{
+  "checked_at": "2026-09-22T08:36:22.381151+00:00",
+  "project": {
+    "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+    "city": "Pune",
+    "contact": 7774065000,
+    "countryCode": 91,
+    "estimatedEndDate": 1903285800000,
+    "estimatedStartDate": 1787682600000,
+    "id": 89,
+    "isPublished": false,
+    "latitude": "73°10'55.4\"",
+    "locality": null,
+    "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+    "longitude": "19°14'56.5\"",
+    "projectCode": null,
+    "projectImageUrl": null,
+    "projectName": "Vishwajeet Precious Phase-V",
+    "projectType": "26",
+    "propertyDetails": null,
+    "reraNo": "P52100053370",
+    "website": null,
+    "zipcode": "421103"
+  },
+  "amenities_endpoint": "/api/cs/16/projects/89/amenities",
+  "raw_amenities_response": [],
+  "turns": [
+    {
+      "endpoint": "/api/support/assist",
+      "question": "mee kada em projects vunnayi?",
+      "response": {
+        "answer": "Maaku 9 projects unnaayi. Meeru deni gurinchi telusukovaalanukuntunnaaru?\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise",
+        "route": "property",
+        "source_status": "live_api",
+        "used_llm": false,
+        "agent_mode": "retrieval",
+        "retrieval_mode": "live_project_records",
+        "confidence_label": "high",
+        "clarification_entity": "project",
+        "quick_replies": [
+          {
+            "label": "Vishwajeet Heights",
+            "value": "Vishwajeet Heights"
+          },
+          {
+            "label": "Vishwajeet Empire NX",
+            "value": "Vishwajeet Empire NX"
+          },
+          {
+            "label": "Vishwajeet Prime",
+            "value": "Vishwajeet Prime"
+          },
+          {
+            "label": "Vishwajeet Myspace",
+            "value": "Vishwajeet Myspace"
+          },
+          {
+            "label": "Vishwajeet Precious",
+            "value": "Vishwajeet Precious"
+          },
+          {
+            "label": "Vishwajeet Town",
+            "value": "Vishwajeet Town"
+          },
+          {
+            "label": "Vishwajeet Empire",
+            "value": "Vishwajeet Empire"
+          },
+          {
+            "label": "Vishwajeet Precious Phase-V",
+            "value": "Vishwajeet Precious Phase-V"
+          },
+          {
+            "label": "Vishwajeet Paradise",
+            "value": "Vishwajeet Paradise"
+          }
+        ],
+        "pending_project_lookup": {
+          "kind": "selection",
+          "original_issue": "mee kada em projects vunnayi?",
+          "entity": "project",
+          "options": [
+            "Vishwajeet Heights",
+            "Vishwajeet Empire NX",
+            "Vishwajeet Prime",
+            "Vishwajeet Myspace",
+            "Vishwajeet Precious",
+            "Vishwajeet Town",
+            "Vishwajeet Empire",
+            "Vishwajeet Precious Phase-V",
+            "Vishwajeet Paradise"
+          ],
+          "scope": {},
+          "purpose": "explore_project"
+        },
+        "matched_chunks": [
+          {
+            "record_kind": "company_api",
+            "source_key": "live-selection-options",
+            "body_text": "Vishwajeet Heights\nVishwajeet Empire NX\nVishwajeet Prime\nVishwajeet Myspace\nVishwajeet Precious\nVishwajeet Town\nVishwajeet Empire\nVishwajeet Precious Phase-V\nVishwajeet Paradise",
+            "title": "Live project options"
+          }
+        ],
+        "articles": [],
+        "knowledge_documents": [],
+        "source_label": "Live Acrobuild CS API",
+        "reply_language": "Telugu",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "7ce66ae1538241f9ad4de9bcda8bda0f",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 94,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:23.270001+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "live-selection-options",
+            "title": "Live project options",
+            "retrieved_at": "2026-09-22T08:36:23.604488+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:23.270001+00:00",
+            "freshness": "live"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 0,
+            "data_api_call_count": 1,
+            "successful_data_api_call_count": 1
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 0.0,
+              "percent": 0.0,
+              "status": "poor",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.1085,
+              "percent": 10.8,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.5882,
+              "percent": 58.8,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.4118,
+              "percent": 41.2,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.4242,
+              "percent": 42.4,
+              "status": "poor",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/api/support/assist",
+      "question": "Vishwajeet Precious Phase-V",
+      "response": {
+        "agent_mode": "remote_llm",
+        "answer": "Sure - here is a verified overview of Vishwajeet Precious Phase-V.\n\nLocation: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra, Pune.\n\nRERA number: P52100053370.\n\nWings: 1.\n- Vishwajeet Precious Emerald: 11 floors, Under-Construction\n\nHome types: 2BHK, 3BHK.\n\nWhat would you like next: availability by home type, pricing, wing details, or a site visit?\n\nAvailability is live and may change.",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": "2026-09-22T08:36:23.930892+00:00",
+        "matched_chunks": [
+          {
+            "title": "Company projects",
+            "record_kind": "company_api",
+            "category": "AcroBuild property data",
+            "source_name": "AcroBuild CS API",
+            "source_key": "acrobuild-cs-projects",
+            "url": "",
+            "excerpt": "Project: name: Vishwajeet Heights; address: SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane; locality: Ambernath; city: Thane; RERA: P51700054685; type: 27;26; published: False\nProject: name: Vishwajeet Empire NX; address: Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.; city: Thane; RERA: P51700027704; type: 27;26; published: False\nProject: name: Vishwajeet Prime; address: Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E); city: Thane; RERA: P51700051593; type: 26; published: False\nProject: name: Vishwajeet Myspace; address: Pale Ambernath East; city: Thane; RERA: P51700079338; type: 26;27; published: False\nProject: name: Vishwajeet Precious; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; locality: Varap; city: Thane; RERA: P51700032998; type: 26;27; published: False\nProject: name: Vishwajeet Town; address: MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.; city: Thane; RERA: P51700079450; type: 26; published: False\nProject: name: Vishwajeet Empire; address: S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East; locality: Ambernath; city: Thane; RERA: P51700034509; type: 27;26; published: False\nProject: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nProject: name: Vishwajeet Paradise; address: Chikhloli, Ambernath West; locality: Chikhloli; city: Thane; RERA: P51700032998; type: 26; published: False",
+            "body_text": "Project: name: Vishwajeet Heights; address: SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane; locality: Ambernath; city: Thane; RERA: P51700054685; type: 27;26; published: False\nProject: name: Vishwajeet Empire NX; address: Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.; city: Thane; RERA: P51700027704; type: 27;26; published: False\nProject: name: Vishwajeet Prime; address: Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E); city: Thane; RERA: P51700051593; type: 26; published: False\nProject: name: Vishwajeet Myspace; address: Pale Ambernath East; city: Thane; RERA: P51700079338; type: 26;27; published: False\nProject: name: Vishwajeet Precious; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; locality: Varap; city: Thane; RERA: P51700032998; type: 26;27; published: False\nProject: name: Vishwajeet Town; address: MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.; city: Thane; RERA: P51700079450; type: 26; published: False\nProject: name: Vishwajeet Empire; address: S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East; locality: Ambernath; city: Thane; RERA: P51700034509; type: 27;26; published: False\nProject: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nProject: name: Vishwajeet Paradise; address: Chikhloli, Ambernath West; locality: Chikhloli; city: Thane; RERA: P51700032998; type: 26; published: False",
+            "score": 100.0,
+            "overlap_terms": [],
+            "strong_overlap_terms": [],
+            "record_count": 9,
+            "projects": [
+              {
+                "address": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane",
+                "city": "Thane",
+                "contact": 8055046000,
+                "countryCode": 91,
+                "estimatedEndDate": 1851013800000,
+                "estimatedStartDate": 1707157800000,
+                "id": 53,
+                "isPublished": false,
+                "latitude": "189.18835186222",
+                "locality": "Ambernath",
+                "location": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane, Ambernath, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/53/Vishwajeet%20Heights%20logo%2011-06-2025.png",
+                "projectName": "Vishwajeet Heights",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700054685",
+                "website": "https://gbkgroup.in/vishwajeet-heights/",
+                "zipcode": "421004"
+              },
+              {
+                "address": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1620153000000,
+                "id": 56,
+                "isPublished": false,
+                "latitude": "19.1875",
+                "locality": null,
+                "location": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501., Thane",
+                "longitude": "73.2310",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Empire NX",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700027704",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E)",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1845916200000,
+                "estimatedStartDate": 1687804200000,
+                "id": 57,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": "",
+                "location": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E), Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Prime",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700051593",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Pale Ambernath East",
+                "city": "Thane",
+                "contact": 8888724999,
+                "countryCode": 91,
+                "estimatedEndDate": 1901125800000,
+                "estimatedStartDate": 1740681000000,
+                "id": 54,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": null,
+                "location": "Pale Ambernath East, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Myspace",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700079338",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Thane",
+                "contact": 7718803334,
+                "countryCode": 91,
+                "estimatedEndDate": 1837967400000,
+                "estimatedStartDate": 1686681000000,
+                "id": 52,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": "Varap",
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Varap, Thane",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/52/WhatsApp%20Image%202025-12-31%20at%2016.14.28.jpeg",
+                "projectName": "Vishwajeet Precious",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-precious/",
+                "zipcode": "421103"
+              },
+              {
+                "address": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1864492200000,
+                "estimatedStartDate": 1748889000000,
+                "id": 58,
+                "isPublished": false,
+                "latitude": "19.18835185222",
+                "locality": null,
+                "location": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301., Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/58/Vishwajeet%20Town%20Logo%20%282%29.png",
+                "projectName": "Vishwajeet Town",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700079450",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East",
+                "city": "Thane",
+                "contact": 8055038000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1649615400000,
+                "id": 50,
+                "isPublished": false,
+                "latitude": "19.1883085",
+                "locality": "Ambernath",
+                "location": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East, Ambernath, Thane",
+                "longitude": "73.1690395",
+                "projectCode": "",
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/50/VE.png",
+                "projectName": "Vishwajeet Empire",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700034509",
+                "website": "https://gbkgroup.in/vishwajeet-empire/",
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Pune",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1903285800000,
+                "estimatedStartDate": 1787682600000,
+                "id": 89,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": null,
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Precious Phase-V",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P52100053370",
+                "website": null,
+                "zipcode": "421103"
+              },
+              {
+                "address": "Chikhloli, Ambernath West",
+                "city": "Thane",
+                "contact": 8888546999,
+                "countryCode": 91,
+                "estimatedEndDate": 1797618600000,
+                "estimatedStartDate": 1643826600000,
+                "id": 51,
+                "isPublished": false,
+                "latitude": "73°13'11.9\"",
+                "locality": "Chikhloli",
+                "location": "Chikhloli, Ambernath West, Chikhloli, Thane",
+                "longitude": "19°11'10.9\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/staging/project/51/gbk_logo.jpeg",
+                "projectName": "Vishwajeet Paradise",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-paradise-ambernath-west/",
+                "zipcode": "421501"
+              }
+            ],
+            "project_names": [
+              "Vishwajeet Heights",
+              "Vishwajeet Empire NX",
+              "Vishwajeet Prime",
+              "Vishwajeet Myspace",
+              "Vishwajeet Precious",
+              "Vishwajeet Town",
+              "Vishwajeet Empire",
+              "Vishwajeet Precious Phase-V",
+              "Vishwajeet Paradise"
+            ]
+          },
+          {
+            "title": "Vishwajeet Precious Phase-V live property details",
+            "record_kind": "company_api",
+            "category": "AcroBuild property data",
+            "source_name": "AcroBuild CS API",
+            "source_key": "acrobuild-cs-project-89",
+            "url": "",
+            "excerpt": "Project: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nWing: name: Vishwajeet Precious Emerald; construction status: Under-Construction; expected possession epoch ms: 1903285800000; floors: 11; saleable units: 98; saleable area: 123577\nTypology: name: 2BHK 1330(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1330.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1165(SQ.FT); type: 2BHK; carpet area: 585.38; saleable area: 1165.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1127(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1127.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1383(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1383.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1644(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1644.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1088(SQ.FT); type: 2BHK; carpet area: 506.01; saleable area: 1088.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1282(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1282.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1227(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1227.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1287(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1287.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1438(SQ.FT); type: 2BHK; carpet area: 549.4; saleable area: 1438.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1099(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1099.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1302(SQ.FT); type: 2BHK; carpet area: 585.3; saleable area: 1302.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1753(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1753.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1139(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1139.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1316(SQ.FT); type: 2BHK; carpet area: 549.38; saleable area: 1316.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0",
+            "body_text": "Project: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nWing: name: Vishwajeet Precious Emerald; construction status: Under-Construction; expected possession epoch ms: 1903285800000; floors: 11; saleable units: 98; saleable area: 123577\nTypology: name: 2BHK 1330(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1330.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1165(SQ.FT); type: 2BHK; carpet area: 585.38; saleable area: 1165.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1127(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1127.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1383(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1383.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1644(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1644.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1088(SQ.FT); type: 2BHK; carpet area: 506.01; saleable area: 1088.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1282(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1282.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1227(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1227.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1287(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1287.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1438(SQ.FT); type: 2BHK; carpet area: 549.4; saleable area: 1438.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1099(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1099.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1302(SQ.FT); type: 2BHK; carpet area: 585.3; saleable area: 1302.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1753(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1753.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1139(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1139.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1316(SQ.FT); type: 2BHK; carpet area: 549.38; saleable area: 1316.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0",
+            "score": 100.0,
+            "overlap_terms": [],
+            "strong_overlap_terms": [],
+            "project_name": "Vishwajeet Precious Phase-V",
+            "project": {
+              "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+              "city": "Pune",
+              "contact": 7774065000,
+              "countryCode": 91,
+              "estimatedEndDate": 1903285800000,
+              "estimatedStartDate": 1787682600000,
+              "id": 89,
+              "isPublished": false,
+              "latitude": "73°10'55.4\"",
+              "locality": null,
+              "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+              "longitude": "19°14'56.5\"",
+              "projectCode": null,
+              "projectImageUrl": null,
+              "projectName": "Vishwajeet Precious Phase-V",
+              "projectType": "26",
+              "propertyDetails": null,
+              "reraNo": "P52100053370",
+              "website": null,
+              "zipcode": "421103"
+            },
+            "wings": [
+              {
+                "code": null,
+                "constructionStatus": "Under-Construction",
+                "developmentType": "Residential",
+                "expectedPossesionDate": 1903285800000,
+                "id": 121,
+                "name": "Vishwajeet Precious Emerald",
+                "projectId": 89,
+                "saleableArea": 123577,
+                "saleableUnits": 98,
+                "totalFloors": 11
+              }
+            ],
+            "typologies": [
+              {
+                "carpetArea": 544.1,
+                "id": 793,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1330.0,
+                "typologyName": "2BHK 1330(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 585.38,
+                "id": 787,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1165.0,
+                "typologyName": "2BHK 1165(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.0,
+                "id": 788,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1127.0,
+                "typologyName": "2BHK 1127(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 532.8,
+                "id": 794,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1383.0,
+                "typologyName": "2BHK 1383(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 713.1,
+                "id": 796,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1644.0,
+                "typologyName": "3BHK 1644(SQ.FT)",
+                "typologyType": "3BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.01,
+                "id": 783,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1088.0,
+                "typologyName": "2BHK 1088(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 544.1,
+                "id": 789,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1282.0,
+                "typologyName": "2BHK 1282(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.0,
+                "id": 797,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1227.0,
+                "typologyName": "2BHK 1227(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 532.8,
+                "id": 790,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1287.0,
+                "typologyName": "2BHK 1287(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 549.4,
+                "id": 795,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1438.0,
+                "typologyName": "2BHK 1438(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 531.3,
+                "id": 784,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1099.0,
+                "typologyName": "2BHK 1099(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 585.3,
+                "id": 791,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1302.0,
+                "typologyName": "2BHK 1302(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 713.1,
+                "id": 785,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1753.0,
+                "typologyName": "3BHK 1753(SQ.FT)",
+                "typologyType": "3BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 531.3,
+                "id": 786,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1139.0,
+                "typologyName": "2BHK 1139(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 549.38,
+                "id": 792,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1316.0,
+                "typologyName": "2BHK 1316(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              }
+            ],
+            "available_inventory": [],
+            "inventory_loaded": false
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "lexical",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "route": "property",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "a7eb98a3d7044deeb473d1f518e29e8e",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 63,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:24.068613+00:00"
+          },
+          {
+            "id": "e3f6cb777a9f4e7a8e05b008e8d68cd7",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 1
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:24.153227+00:00"
+          },
+          {
+            "id": "c28b44c6903e40099283cf3e7b95895d",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/typologies",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 15
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:24.272230+00:00"
+          },
+          {
+            "id": "4fa9e5dcb92e451083d537f2fd2f8c10",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:24.285571+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "acrobuild-cs-projects",
+            "title": "Company projects",
+            "retrieved_at": "2026-09-22T08:36:24.286056+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "acrobuild-cs-project-89",
+            "title": "Vishwajeet Precious Phase-V live property details",
+            "retrieved_at": "2026-09-22T08:36:24.286056+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:24.068613+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:24.153227+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/typologies",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:24.272230+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:24.285571+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "lexical",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 2,
+            "relevant_chunk_count": 2,
+            "data_api_call_count": 4,
+            "successful_data_api_call_count": 4
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.2611,
+              "percent": 26.1,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.6136,
+              "percent": 61.4,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.3864,
+              "percent": 38.6,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.7187,
+              "percent": 71.9,
+              "status": "good",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/api/support/assist",
+      "question": "indhulo em em amenities vunnayi?",
+      "response": {
+        "agent_mode": "retrieval",
+        "answer": "Prasthutham andubatuloo unna project data lo Vishwajeet Precious Phase-V ki sambandhinchina amenities vivaralu levu. Latest-ga confirm ayina amenity vivarala kosam dayachesi sales team-nu sampradinchandi.\n\nMeeku project location, pricing leda site-visit vivaralu kavala?",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": null,
+        "matched_chunks": [
+          {
+            "body_text": "The available project data does not currently list amenities for Vishwajeet Precious Phase-V. Please contact the sales team for the latest confirmed amenity details.\n\nWould you like the project location, pricing, or site-visit details?",
+            "category": "AcroBuild property data",
+            "excerpt": "0 amenity record(s) checked via the project amenities endpoint",
+            "project": {
+              "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+              "city": "Pune",
+              "contact": 7774065000,
+              "countryCode": 91,
+              "estimatedEndDate": 1903285800000,
+              "estimatedStartDate": 1787682600000,
+              "id": 89,
+              "isPublished": false,
+              "latitude": "73°10'55.4\"",
+              "locality": null,
+              "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+              "longitude": "19°14'56.5\"",
+              "projectCode": null,
+              "projectImageUrl": null,
+              "projectName": "Vishwajeet Precious Phase-V",
+              "projectType": "26",
+              "propertyDetails": null,
+              "reraNo": "P52100053370",
+              "website": null,
+              "zipcode": "421103"
+            },
+            "record_kind": "company_api",
+            "score": 100.0,
+            "source_key": "acrobuild-cs-project-89-amenities",
+            "source_name": "AcroBuild CS API",
+            "title": "Vishwajeet Precious Phase-V amenities",
+            "url": "",
+            "amenities_checked": 0
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "route": "property",
+        "reply_language": "Telugu",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "c0a82f8e6f504124aec0d9769d4b8d0c",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 47,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:24.764980+00:00"
+          },
+          {
+            "id": "7c3cc23c0f17469a915151fcdf5e5109",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:24.764980+00:00"
+          },
+          {
+            "id": "e58602779c4b44b7b105d7869027f7a4",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:24.764980+00:00"
+          },
+          {
+            "id": "251b3ecf64e745dbaf73f81435b71c1a",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/53/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 22
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:24.879466+00:00"
+          },
+          {
+            "id": "bdd54bd4e304435d9d91507587dfbbe5",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/56/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:24.975901+00:00"
+          },
+          {
+            "id": "3ad859b74cd3422da9a5570d552423cd",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/57/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 5
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:25.074867+00:00"
+          },
+          {
+            "id": "025c2c619ed845bdb5776453e435468c",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:25.171040+00:00"
+          },
+          {
+            "id": "4ec5d2c38ba844ebbee162f157b41a6c",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 14
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:25.254554+00:00"
+          },
+          {
+            "id": "b04f9c8aefa241b68b87b3dff7680669",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/58/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 3
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:25.337627+00:00"
+          },
+          {
+            "id": "8720933c379142cbb007e4641aeb47de",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/50/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 26
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:25.448254+00:00"
+          },
+          {
+            "id": "6d746da33b6d462b9332a294df61607c",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:25.542385+00:00"
+          },
+          {
+            "id": "c341869f2f07405ba49c6a48f0a0d7b9",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/51/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 25
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:25.630762+00:00"
+          },
+          {
+            "id": "b31323c0a68245bab8c73e2ace8d45e6",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:25.633375+00:00"
+          },
+          {
+            "id": "bc93299329674ea98f4336f105afec95",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:25.633917+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "acrobuild-cs-project-89-amenities",
+            "title": "Vishwajeet Precious Phase-V amenities",
+            "retrieved_at": "2026-09-22T08:36:26.036898+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:24.764980+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:24.764980+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:24.764980+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects/53/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:24.879466+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/56/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:24.975901+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/57/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:25.074867+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:25.171040+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:25.254554+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/58/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:25.337627+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/50/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:25.448254+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:25.542385+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/51/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:25.630762+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:25.633375+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:25.633917+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 1,
+            "data_api_call_count": 14,
+            "successful_data_api_call_count": 14
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.087,
+              "percent": 8.7,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.4242,
+              "percent": 42.4,
+              "status": "poor",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.5758,
+              "percent": 57.6,
+              "status": "poor",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.6278,
+              "percent": 62.8,
+              "status": "review",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/api/support/assist",
+      "question": "Legacy selection: Vishwajeet Precious Phase-V",
+      "response": {
+        "agent_mode": "remote_llm",
+        "answer": "Sure - here is a verified overview of Vishwajeet Precious Phase-V.\n\nLocation: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra, Pune.\n\nRERA number: P52100053370.\n\nWings: 1.\n- Vishwajeet Precious Emerald: 11 floors, Under-Construction\n\nHome types: 2BHK, 3BHK.\n\nWhat would you like next: availability by home type, pricing, wing details, or a site visit?\n\nAvailability is live and may change.",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": "2026-09-22T08:36:23.930892+00:00",
+        "matched_chunks": [
+          {
+            "title": "Company projects",
+            "record_kind": "company_api",
+            "category": "AcroBuild property data",
+            "source_name": "AcroBuild CS API",
+            "source_key": "acrobuild-cs-projects",
+            "url": "",
+            "excerpt": "Project: name: Vishwajeet Heights; address: SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane; locality: Ambernath; city: Thane; RERA: P51700054685; type: 27;26; published: False\nProject: name: Vishwajeet Empire NX; address: Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.; city: Thane; RERA: P51700027704; type: 27;26; published: False\nProject: name: Vishwajeet Prime; address: Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E); city: Thane; RERA: P51700051593; type: 26; published: False\nProject: name: Vishwajeet Myspace; address: Pale Ambernath East; city: Thane; RERA: P51700079338; type: 26;27; published: False\nProject: name: Vishwajeet Precious; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; locality: Varap; city: Thane; RERA: P51700032998; type: 26;27; published: False\nProject: name: Vishwajeet Town; address: MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.; city: Thane; RERA: P51700079450; type: 26; published: False\nProject: name: Vishwajeet Empire; address: S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East; locality: Ambernath; city: Thane; RERA: P51700034509; type: 27;26; published: False\nProject: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nProject: name: Vishwajeet Paradise; address: Chikhloli, Ambernath West; locality: Chikhloli; city: Thane; RERA: P51700032998; type: 26; published: False",
+            "body_text": "Project: name: Vishwajeet Heights; address: SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane; locality: Ambernath; city: Thane; RERA: P51700054685; type: 27;26; published: False\nProject: name: Vishwajeet Empire NX; address: Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.; city: Thane; RERA: P51700027704; type: 27;26; published: False\nProject: name: Vishwajeet Prime; address: Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E); city: Thane; RERA: P51700051593; type: 26; published: False\nProject: name: Vishwajeet Myspace; address: Pale Ambernath East; city: Thane; RERA: P51700079338; type: 26;27; published: False\nProject: name: Vishwajeet Precious; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; locality: Varap; city: Thane; RERA: P51700032998; type: 26;27; published: False\nProject: name: Vishwajeet Town; address: MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.; city: Thane; RERA: P51700079450; type: 26; published: False\nProject: name: Vishwajeet Empire; address: S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East; locality: Ambernath; city: Thane; RERA: P51700034509; type: 27;26; published: False\nProject: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nProject: name: Vishwajeet Paradise; address: Chikhloli, Ambernath West; locality: Chikhloli; city: Thane; RERA: P51700032998; type: 26; published: False",
+            "score": 100.0,
+            "overlap_terms": [],
+            "strong_overlap_terms": [],
+            "record_count": 9,
+            "projects": [
+              {
+                "address": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane",
+                "city": "Thane",
+                "contact": 8055046000,
+                "countryCode": 91,
+                "estimatedEndDate": 1851013800000,
+                "estimatedStartDate": 1707157800000,
+                "id": 53,
+                "isPublished": false,
+                "latitude": "189.18835186222",
+                "locality": "Ambernath",
+                "location": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane, Ambernath, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/53/Vishwajeet%20Heights%20logo%2011-06-2025.png",
+                "projectName": "Vishwajeet Heights",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700054685",
+                "website": "https://gbkgroup.in/vishwajeet-heights/",
+                "zipcode": "421004"
+              },
+              {
+                "address": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1620153000000,
+                "id": 56,
+                "isPublished": false,
+                "latitude": "19.1875",
+                "locality": null,
+                "location": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501., Thane",
+                "longitude": "73.2310",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Empire NX",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700027704",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E)",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1845916200000,
+                "estimatedStartDate": 1687804200000,
+                "id": 57,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": "",
+                "location": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E), Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Prime",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700051593",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Pale Ambernath East",
+                "city": "Thane",
+                "contact": 8888724999,
+                "countryCode": 91,
+                "estimatedEndDate": 1901125800000,
+                "estimatedStartDate": 1740681000000,
+                "id": 54,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": null,
+                "location": "Pale Ambernath East, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Myspace",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700079338",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Thane",
+                "contact": 7718803334,
+                "countryCode": 91,
+                "estimatedEndDate": 1837967400000,
+                "estimatedStartDate": 1686681000000,
+                "id": 52,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": "Varap",
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Varap, Thane",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/52/WhatsApp%20Image%202025-12-31%20at%2016.14.28.jpeg",
+                "projectName": "Vishwajeet Precious",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-precious/",
+                "zipcode": "421103"
+              },
+              {
+                "address": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1864492200000,
+                "estimatedStartDate": 1748889000000,
+                "id": 58,
+                "isPublished": false,
+                "latitude": "19.18835185222",
+                "locality": null,
+                "location": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301., Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/58/Vishwajeet%20Town%20Logo%20%282%29.png",
+                "projectName": "Vishwajeet Town",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700079450",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East",
+                "city": "Thane",
+                "contact": 8055038000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1649615400000,
+                "id": 50,
+                "isPublished": false,
+                "latitude": "19.1883085",
+                "locality": "Ambernath",
+                "location": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East, Ambernath, Thane",
+                "longitude": "73.1690395",
+                "projectCode": "",
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/50/VE.png",
+                "projectName": "Vishwajeet Empire",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700034509",
+                "website": "https://gbkgroup.in/vishwajeet-empire/",
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Pune",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1903285800000,
+                "estimatedStartDate": 1787682600000,
+                "id": 89,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": null,
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Precious Phase-V",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P52100053370",
+                "website": null,
+                "zipcode": "421103"
+              },
+              {
+                "address": "Chikhloli, Ambernath West",
+                "city": "Thane",
+                "contact": 8888546999,
+                "countryCode": 91,
+                "estimatedEndDate": 1797618600000,
+                "estimatedStartDate": 1643826600000,
+                "id": 51,
+                "isPublished": false,
+                "latitude": "73°13'11.9\"",
+                "locality": "Chikhloli",
+                "location": "Chikhloli, Ambernath West, Chikhloli, Thane",
+                "longitude": "19°11'10.9\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/staging/project/51/gbk_logo.jpeg",
+                "projectName": "Vishwajeet Paradise",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-paradise-ambernath-west/",
+                "zipcode": "421501"
+              }
+            ],
+            "project_names": [
+              "Vishwajeet Heights",
+              "Vishwajeet Empire NX",
+              "Vishwajeet Prime",
+              "Vishwajeet Myspace",
+              "Vishwajeet Precious",
+              "Vishwajeet Town",
+              "Vishwajeet Empire",
+              "Vishwajeet Precious Phase-V",
+              "Vishwajeet Paradise"
+            ]
+          },
+          {
+            "title": "Vishwajeet Precious Phase-V live property details",
+            "record_kind": "company_api",
+            "category": "AcroBuild property data",
+            "source_name": "AcroBuild CS API",
+            "source_key": "acrobuild-cs-project-89",
+            "url": "",
+            "excerpt": "Project: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nWing: name: Vishwajeet Precious Emerald; construction status: Under-Construction; expected possession epoch ms: 1903285800000; floors: 11; saleable units: 98; saleable area: 123577\nTypology: name: 2BHK 1330(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1330.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1165(SQ.FT); type: 2BHK; carpet area: 585.38; saleable area: 1165.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1127(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1127.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1383(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1383.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1644(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1644.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1088(SQ.FT); type: 2BHK; carpet area: 506.01; saleable area: 1088.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1282(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1282.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1227(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1227.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1287(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1287.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1438(SQ.FT); type: 2BHK; carpet area: 549.4; saleable area: 1438.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1099(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1099.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1302(SQ.FT); type: 2BHK; carpet area: 585.3; saleable area: 1302.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1753(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1753.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1139(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1139.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1316(SQ.FT); type: 2BHK; carpet area: 549.38; saleable area: 1316.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0",
+            "body_text": "Project: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nWing: name: Vishwajeet Precious Emerald; construction status: Under-Construction; expected possession epoch ms: 1903285800000; floors: 11; saleable units: 98; saleable area: 123577\nTypology: name: 2BHK 1330(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1330.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1165(SQ.FT); type: 2BHK; carpet area: 585.38; saleable area: 1165.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1127(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1127.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1383(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1383.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1644(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1644.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1088(SQ.FT); type: 2BHK; carpet area: 506.01; saleable area: 1088.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1282(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1282.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1227(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1227.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1287(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1287.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1438(SQ.FT); type: 2BHK; carpet area: 549.4; saleable area: 1438.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1099(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1099.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1302(SQ.FT); type: 2BHK; carpet area: 585.3; saleable area: 1302.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1753(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1753.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1139(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1139.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1316(SQ.FT); type: 2BHK; carpet area: 549.38; saleable area: 1316.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0",
+            "score": 100.0,
+            "overlap_terms": [],
+            "strong_overlap_terms": [],
+            "project_name": "Vishwajeet Precious Phase-V",
+            "project": {
+              "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+              "city": "Pune",
+              "contact": 7774065000,
+              "countryCode": 91,
+              "estimatedEndDate": 1903285800000,
+              "estimatedStartDate": 1787682600000,
+              "id": 89,
+              "isPublished": false,
+              "latitude": "73°10'55.4\"",
+              "locality": null,
+              "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+              "longitude": "19°14'56.5\"",
+              "projectCode": null,
+              "projectImageUrl": null,
+              "projectName": "Vishwajeet Precious Phase-V",
+              "projectType": "26",
+              "propertyDetails": null,
+              "reraNo": "P52100053370",
+              "website": null,
+              "zipcode": "421103"
+            },
+            "wings": [
+              {
+                "code": null,
+                "constructionStatus": "Under-Construction",
+                "developmentType": "Residential",
+                "expectedPossesionDate": 1903285800000,
+                "id": 121,
+                "name": "Vishwajeet Precious Emerald",
+                "projectId": 89,
+                "saleableArea": 123577,
+                "saleableUnits": 98,
+                "totalFloors": 11
+              }
+            ],
+            "typologies": [
+              {
+                "carpetArea": 544.1,
+                "id": 793,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1330.0,
+                "typologyName": "2BHK 1330(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 585.38,
+                "id": 787,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1165.0,
+                "typologyName": "2BHK 1165(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.0,
+                "id": 788,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1127.0,
+                "typologyName": "2BHK 1127(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 532.8,
+                "id": 794,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1383.0,
+                "typologyName": "2BHK 1383(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 713.1,
+                "id": 796,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1644.0,
+                "typologyName": "3BHK 1644(SQ.FT)",
+                "typologyType": "3BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.01,
+                "id": 783,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1088.0,
+                "typologyName": "2BHK 1088(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 544.1,
+                "id": 789,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1282.0,
+                "typologyName": "2BHK 1282(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.0,
+                "id": 797,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1227.0,
+                "typologyName": "2BHK 1227(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 532.8,
+                "id": 790,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1287.0,
+                "typologyName": "2BHK 1287(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 549.4,
+                "id": 795,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1438.0,
+                "typologyName": "2BHK 1438(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 531.3,
+                "id": 784,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1099.0,
+                "typologyName": "2BHK 1099(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 585.3,
+                "id": 791,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1302.0,
+                "typologyName": "2BHK 1302(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 713.1,
+                "id": 785,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1753.0,
+                "typologyName": "3BHK 1753(SQ.FT)",
+                "typologyType": "3BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 531.3,
+                "id": 786,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1139.0,
+                "typologyName": "2BHK 1139(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 549.38,
+                "id": 792,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1316.0,
+                "typologyName": "2BHK 1316(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              }
+            ],
+            "available_inventory": [],
+            "inventory_loaded": false
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "lexical",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "route": "property",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "b2a1308bd8514f0cbb239b9f9b579873",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 77,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:26.468785+00:00"
+          },
+          {
+            "id": "86c64f69f5114cc7ba51285a9971d971",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 16,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 1
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:26.568581+00:00"
+          },
+          {
+            "id": "ca51adcc30bb4de1890849c52dc333ee",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/typologies",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 15
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:26.678136+00:00"
+          },
+          {
+            "id": "c41519bbe421448fb9f04626d891baf7",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:26.678136+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "acrobuild-cs-projects",
+            "title": "Company projects",
+            "retrieved_at": "2026-09-22T08:36:26.678136+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "acrobuild-cs-project-89",
+            "title": "Vishwajeet Precious Phase-V live property details",
+            "retrieved_at": "2026-09-22T08:36:26.678136+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:26.468785+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:26.568581+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/typologies",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:26.678136+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:26.678136+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "lexical",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 2,
+            "relevant_chunk_count": 2,
+            "data_api_call_count": 4,
+            "successful_data_api_call_count": 4
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.2611,
+              "percent": 26.1,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.6136,
+              "percent": 61.4,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.3864,
+              "percent": 38.6,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.7187,
+              "percent": 71.9,
+              "status": "good",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/api/support/assist/stream",
+      "question": "mee kada em projects vunnayi?",
+      "response": {
+        "answer": "Maaku 9 projects unnaayi. Meeru denni choodalanukuntunnaaru?\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Precious\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious Phase-V\n- Vishwajeet Paradise",
+        "route": "property",
+        "source_status": "live_api",
+        "used_llm": false,
+        "agent_mode": "retrieval",
+        "retrieval_mode": "live_project_records",
+        "confidence_label": "high",
+        "clarification_entity": "project",
+        "quick_replies": [
+          {
+            "label": "Vishwajeet Heights",
+            "value": "Vishwajeet Heights"
+          },
+          {
+            "label": "Vishwajeet Empire NX",
+            "value": "Vishwajeet Empire NX"
+          },
+          {
+            "label": "Vishwajeet Prime",
+            "value": "Vishwajeet Prime"
+          },
+          {
+            "label": "Vishwajeet Myspace",
+            "value": "Vishwajeet Myspace"
+          },
+          {
+            "label": "Vishwajeet Precious",
+            "value": "Vishwajeet Precious"
+          },
+          {
+            "label": "Vishwajeet Town",
+            "value": "Vishwajeet Town"
+          },
+          {
+            "label": "Vishwajeet Empire",
+            "value": "Vishwajeet Empire"
+          },
+          {
+            "label": "Vishwajeet Precious Phase-V",
+            "value": "Vishwajeet Precious Phase-V"
+          },
+          {
+            "label": "Vishwajeet Paradise",
+            "value": "Vishwajeet Paradise"
+          }
+        ],
+        "pending_project_lookup": {
+          "kind": "selection",
+          "original_issue": "mee kada em projects vunnayi?",
+          "entity": "project",
+          "options": [
+            "Vishwajeet Heights",
+            "Vishwajeet Empire NX",
+            "Vishwajeet Prime",
+            "Vishwajeet Myspace",
+            "Vishwajeet Precious",
+            "Vishwajeet Town",
+            "Vishwajeet Empire",
+            "Vishwajeet Precious Phase-V",
+            "Vishwajeet Paradise"
+          ],
+          "scope": {},
+          "purpose": "explore_project"
+        },
+        "matched_chunks": [
+          {
+            "record_kind": "company_api",
+            "source_key": "live-selection-options",
+            "body_text": "Vishwajeet Heights\nVishwajeet Empire NX\nVishwajeet Prime\nVishwajeet Myspace\nVishwajeet Precious\nVishwajeet Town\nVishwajeet Empire\nVishwajeet Precious Phase-V\nVishwajeet Paradise",
+            "title": "Live project options"
+          }
+        ],
+        "articles": [],
+        "knowledge_documents": [],
+        "source_label": "Live Acrobuild CS API",
+        "reply_language": "Telugu",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "1a252a7b05d2410cb93ee11baba7e3ae",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 77,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:27.074493+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "live-selection-options",
+            "title": "Live project options",
+            "retrieved_at": "2026-09-22T08:36:27.339579+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:27.074493+00:00",
+            "freshness": "live"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 0,
+            "data_api_call_count": 1,
+            "successful_data_api_call_count": 1
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 0.0,
+              "percent": 0.0,
+              "status": "poor",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.1118,
+              "percent": 11.2,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.625,
+              "percent": 62.5,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.375,
+              "percent": 37.5,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.4342,
+              "percent": 43.4,
+              "status": "poor",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/api/support/assist/stream",
+      "question": "Vishwajeet Precious Phase-V",
+      "response": {
+        "agent_mode": "remote_llm",
+        "answer": "Kachitanga - Vishwajeet Precious Phase-V gurinchi verify chesina overview ikkada undi.\n\nLocation: Kalyan-Murbad Road, Sacred Heart School daggara, Varap, Kalyan West, Maharashtra, Pune.\n\nRERA number: P52100053370.\n\nWings: 1.\n- Vishwajeet Precious Emerald: 11 floors, Under-Construction\n\nHome types: 2BHK, 3BHK.\n\nMeeku tharvatha em kavali: home type batti availability, pricing, wing details, leda site visit?\n\nAvailability ippudu live-lo undi, eppudaina marochu.",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": "2026-09-22T08:36:23.930892+00:00",
+        "matched_chunks": [
+          {
+            "title": "Company projects",
+            "record_kind": "company_api",
+            "category": "AcroBuild property data",
+            "source_name": "AcroBuild CS API",
+            "source_key": "acrobuild-cs-projects",
+            "url": "",
+            "excerpt": "Project: name: Vishwajeet Heights; address: SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane; locality: Ambernath; city: Thane; RERA: P51700054685; type: 27;26; published: False\nProject: name: Vishwajeet Empire NX; address: Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.; city: Thane; RERA: P51700027704; type: 27;26; published: False\nProject: name: Vishwajeet Prime; address: Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E); city: Thane; RERA: P51700051593; type: 26; published: False\nProject: name: Vishwajeet Myspace; address: Pale Ambernath East; city: Thane; RERA: P51700079338; type: 26;27; published: False\nProject: name: Vishwajeet Precious; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; locality: Varap; city: Thane; RERA: P51700032998; type: 26;27; published: False\nProject: name: Vishwajeet Town; address: MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.; city: Thane; RERA: P51700079450; type: 26; published: False\nProject: name: Vishwajeet Empire; address: S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East; locality: Ambernath; city: Thane; RERA: P51700034509; type: 27;26; published: False\nProject: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nProject: name: Vishwajeet Paradise; address: Chikhloli, Ambernath West; locality: Chikhloli; city: Thane; RERA: P51700032998; type: 26; published: False",
+            "body_text": "Project: name: Vishwajeet Heights; address: SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane; locality: Ambernath; city: Thane; RERA: P51700054685; type: 27;26; published: False\nProject: name: Vishwajeet Empire NX; address: Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.; city: Thane; RERA: P51700027704; type: 27;26; published: False\nProject: name: Vishwajeet Prime; address: Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E); city: Thane; RERA: P51700051593; type: 26; published: False\nProject: name: Vishwajeet Myspace; address: Pale Ambernath East; city: Thane; RERA: P51700079338; type: 26;27; published: False\nProject: name: Vishwajeet Precious; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; locality: Varap; city: Thane; RERA: P51700032998; type: 26;27; published: False\nProject: name: Vishwajeet Town; address: MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.; city: Thane; RERA: P51700079450; type: 26; published: False\nProject: name: Vishwajeet Empire; address: S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East; locality: Ambernath; city: Thane; RERA: P51700034509; type: 27;26; published: False\nProject: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nProject: name: Vishwajeet Paradise; address: Chikhloli, Ambernath West; locality: Chikhloli; city: Thane; RERA: P51700032998; type: 26; published: False",
+            "score": 100.0,
+            "overlap_terms": [],
+            "strong_overlap_terms": [],
+            "record_count": 9,
+            "projects": [
+              {
+                "address": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane",
+                "city": "Thane",
+                "contact": 8055046000,
+                "countryCode": 91,
+                "estimatedEndDate": 1851013800000,
+                "estimatedStartDate": 1707157800000,
+                "id": 53,
+                "isPublished": false,
+                "latitude": "189.18835186222",
+                "locality": "Ambernath",
+                "location": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane, Ambernath, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/53/Vishwajeet%20Heights%20logo%2011-06-2025.png",
+                "projectName": "Vishwajeet Heights",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700054685",
+                "website": "https://gbkgroup.in/vishwajeet-heights/",
+                "zipcode": "421004"
+              },
+              {
+                "address": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1620153000000,
+                "id": 56,
+                "isPublished": false,
+                "latitude": "19.1875",
+                "locality": null,
+                "location": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501., Thane",
+                "longitude": "73.2310",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Empire NX",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700027704",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E)",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1845916200000,
+                "estimatedStartDate": 1687804200000,
+                "id": 57,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": "",
+                "location": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E), Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Prime",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700051593",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Pale Ambernath East",
+                "city": "Thane",
+                "contact": 8888724999,
+                "countryCode": 91,
+                "estimatedEndDate": 1901125800000,
+                "estimatedStartDate": 1740681000000,
+                "id": 54,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": null,
+                "location": "Pale Ambernath East, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Myspace",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700079338",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Thane",
+                "contact": 7718803334,
+                "countryCode": 91,
+                "estimatedEndDate": 1837967400000,
+                "estimatedStartDate": 1686681000000,
+                "id": 52,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": "Varap",
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Varap, Thane",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/52/WhatsApp%20Image%202025-12-31%20at%2016.14.28.jpeg",
+                "projectName": "Vishwajeet Precious",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-precious/",
+                "zipcode": "421103"
+              },
+              {
+                "address": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1864492200000,
+                "estimatedStartDate": 1748889000000,
+                "id": 58,
+                "isPublished": false,
+                "latitude": "19.18835185222",
+                "locality": null,
+                "location": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301., Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/58/Vishwajeet%20Town%20Logo%20%282%29.png",
+                "projectName": "Vishwajeet Town",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700079450",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East",
+                "city": "Thane",
+                "contact": 8055038000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1649615400000,
+                "id": 50,
+                "isPublished": false,
+                "latitude": "19.1883085",
+                "locality": "Ambernath",
+                "location": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East, Ambernath, Thane",
+                "longitude": "73.1690395",
+                "projectCode": "",
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/50/VE.png",
+                "projectName": "Vishwajeet Empire",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700034509",
+                "website": "https://gbkgroup.in/vishwajeet-empire/",
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Pune",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1903285800000,
+                "estimatedStartDate": 1787682600000,
+                "id": 89,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": null,
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Precious Phase-V",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P52100053370",
+                "website": null,
+                "zipcode": "421103"
+              },
+              {
+                "address": "Chikhloli, Ambernath West",
+                "city": "Thane",
+                "contact": 8888546999,
+                "countryCode": 91,
+                "estimatedEndDate": 1797618600000,
+                "estimatedStartDate": 1643826600000,
+                "id": 51,
+                "isPublished": false,
+                "latitude": "73°13'11.9\"",
+                "locality": "Chikhloli",
+                "location": "Chikhloli, Ambernath West, Chikhloli, Thane",
+                "longitude": "19°11'10.9\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/staging/project/51/gbk_logo.jpeg",
+                "projectName": "Vishwajeet Paradise",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-paradise-ambernath-west/",
+                "zipcode": "421501"
+              }
+            ],
+            "project_names": [
+              "Vishwajeet Heights",
+              "Vishwajeet Empire NX",
+              "Vishwajeet Prime",
+              "Vishwajeet Myspace",
+              "Vishwajeet Precious",
+              "Vishwajeet Town",
+              "Vishwajeet Empire",
+              "Vishwajeet Precious Phase-V",
+              "Vishwajeet Paradise"
+            ]
+          },
+          {
+            "title": "Vishwajeet Precious Phase-V live property details",
+            "record_kind": "company_api",
+            "category": "AcroBuild property data",
+            "source_name": "AcroBuild CS API",
+            "source_key": "acrobuild-cs-project-89",
+            "url": "",
+            "excerpt": "Project: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nWing: name: Vishwajeet Precious Emerald; construction status: Under-Construction; expected possession epoch ms: 1903285800000; floors: 11; saleable units: 98; saleable area: 123577\nTypology: name: 2BHK 1330(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1330.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1165(SQ.FT); type: 2BHK; carpet area: 585.38; saleable area: 1165.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1127(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1127.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1383(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1383.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1644(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1644.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1088(SQ.FT); type: 2BHK; carpet area: 506.01; saleable area: 1088.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1282(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1282.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1227(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1227.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1287(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1287.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1438(SQ.FT); type: 2BHK; carpet area: 549.4; saleable area: 1438.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1099(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1099.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1302(SQ.FT); type: 2BHK; carpet area: 585.3; saleable area: 1302.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1753(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1753.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1139(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1139.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1316(SQ.FT); type: 2BHK; carpet area: 549.38; saleable area: 1316.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0",
+            "body_text": "Project: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nWing: name: Vishwajeet Precious Emerald; construction status: Under-Construction; expected possession epoch ms: 1903285800000; floors: 11; saleable units: 98; saleable area: 123577\nTypology: name: 2BHK 1330(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1330.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1165(SQ.FT); type: 2BHK; carpet area: 585.38; saleable area: 1165.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1127(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1127.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1383(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1383.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1644(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1644.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1088(SQ.FT); type: 2BHK; carpet area: 506.01; saleable area: 1088.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1282(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1282.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1227(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1227.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1287(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1287.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1438(SQ.FT); type: 2BHK; carpet area: 549.4; saleable area: 1438.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1099(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1099.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1302(SQ.FT); type: 2BHK; carpet area: 585.3; saleable area: 1302.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1753(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1753.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1139(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1139.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1316(SQ.FT); type: 2BHK; carpet area: 549.38; saleable area: 1316.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0",
+            "score": 100.0,
+            "overlap_terms": [],
+            "strong_overlap_terms": [],
+            "project_name": "Vishwajeet Precious Phase-V",
+            "project": {
+              "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+              "city": "Pune",
+              "contact": 7774065000,
+              "countryCode": 91,
+              "estimatedEndDate": 1903285800000,
+              "estimatedStartDate": 1787682600000,
+              "id": 89,
+              "isPublished": false,
+              "latitude": "73°10'55.4\"",
+              "locality": null,
+              "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+              "longitude": "19°14'56.5\"",
+              "projectCode": null,
+              "projectImageUrl": null,
+              "projectName": "Vishwajeet Precious Phase-V",
+              "projectType": "26",
+              "propertyDetails": null,
+              "reraNo": "P52100053370",
+              "website": null,
+              "zipcode": "421103"
+            },
+            "wings": [
+              {
+                "code": null,
+                "constructionStatus": "Under-Construction",
+                "developmentType": "Residential",
+                "expectedPossesionDate": 1903285800000,
+                "id": 121,
+                "name": "Vishwajeet Precious Emerald",
+                "projectId": 89,
+                "saleableArea": 123577,
+                "saleableUnits": 98,
+                "totalFloors": 11
+              }
+            ],
+            "typologies": [
+              {
+                "carpetArea": 544.1,
+                "id": 793,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1330.0,
+                "typologyName": "2BHK 1330(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 585.38,
+                "id": 787,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1165.0,
+                "typologyName": "2BHK 1165(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.0,
+                "id": 788,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1127.0,
+                "typologyName": "2BHK 1127(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 532.8,
+                "id": 794,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1383.0,
+                "typologyName": "2BHK 1383(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 713.1,
+                "id": 796,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1644.0,
+                "typologyName": "3BHK 1644(SQ.FT)",
+                "typologyType": "3BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.01,
+                "id": 783,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1088.0,
+                "typologyName": "2BHK 1088(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 544.1,
+                "id": 789,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1282.0,
+                "typologyName": "2BHK 1282(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.0,
+                "id": 797,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1227.0,
+                "typologyName": "2BHK 1227(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 532.8,
+                "id": 790,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1287.0,
+                "typologyName": "2BHK 1287(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 549.4,
+                "id": 795,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1438.0,
+                "typologyName": "2BHK 1438(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 531.3,
+                "id": 784,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1099.0,
+                "typologyName": "2BHK 1099(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 585.3,
+                "id": 791,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1302.0,
+                "typologyName": "2BHK 1302(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 713.1,
+                "id": 785,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1753.0,
+                "typologyName": "3BHK 1753(SQ.FT)",
+                "typologyType": "3BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 531.3,
+                "id": 786,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1139.0,
+                "typologyName": "2BHK 1139(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 549.38,
+                "id": 792,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1316.0,
+                "typologyName": "2BHK 1316(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              }
+            ],
+            "available_inventory": [],
+            "inventory_loaded": false
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "lexical",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "route": "property",
+        "reply_language": "Telugu",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "ff4d6ae5962c4021b52ca8b1e08474c3",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 61,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:27.725830+00:00"
+          },
+          {
+            "id": "be1514b2a1154222b0a512f8f652fcba",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 16,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 1
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:27.820902+00:00"
+          },
+          {
+            "id": "30844d7b2c24480f9c16a96f546e2ee4",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/typologies",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 15
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:27.884446+00:00"
+          },
+          {
+            "id": "57f176bb4b4844e7b2165fb01ecc8972",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:27.903838+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "acrobuild-cs-projects",
+            "title": "Company projects",
+            "retrieved_at": "2026-09-22T08:36:28.244530+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "acrobuild-cs-project-89",
+            "title": "Vishwajeet Precious Phase-V live property details",
+            "retrieved_at": "2026-09-22T08:36:28.244530+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:27.725830+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:27.820902+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/typologies",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:27.884446+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:27.903838+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "lexical",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 2,
+            "relevant_chunk_count": 2,
+            "data_api_call_count": 4,
+            "successful_data_api_call_count": 4
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.2379,
+              "percent": 23.8,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.4906,
+              "percent": 49.1,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.5094,
+              "percent": 50.9,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.6821,
+              "percent": 68.2,
+              "status": "review",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/api/support/assist/stream",
+      "question": "indhulo em em amenities vunnayi?",
+      "response": {
+        "agent_mode": "retrieval",
+        "answer": "Prasthutham andubatulo unna project data lo Vishwajeet Precious Phase-V amenities vivaralu levu. Latest ga confirm ayina amenity details kosam sales team ni sampradinchandi.\n\nMeeku project location, pricing leda site-visit vivaralu kavala?",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": null,
+        "matched_chunks": [
+          {
+            "body_text": "The available project data does not currently list amenities for Vishwajeet Precious Phase-V. Please contact the sales team for the latest confirmed amenity details.\n\nWould you like the project location, pricing, or site-visit details?",
+            "category": "AcroBuild property data",
+            "excerpt": "0 amenity record(s) checked via the project amenities endpoint",
+            "project": {
+              "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+              "city": "Pune",
+              "contact": 7774065000,
+              "countryCode": 91,
+              "estimatedEndDate": 1903285800000,
+              "estimatedStartDate": 1787682600000,
+              "id": 89,
+              "isPublished": false,
+              "latitude": "73°10'55.4\"",
+              "locality": null,
+              "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+              "longitude": "19°14'56.5\"",
+              "projectCode": null,
+              "projectImageUrl": null,
+              "projectName": "Vishwajeet Precious Phase-V",
+              "projectType": "26",
+              "propertyDetails": null,
+              "reraNo": "P52100053370",
+              "website": null,
+              "zipcode": "421103"
+            },
+            "record_kind": "company_api",
+            "score": 100.0,
+            "source_key": "acrobuild-cs-project-89-amenities",
+            "source_name": "AcroBuild CS API",
+            "title": "Vishwajeet Precious Phase-V amenities",
+            "url": "",
+            "amenities_checked": 0
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "route": "property",
+        "reply_language": "Telugu",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "cebaf3a75f4a419b858137882685d3f3",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:28.634889+00:00"
+          },
+          {
+            "id": "aed0bda5cb334423897ffb0b49fe821b",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:28.634889+00:00"
+          },
+          {
+            "id": "99082310bb174652a8d79f3807d04ae0",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:28.634889+00:00"
+          },
+          {
+            "id": "9aa68e0e3cab4b3892d24869e98e2cee",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/53/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 22
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:28.730096+00:00"
+          },
+          {
+            "id": "e8bd5635133e4729bbe0d398f49375f5",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/56/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:28.824751+00:00"
+          },
+          {
+            "id": "459300a3991747f39096cae8f11020f6",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/57/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 5
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:28.951993+00:00"
+          },
+          {
+            "id": "c4c6e8fc58a34c9cb89e9c6c6102f423",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/54/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 14,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:29.049319+00:00"
+          },
+          {
+            "id": "6594ba3840b44a9fbf49bd291780cf2c",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/52/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 93,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 14
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:29.215128+00:00"
+          },
+          {
+            "id": "cedcf09798d84cc391d2294599f81375",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/58/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 16,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 3
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:29.310230+00:00"
+          },
+          {
+            "id": "ffc96a29042c4ee183c810f1cfeb78eb",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/50/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 26
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:29.413339+00:00"
+          },
+          {
+            "id": "6343ac42be4f46dfaded4315a2376098",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:29.507080+00:00"
+          },
+          {
+            "id": "7fb9534b3a47475d99b4e8830fd5ba39",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/51/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 25
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:29.614779+00:00"
+          },
+          {
+            "id": "900716d1b5be40dab9a6187e9cb38a9a",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:29.618334+00:00"
+          },
+          {
+            "id": "7f9c14250fd2450391682c16dace44e4",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/amenities",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 0
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:29.618334+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "acrobuild-cs-project-89-amenities",
+            "title": "Vishwajeet Precious Phase-V amenities",
+            "retrieved_at": "2026-09-22T08:36:29.953137+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:28.634889+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:28.634889+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:28.634889+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects/53/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:28.730096+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/56/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:28.824751+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/57/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:28.951993+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/54/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:29.049319+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/52/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:29.215128+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/58/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:29.310230+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/50/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:29.413339+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:29.507080+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/51/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:29.614779+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:29.618334+00:00",
+            "freshness": "cached"
+          },
+          {
+            "source_id": "/api/cs/projects/89/amenities",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:29.618334+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "live_project_records",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 1,
+            "relevant_chunk_count": 1,
+            "data_api_call_count": 14,
+            "successful_data_api_call_count": 14
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.0913,
+              "percent": 9.1,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.5,
+              "percent": 50.0,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.5,
+              "percent": 50.0,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.6478,
+              "percent": 64.8,
+              "status": "review",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    },
+    {
+      "endpoint": "/api/support/assist/stream",
+      "question": "Legacy selection: Vishwajeet Precious Phase-V",
+      "response": {
+        "agent_mode": "remote_llm",
+        "answer": "Sure - here is a verified overview of Vishwajeet Precious Phase-V.\n\nLocation: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra, Pune.\n\nRERA number: P52100053370.\n\nWings: 1.\n- Vishwajeet Precious Emerald: 11 floors, Under-Construction\n\nHome types: 2BHK, 3BHK.\n\nWhat would you like next: availability by home type, pricing, wing details, or a site visit?\n\nAvailability is live and may change.",
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": false,
+        "knowledge_documents": [],
+        "last_synced_at": "2026-09-22T08:36:23.930892+00:00",
+        "matched_chunks": [
+          {
+            "title": "Company projects",
+            "record_kind": "company_api",
+            "category": "AcroBuild property data",
+            "source_name": "AcroBuild CS API",
+            "source_key": "acrobuild-cs-projects",
+            "url": "",
+            "excerpt": "Project: name: Vishwajeet Heights; address: SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane; locality: Ambernath; city: Thane; RERA: P51700054685; type: 27;26; published: False\nProject: name: Vishwajeet Empire NX; address: Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.; city: Thane; RERA: P51700027704; type: 27;26; published: False\nProject: name: Vishwajeet Prime; address: Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E); city: Thane; RERA: P51700051593; type: 26; published: False\nProject: name: Vishwajeet Myspace; address: Pale Ambernath East; city: Thane; RERA: P51700079338; type: 26;27; published: False\nProject: name: Vishwajeet Precious; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; locality: Varap; city: Thane; RERA: P51700032998; type: 26;27; published: False\nProject: name: Vishwajeet Town; address: MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.; city: Thane; RERA: P51700079450; type: 26; published: False\nProject: name: Vishwajeet Empire; address: S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East; locality: Ambernath; city: Thane; RERA: P51700034509; type: 27;26; published: False\nProject: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nProject: name: Vishwajeet Paradise; address: Chikhloli, Ambernath West; locality: Chikhloli; city: Thane; RERA: P51700032998; type: 26; published: False",
+            "body_text": "Project: name: Vishwajeet Heights; address: SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane; locality: Ambernath; city: Thane; RERA: P51700054685; type: 27;26; published: False\nProject: name: Vishwajeet Empire NX; address: Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.; city: Thane; RERA: P51700027704; type: 27;26; published: False\nProject: name: Vishwajeet Prime; address: Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E); city: Thane; RERA: P51700051593; type: 26; published: False\nProject: name: Vishwajeet Myspace; address: Pale Ambernath East; city: Thane; RERA: P51700079338; type: 26;27; published: False\nProject: name: Vishwajeet Precious; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; locality: Varap; city: Thane; RERA: P51700032998; type: 26;27; published: False\nProject: name: Vishwajeet Town; address: MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.; city: Thane; RERA: P51700079450; type: 26; published: False\nProject: name: Vishwajeet Empire; address: S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East; locality: Ambernath; city: Thane; RERA: P51700034509; type: 27;26; published: False\nProject: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nProject: name: Vishwajeet Paradise; address: Chikhloli, Ambernath West; locality: Chikhloli; city: Thane; RERA: P51700032998; type: 26; published: False",
+            "score": 100.0,
+            "overlap_terms": [],
+            "strong_overlap_terms": [],
+            "record_count": 9,
+            "projects": [
+              {
+                "address": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane",
+                "city": "Thane",
+                "contact": 8055046000,
+                "countryCode": 91,
+                "estimatedEndDate": 1851013800000,
+                "estimatedStartDate": 1707157800000,
+                "id": 53,
+                "isPublished": false,
+                "latitude": "189.18835186222",
+                "locality": "Ambernath",
+                "location": "SURVEY NO 51 HISSA NO 3/B, 3/C,\n3/D, 10 AND 13 at Ashele, Ambarnath, Thane, Ambernath, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/53/Vishwajeet%20Heights%20logo%2011-06-2025.png",
+                "projectName": "Vishwajeet Heights",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700054685",
+                "website": "https://gbkgroup.in/vishwajeet-heights/",
+                "zipcode": "421004"
+              },
+              {
+                "address": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1620153000000,
+                "id": 56,
+                "isPublished": false,
+                "latitude": "19.1875",
+                "locality": null,
+                "location": "Vishwajeet Empire, Near Royal Flora Complex Opp. Anand Green Land Lawns, Pale Village, Ambernath (E) 421501., Thane",
+                "longitude": "73.2310",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Empire NX",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700027704",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E)",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1845916200000,
+                "estimatedStartDate": 1687804200000,
+                "id": 57,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": "",
+                "location": "Vishwajeet Prime, Swami Samarth Chowk, Opp Suryoday Garden, Sai Section, Ambernath (E), Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Prime",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700051593",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Pale Ambernath East",
+                "city": "Thane",
+                "contact": 8888724999,
+                "countryCode": 91,
+                "estimatedEndDate": 1901125800000,
+                "estimatedStartDate": 1740681000000,
+                "id": 54,
+                "isPublished": false,
+                "latitude": "19.18835186222",
+                "locality": null,
+                "location": "Pale Ambernath East, Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Myspace",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700079338",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Thane",
+                "contact": 7718803334,
+                "countryCode": 91,
+                "estimatedEndDate": 1837967400000,
+                "estimatedStartDate": 1686681000000,
+                "id": 52,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": "Varap",
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Varap, Thane",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/52/WhatsApp%20Image%202025-12-31%20at%2016.14.28.jpeg",
+                "projectName": "Vishwajeet Precious",
+                "projectType": "26;27",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-precious/",
+                "zipcode": "421103"
+              },
+              {
+                "address": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301.",
+                "city": "Thane",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1864492200000,
+                "estimatedStartDate": 1748889000000,
+                "id": 58,
+                "isPublished": false,
+                "latitude": "19.18835185222",
+                "locality": null,
+                "location": "MH MSH 2, Kalyan-Murbad Rd, Opp Tharwani Solitaire, Mharal, Kalyan West, Kalyan, Maharashtra 421301., Thane",
+                "longitude": "73.1688721294",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/58/Vishwajeet%20Town%20Logo%20%282%29.png",
+                "projectName": "Vishwajeet Town",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700079450",
+                "website": null,
+                "zipcode": "421501"
+              },
+              {
+                "address": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East",
+                "city": "Thane",
+                "contact": 8055038000,
+                "countryCode": 91,
+                "estimatedEndDate": 1782153000000,
+                "estimatedStartDate": 1649615400000,
+                "id": 50,
+                "isPublished": false,
+                "latitude": "19.1883085",
+                "locality": "Ambernath",
+                "location": "S. No. 40/2, Behind Anand Sagar Resort, Pale Village, Ambernath East, Ambernath, Thane",
+                "longitude": "73.1690395",
+                "projectCode": "",
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/project/50/VE.png",
+                "projectName": "Vishwajeet Empire",
+                "projectType": "27;26",
+                "propertyDetails": null,
+                "reraNo": "P51700034509",
+                "website": "https://gbkgroup.in/vishwajeet-empire/",
+                "zipcode": "421501"
+              },
+              {
+                "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+                "city": "Pune",
+                "contact": 7774065000,
+                "countryCode": 91,
+                "estimatedEndDate": 1903285800000,
+                "estimatedStartDate": 1787682600000,
+                "id": 89,
+                "isPublished": false,
+                "latitude": "73°10'55.4\"",
+                "locality": null,
+                "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+                "longitude": "19°14'56.5\"",
+                "projectCode": null,
+                "projectImageUrl": null,
+                "projectName": "Vishwajeet Precious Phase-V",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P52100053370",
+                "website": null,
+                "zipcode": "421103"
+              },
+              {
+                "address": "Chikhloli, Ambernath West",
+                "city": "Thane",
+                "contact": 8888546999,
+                "countryCode": 91,
+                "estimatedEndDate": 1797618600000,
+                "estimatedStartDate": 1643826600000,
+                "id": 51,
+                "isPublished": false,
+                "latitude": "73°13'11.9\"",
+                "locality": "Chikhloli",
+                "location": "Chikhloli, Ambernath West, Chikhloli, Thane",
+                "longitude": "19°11'10.9\"",
+                "projectCode": null,
+                "projectImageUrl": "https://eko.blr1.digitaloceanspaces.com/acrobuild/staging/project/51/gbk_logo.jpeg",
+                "projectName": "Vishwajeet Paradise",
+                "projectType": "26",
+                "propertyDetails": null,
+                "reraNo": "P51700032998",
+                "website": "https://gbkgroup.in/vishwajeet-paradise-ambernath-west/",
+                "zipcode": "421501"
+              }
+            ],
+            "project_names": [
+              "Vishwajeet Heights",
+              "Vishwajeet Empire NX",
+              "Vishwajeet Prime",
+              "Vishwajeet Myspace",
+              "Vishwajeet Precious",
+              "Vishwajeet Town",
+              "Vishwajeet Empire",
+              "Vishwajeet Precious Phase-V",
+              "Vishwajeet Paradise"
+            ]
+          },
+          {
+            "title": "Vishwajeet Precious Phase-V live property details",
+            "record_kind": "company_api",
+            "category": "AcroBuild property data",
+            "source_name": "AcroBuild CS API",
+            "source_key": "acrobuild-cs-project-89",
+            "url": "",
+            "excerpt": "Project: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nWing: name: Vishwajeet Precious Emerald; construction status: Under-Construction; expected possession epoch ms: 1903285800000; floors: 11; saleable units: 98; saleable area: 123577\nTypology: name: 2BHK 1330(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1330.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1165(SQ.FT); type: 2BHK; carpet area: 585.38; saleable area: 1165.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1127(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1127.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1383(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1383.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1644(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1644.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1088(SQ.FT); type: 2BHK; carpet area: 506.01; saleable area: 1088.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1282(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1282.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1227(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1227.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1287(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1287.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1438(SQ.FT); type: 2BHK; carpet area: 549.4; saleable area: 1438.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1099(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1099.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1302(SQ.FT); type: 2BHK; carpet area: 585.3; saleable area: 1302.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1753(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1753.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1139(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1139.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1316(SQ.FT); type: 2BHK; carpet area: 549.38; saleable area: 1316.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0",
+            "body_text": "Project: name: Vishwajeet Precious Phase-V; address: Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ; city: Pune; RERA: P52100053370; type: 26; published: False\nWing: name: Vishwajeet Precious Emerald; construction status: Under-Construction; expected possession epoch ms: 1903285800000; floors: 11; saleable units: 98; saleable area: 123577\nTypology: name: 2BHK 1330(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1330.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1165(SQ.FT); type: 2BHK; carpet area: 585.38; saleable area: 1165.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1127(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1127.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1383(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1383.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1644(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1644.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1088(SQ.FT); type: 2BHK; carpet area: 506.01; saleable area: 1088.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1282(SQ.FT); type: 2BHK; carpet area: 544.1; saleable area: 1282.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1227(SQ.FT); type: 2BHK; carpet area: 506.0; saleable area: 1227.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1287(SQ.FT); type: 2BHK; carpet area: 532.8; saleable area: 1287.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1438(SQ.FT); type: 2BHK; carpet area: 549.4; saleable area: 1438.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1099(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1099.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1302(SQ.FT); type: 2BHK; carpet area: 585.3; saleable area: 1302.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 3BHK 1753(SQ.FT); type: 3BHK; carpet area: 713.1; saleable area: 1753.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1139(SQ.FT); type: 2BHK; carpet area: 531.3; saleable area: 1139.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0\nTypology: name: 2BHK 1316(SQ.FT); type: 2BHK; carpet area: 549.38; saleable area: 1316.0; rate type: Rate Per Sq.Ft.; minimum base price: 3500.0; maximum base price: 3800.0",
+            "score": 100.0,
+            "overlap_terms": [],
+            "strong_overlap_terms": [],
+            "project_name": "Vishwajeet Precious Phase-V",
+            "project": {
+              "address": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra ",
+              "city": "Pune",
+              "contact": 7774065000,
+              "countryCode": 91,
+              "estimatedEndDate": 1903285800000,
+              "estimatedStartDate": 1787682600000,
+              "id": 89,
+              "isPublished": false,
+              "latitude": "73°10'55.4\"",
+              "locality": null,
+              "location": "Kalyan-Murbad Road, near Sacred Heart School, Varap, Kalyan West, Maharashtra , Pune",
+              "longitude": "19°14'56.5\"",
+              "projectCode": null,
+              "projectImageUrl": null,
+              "projectName": "Vishwajeet Precious Phase-V",
+              "projectType": "26",
+              "propertyDetails": null,
+              "reraNo": "P52100053370",
+              "website": null,
+              "zipcode": "421103"
+            },
+            "wings": [
+              {
+                "code": null,
+                "constructionStatus": "Under-Construction",
+                "developmentType": "Residential",
+                "expectedPossesionDate": 1903285800000,
+                "id": 121,
+                "name": "Vishwajeet Precious Emerald",
+                "projectId": 89,
+                "saleableArea": 123577,
+                "saleableUnits": 98,
+                "totalFloors": 11
+              }
+            ],
+            "typologies": [
+              {
+                "carpetArea": 544.1,
+                "id": 793,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1330.0,
+                "typologyName": "2BHK 1330(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 585.38,
+                "id": 787,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1165.0,
+                "typologyName": "2BHK 1165(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.0,
+                "id": 788,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1127.0,
+                "typologyName": "2BHK 1127(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 532.8,
+                "id": 794,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1383.0,
+                "typologyName": "2BHK 1383(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 713.1,
+                "id": 796,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1644.0,
+                "typologyName": "3BHK 1644(SQ.FT)",
+                "typologyType": "3BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.01,
+                "id": 783,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1088.0,
+                "typologyName": "2BHK 1088(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 544.1,
+                "id": 789,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1282.0,
+                "typologyName": "2BHK 1282(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 506.0,
+                "id": 797,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1227.0,
+                "typologyName": "2BHK 1227(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 532.8,
+                "id": 790,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1287.0,
+                "typologyName": "2BHK 1287(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 549.4,
+                "id": 795,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1438.0,
+                "typologyName": "2BHK 1438(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 531.3,
+                "id": 784,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1099.0,
+                "typologyName": "2BHK 1099(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 585.3,
+                "id": 791,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1302.0,
+                "typologyName": "2BHK 1302(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 713.1,
+                "id": 785,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1753.0,
+                "typologyName": "3BHK 1753(SQ.FT)",
+                "typologyType": "3BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 531.3,
+                "id": 786,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1139.0,
+                "typologyName": "2BHK 1139(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              },
+              {
+                "carpetArea": 549.38,
+                "id": 792,
+                "imageUrl": null,
+                "maxBasePrice": 3800.0,
+                "minBasePrice": 3500.0,
+                "rateType": "Rate Per Sq.Ft.",
+                "saleableArea": 1316.0,
+                "typologyName": "2BHK 1316(SQ.FT)",
+                "typologyType": "2BHK",
+                "unitAmenities": "",
+                "wingId": 121
+              }
+            ],
+            "available_inventory": [],
+            "inventory_loaded": false
+          }
+        ],
+        "model": "",
+        "retrieval_mode": "lexical",
+        "source_label": "Live Acrobuild CS API",
+        "source_status": "live_api",
+        "support_base_url": "https://support.acrobuild.com",
+        "sync_error": "",
+        "used_llm": false,
+        "route": "property",
+        "reply_language": "English",
+        "reply_script": "latin",
+        "data_api_calls": [
+          {
+            "id": "e00580843b2d4531b124d503b594dfa9",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 77,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:30.418645+00:00"
+          },
+          {
+            "id": "aa7b06b93e1d4703947ef7fec17b4d23",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/wings",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 31,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 1
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:30.531038+00:00"
+          },
+          {
+            "id": "467d28ce28564d3f9b9869c1aaf60bb0",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects/89/typologies",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 15,
+            "cache_hit": false,
+            "response_summary": {
+              "kind": "list",
+              "record_count": 15
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:30.653329+00:00"
+          },
+          {
+            "id": "ed05da993b51427e8ca064d919826ba1",
+            "provider": "Acrobuild CS API",
+            "endpoint": "/api/cs/projects",
+            "method": "GET",
+            "params": {},
+            "status": "completed",
+            "duration_ms": 0,
+            "cache_hit": true,
+            "response_summary": {
+              "kind": "turn_cache",
+              "record_count": 10
+            },
+            "error": "",
+            "created_at": "2026-09-22T08:36:30.667420+00:00"
+          }
+        ],
+        "citations": [
+          {
+            "source_id": "acrobuild-cs-projects",
+            "title": "Company projects",
+            "retrieved_at": "2026-09-22T08:36:30.667420+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "acrobuild-cs-project-89",
+            "title": "Vishwajeet Precious Phase-V live property details",
+            "retrieved_at": "2026-09-22T08:36:30.667420+00:00",
+            "freshness": "workspace",
+            "updated_at": null
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:30.418645+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/wings",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:30.531038+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects/89/typologies",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:30.653329+00:00",
+            "freshness": "live"
+          },
+          {
+            "source_id": "/api/cs/projects",
+            "title": "Acrobuild CS API",
+            "retrieved_at": "2026-09-22T08:36:30.667420+00:00",
+            "freshness": "cached"
+          }
+        ],
+        "confidence_basis": "routing_and_evidence_heuristic; not a calibrated probability",
+        "rag_evaluation": {
+          "version": "online-proxy-v1",
+          "evaluation_type": "online_proxy",
+          "retrieval_mode": "lexical",
+          "source_status": "live_api",
+          "evidence": {
+            "matched_chunk_count": 2,
+            "relevant_chunk_count": 2,
+            "data_api_call_count": 4,
+            "successful_data_api_call_count": 4
+          },
+          "metrics": {
+            "retrieval_hit_rate": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieval or live-data calls that returned usable evidence."
+            },
+            "context_precision": {
+              "score": 1.0,
+              "percent": 100.0,
+              "status": "good",
+              "explanation": "Share of retrieved chunks that overlap the question or pass the relevance threshold."
+            },
+            "answer_relevance": {
+              "score": 0.2611,
+              "percent": 26.1,
+              "status": "poor",
+              "explanation": "Lexical similarity proxy between the customer question and final answer."
+            },
+            "groundedness": {
+              "score": 0.6136,
+              "percent": 61.4,
+              "status": "review",
+              "explanation": "Share of meaningful answer terms supported by retrieved context."
+            },
+            "hallucination_risk": {
+              "score": 0.3864,
+              "percent": 38.6,
+              "status": "review",
+              "explanation": "Unsupported-answer-term proxy; lower is better."
+            },
+            "overall_quality": {
+              "score": 0.7187,
+              "percent": 71.9,
+              "status": "good",
+              "explanation": "Average of the available online proxy scores."
+            },
+            "context_recall": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires labelled expected source documents for each question."
+            },
+            "mrr": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires a labelled relevant-document rank for each evaluation question."
+            },
+            "ndcg": {
+              "score": null,
+              "percent": null,
+              "status": "not_available",
+              "explanation": "Requires graded relevance labels for retrieved documents."
+            }
+          }
+        }
+      }
+    }
+  ]
+}

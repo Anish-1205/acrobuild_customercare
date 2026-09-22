@@ -1,4 +1,6 @@
 import json
+import hashlib
+from contextvars import ContextVar
 import os
 import re
 import socket
@@ -13,6 +15,7 @@ from time import monotonic, time
 from dotenv import load_dotenv
 
 from services.reply_language import strip_reply_language_directive
+from services.cs_api_settings_service import get_cs_api_settings
 
 from services.internal_api_log_service import (
     log_data_api_call,
@@ -27,6 +30,7 @@ CS_API_BASE_URL = os.getenv(
     "http://10.10.1.23:8081",
 ).rstrip("/")
 CS_API_KEY = os.getenv("ACROBUILD_CS_API_KEY", "").strip()
+CS_API_COMPANY_ID = os.getenv("ACROBUILD_CS_API_COMPANY_ID", "").strip()
 CS_API_TIMEOUT_SECONDS = float(
     os.getenv("ACROBUILD_CS_API_TIMEOUT_SECONDS", "2.5")
 )
@@ -39,6 +43,15 @@ CS_API_LIVE_ONLY = os.getenv("ACROBUILD_CS_API_LIVE_ONLY", "true").strip().lower
 
 _CACHE = {}
 _CACHE_LOCK = Lock()
+_CS_CONFIG = ContextVar("cs_api_config", default=None)
+
+
+def _cs_api_defaults():
+    return {"base_url": CS_API_BASE_URL, "api_key": CS_API_KEY, "company_id": CS_API_COMPANY_ID}
+
+
+def _cs_api_config():
+    return _CS_CONFIG.get() or get_cs_api_settings(_cs_api_defaults())
 
 # Words that mean "the customer wants company / contact details" vs. words that
 # mean "the customer is asking about property inventory". Used to decide whether
@@ -87,6 +100,67 @@ INVENTORY_TERMS = {
 }
 
 
+def customer_facing_projects(projects):
+    """Remove company/test rows that the CS API mixes into project data."""
+    return [
+        project for project in (projects or [])
+        if isinstance(project, dict) and "@" not in str(project.get("address", ""))
+    ]
+
+
+# -----------------------------------
+# CATALOGUE-WIDE FIELD FILTERING
+# -----------------------------------
+# Shared by every "which projects have X?" question (home type, amenity, and
+# any future field the CS API exposes per project), so each one does not need
+# its own project-loop-and-match code.
+
+def build_project_record_index(record_fetcher, projects=None):
+    """{project_id: {"project": record, "records": [...]}}, calling
+    ``record_fetcher(project_id)`` once per live project.
+
+    A single project's live-and-snapshot fetch failure is skipped, not fatal:
+    the CS API can add a project before the on-disk snapshot is regenerated
+    for it (no local fallback data yet), and that project's own timeout must
+    not abort a catalogue-wide scan of every other project. Returns
+    ``(index, failed)`` where ``failed`` lists the ``(project, error)`` pairs
+    that were skipped, so callers can disclose partial coverage honestly
+    instead of silently presenting an incomplete scan as a complete one.
+    """
+    index = {}
+    failed = []
+    for project in (projects if projects is not None else customer_facing_projects(get_company_projects())):
+        try:
+            index[project["id"]] = {"project": project, "records": record_fetcher(project["id"])}
+        except (RuntimeError, TimeoutError) as error:
+            failed.append((project, error))
+    return index, failed
+
+
+def filter_project_index(index, value_extractor, requested_values):
+    """(matches, per_value) over a {project_id: {"project": ..., ...}} index
+    (build_project_record_index()'s shape, or any per-project dict that has a
+    "project" key alongside whatever field data the caller keeps).
+
+    ``value_extractor(entry)`` turns one project's index entry into the set
+    of field values it has. ``matches`` are projects whose values cover every
+    requested value; ``per_value`` maps each requested value to the projects
+    that have it, for an honest per-value breakdown when nothing matches all
+    of them.
+    """
+    requested_values = list(dict.fromkeys(requested_values))
+    matches = []
+    per_value = {value: [] for value in requested_values}
+    for entry in index.values():
+        values = value_extractor(entry)
+        present = [value for value in requested_values if value in values]
+        for value in present:
+            per_value[value].append(entry["project"])
+        if requested_values and len(present) == len(requested_values):
+            matches.append(entry["project"])
+    return matches, per_value
+
+
 # -----------------------------------
 # INTERNAL HELPERS
 # -----------------------------------
@@ -103,11 +177,21 @@ def _response_summary(value):
     return {"kind": type(value).__name__}
 
 
+def _company_scoped_path(path):
+    company_id = _cs_api_config()["company_id"]
+    if not company_id.isdecimal() or int(company_id) <= 0:
+        raise RuntimeError("ACROBUILD_CS_API_COMPANY_ID must be a positive integer.")
+    if not path.startswith("/api/cs/"):
+        raise ValueError(f"Unexpected CS API path: {path}")
+    return f"/api/cs/{company_id}/{path.removeprefix('/api/cs/')}"
+
+
 def _request_json(path, params=None):
-    if not CS_API_KEY:
+    config = _cs_api_config()
+    if not config["api_key"]:
         raise RuntimeError("ACROBUILD_CS_API_KEY is not configured.")
 
-    url = f"{CS_API_BASE_URL}{path}"
+    url = f"{config['base_url']}{_company_scoped_path(path)}"
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
 
@@ -116,7 +200,7 @@ def _request_json(path, params=None):
         headers={
             "Accept": "application/json",
             "User-Agent": "AcrobuildSupportAgent/1.0",
-            "apiKey": CS_API_KEY,
+            "apiKey": config["api_key"],
         },
         method="GET",
     )
@@ -159,12 +243,19 @@ def _snapshot_json_path():
 
 
 def _load_snapshot_fallback(path, params=None):
+    config = _cs_api_config()
+    # Legacy snapshots have no origin metadata. Never reuse them for a new server.
+    if config["base_url"] != CS_API_BASE_URL:
+        return None
     snapshot_path = _snapshot_json_path()
     if not snapshot_path.exists():
         return None
     try:
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
+        return None
+    company_id = config["company_id"]
+    if not company_id.isdecimal() or snapshot.get("company", {}).get("id") != int(company_id):
         return None
     if path == "/api/cs/company":
         return snapshot.get("company")
@@ -219,7 +310,17 @@ def normalize_inventory_status(record):
 
 
 def _cached_request(path, params=None, ttl_seconds=None):
-    turn_key = (path, tuple(sorted((params or {}).items())))
+    token = _CS_CONFIG.set(_cs_api_config())
+    try:
+        return _cached_configured_request(path, params, ttl_seconds)
+    finally:
+        _CS_CONFIG.reset(token)
+
+
+def _cached_configured_request(path, params=None, ttl_seconds=None):
+    config = _cs_api_config()
+    namespace = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()
+    turn_key = (namespace, path, tuple(sorted((params or {}).items())))
     memoised = turn_cache_get(turn_key)
     if memoised is not None:
         summary = _response_summary(memoised)
@@ -239,7 +340,7 @@ def _cached_request(path, params=None, ttl_seconds=None):
         if ttl_seconds is None
         else ttl_seconds
     )
-    cache_key = (path, tuple(sorted((params or {}).items())))
+    cache_key = turn_key
     with _CACHE_LOCK:
         cached = _CACHE.get(cache_key)
         if cached and time() - cached["stored_at"] < ttl_seconds:
@@ -257,8 +358,6 @@ def _cached_request(path, params=None, ttl_seconds=None):
     try:
         value = _request_json(path, params=params)
     except RuntimeError:
-        if cached is not None:
-            return cached["value"]
         fallback_value = _load_snapshot_fallback(path, params=params)
         if fallback_value is not None:
             log_data_api_call(
@@ -271,6 +370,8 @@ def _cached_request(path, params=None, ttl_seconds=None):
                 response_summary=_response_summary(fallback_value),
             )
             return fallback_value
+        if cached is not None:
+            return cached["value"]
         raise
     with _CACHE_LOCK:
         _CACHE[cache_key] = {
@@ -308,7 +409,94 @@ def _matches_project(query, project):
 
 
 def _normalized_project_text(value):
-    return " ".join(re.findall(r"[a-z0-9]+", str(value or "").lower()))
+    tokens = re.findall(r"[a-z0-9]+", str(value or "").lower())
+    # Customers commonly transliterate the catalogue brand with a "v" even
+    # though the project records use "Vishwajeet". Treat that spelling as the
+    # same token without fuzzy-matching unrelated project words.
+    aliases = {
+        "vishvajeet": "vishwajeet",
+    }
+    return " ".join(aliases.get(token, token) for token in tokens)
+
+
+def resolve_project_candidates_from_text(projects, text):
+    """Return the best project-name candidates mentioned by ``text``.
+
+    A one-item result is a resolved project. Multiple items mean that the
+    supplied name fragment is ambiguous. An empty result means that no project
+    name was found. Keeping all three states prevents callers from collapsing
+    an ambiguous fragment into a blind "which project?" prompt.
+    """
+    explicit_scopes = re.findall(r"\b(?:selected|requested)\s+project:\s*([^\n.]+)", str(text or ""), re.I)
+    if explicit_scopes:
+        text = explicit_scopes[-1]
+    normalized_text = _normalized_project_text(text)
+    if not normalized_text:
+        return []
+    padded_text = f" {normalized_text} "
+    named_matches = []
+    valid_projects = [project for project in projects or [] if isinstance(project, dict)]
+    for project in valid_projects:
+        name = str(project.get("projectName", "") or "").strip()
+        normalized_name = _normalized_project_text(name)
+        if normalized_name and f" {normalized_name} " in padded_text:
+            named_matches.append((len(normalized_name.split()), len(normalized_name), project))
+    if named_matches:
+        named_matches.sort(key=lambda item: (item[0], item[1]), reverse=True)
+        # A suffixed name subsumes its base name, but two independent exact
+        # names are ambiguous and must both be offered to the customer.
+        longest = []
+        for _, _, project in named_matches:
+            name = _normalized_project_text(project.get("projectName", ""))
+            if not any(_normalized_project_text(p.get("projectName", "")).startswith(name + " ") for p in longest):
+                longest.append(project)
+        return longest
+
+    query_tokens = set(normalized_text.split())
+    generic_tokens = {"project", "projects", "property", "properties", "the", "vishwajeet"}
+    token_candidates = []
+    for project in valid_projects:
+        name_tokens = set(_normalized_project_text(project.get("projectName", "")).split())
+        distinctive = name_tokens - generic_tokens
+        overlap = query_tokens.intersection(distinctive)
+        if distinctive and overlap:
+            token_candidates.append((len(overlap), len(distinctive), project))
+    if token_candidates:
+        best_overlap = max(item[0] for item in token_candidates)
+        best = [item for item in token_candidates if item[0] == best_overlap]
+        # A fragment such as "Empire" also matches "Empire NX". Only a
+        # full catalogue name (handled above) can prefer the base project.
+        if len(best) == 1:
+            return [best[0][2]]
+        return [item[2] for item in best]
+
+    # Incomplete but recognizable name tokens ("preci", "mysp") narrow the
+    # option list without fuzzy-matching unrelated names.
+    partial_candidates = []
+    for project in valid_projects:
+        names = set(_normalized_project_text(project.get("projectName", "")).split()) - generic_tokens
+        if any(len(token) >= 3 and token not in generic_tokens and name.startswith(token)
+               for token in query_tokens for name in names):
+            partial_candidates.append(project)
+    if partial_candidates:
+        return partial_candidates
+
+    # A shared brand token is intentionally not distinctive enough to resolve
+    # one project, but it is exactly what we need to enumerate candidates for a
+    # clarification (for example bare "vishvajeet").
+    fallback_query_tokens = query_tokens - {
+        "project", "projects", "property", "properties", "the",
+    }
+    fallback_candidates = []
+    for project in valid_projects:
+        name_tokens = set(_normalized_project_text(project.get("projectName", "")).split())
+        overlap = fallback_query_tokens.intersection(name_tokens)
+        if overlap:
+            fallback_candidates.append((len(overlap), project))
+    if not fallback_candidates:
+        return []
+    best_overlap = max(item[0] for item in fallback_candidates)
+    return [item[1] for item in fallback_candidates if item[0] == best_overlap]
 
 
 def resolve_project_from_text(projects, text):
@@ -317,43 +505,8 @@ def resolve_project_from_text(projects, text):
     Longest-name priority is essential for catalogues that contain both a base
     project and a suffixed project, such as Empire and Empire NX.
     """
-    normalized_text = _normalized_project_text(text)
-    if not normalized_text:
-        return None
-    padded_text = f" {normalized_text} "
-    named_matches = []
-    for project in projects or []:
-        if not isinstance(project, dict):
-            continue
-        name = str(project.get("projectName", "") or "").strip()
-        normalized_name = _normalized_project_text(name)
-        if normalized_name and f" {normalized_name} " in padded_text:
-            named_matches.append((len(normalized_name.split()), len(normalized_name), project))
-    if named_matches:
-        named_matches.sort(key=lambda item: (item[0], item[1]), reverse=True)
-        return named_matches[0][2]
-
-    query_tokens = set(normalized_text.split())
-    generic_tokens = {"project", "projects", "property", "properties", "the", "vishwajeet"}
-    token_candidates = []
-    for project in projects or []:
-        if not isinstance(project, dict):
-            continue
-        name_tokens = set(_normalized_project_text(project.get("projectName", "")).split())
-        distinctive = name_tokens - generic_tokens
-        overlap = query_tokens.intersection(distinctive)
-        if distinctive and overlap:
-            token_candidates.append((len(overlap), len(distinctive), project))
-    if not token_candidates:
-        return None
-    best_overlap = max(item[0] for item in token_candidates)
-    best = [item for item in token_candidates if item[0] == best_overlap]
-    complete = [item for item in best if item[0] == item[1]]
-    if len(complete) == 1:
-        return complete[0][2]
-    if len(best) == 1:
-        return best[0][2]
-    return None
+    candidates = resolve_project_candidates_from_text(projects, text)
+    return candidates[0] if len(candidates) == 1 else None
 
 
 def _format_record(label, record, fields):
@@ -386,7 +539,9 @@ def _knowledge_chunk(title, excerpt, source_key):
 # -----------------------------------
 
 def is_cs_api_configured():
-    return bool(CS_API_BASE_URL and CS_API_KEY)
+    config = _cs_api_config()
+    return bool(config["base_url"] and config["api_key"] and config["company_id"].isdecimal()
+                and int(config["company_id"]) > 0)
 
 
 def get_company_projects():
@@ -397,6 +552,16 @@ def get_company_projects():
 def get_project_wings(project_id):
     wings = _cached_request(f"/api/cs/projects/{int(project_id)}/wings")
     return wings if isinstance(wings, list) else []
+
+
+def get_project_amenities(project_id):
+    amenities = _cached_request(f"/api/cs/projects/{int(project_id)}/amenities")
+    return amenities if isinstance(amenities, list) else []
+
+
+def get_project_typologies(project_id):
+    records = _cached_request(f"/api/cs/projects/{int(project_id)}/typologies")
+    return records if isinstance(records, list) else []
 
 
 def get_wing_typologies(wing_id):
@@ -482,9 +647,7 @@ def search_company_knowledge(query, max_projects=20):
         company_chunk["score"] = 12.0
         chunks.append(company_chunk)
 
-    projects = _cached_request("/api/cs/projects")
-    if not isinstance(projects, list):
-        projects = []
+    projects = customer_facing_projects(_cached_request("/api/cs/projects"))
     project_fields = (
         ("projectName", "name"),
         ("projectCode", "code"),
@@ -647,8 +810,8 @@ def search_company_knowledge(query, max_projects=20):
 def get_cs_api_status():
     return {
         "configured": is_cs_api_configured(),
-        "base_url": CS_API_BASE_URL,
-        "api_key_present": bool(CS_API_KEY),
+        "base_url": _cs_api_config()["base_url"],
+        "api_key_present": bool(_cs_api_config()["api_key"]),
     }
 # -----------------------------------
 # COMPLETE COMPANY DATA SNAPSHOT

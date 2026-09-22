@@ -165,13 +165,23 @@ def _latest_bot_message(conversation_messages: list[dict[str, str]]) -> str:
 
 def _conversation_project_name(conversation_messages: list[dict[str, str]]) -> str:
     project_names = get_live_project_names()
+    from services.acrobuild_company_service import resolve_project_candidates_from_text
+    from services.conversation_store_service import get_current_project_context
+    projects = [{"projectName": name} for name in project_names]
     for message in reversed(conversation_messages):
+        context = get_current_project_context(message.get("text", ""))
+        if context is not None:
+            selected = context.get("project", "")
+            matches = resolve_project_candidates_from_text(projects, selected)
+            return matches[0]["projectName"] if len(matches) == 1 else ""
         message_text = normalize_text(message.get("text", "")).lower()
-        mentioned = [name for name in project_names if name.lower() in message_text]
+        # Restrict history recovery to explicit names, and let suffixes win.
+        named = [p for p in projects if p["projectName"].lower() in message_text]
+        mentioned = resolve_project_candidates_from_text(named, message_text)
         if len(mentioned) == 1:
-            return mentioned[0]
+            return mentioned[0]["projectName"]
         if len(mentioned) > 1:
-            continue
+            return ""
     return ""
 
 
@@ -541,8 +551,9 @@ def validate_support_answer(issue: str, answer: str) -> list[str]:
             failures.append("a verified project floor comparison")
 
     bhk_match = re.search(r"\b([1-6])\s*bhk\b", cleaned_issue)
-    if bhk_match and not re.search(rf"\b{bhk_match.group(1)}\s*bhk\b", cleaned_answer):
-        failures.append(f"{bhk_match.group(1)} BHK")
+    for home_type in set(re.findall(r"\b([1-6])\s*bhk\b", cleaned_issue)):
+        if not re.search(rf"\b{home_type}\s*bhk\b", cleaned_answer):
+            failures.append(f"{home_type} BHK")
 
     floor_match = re.search(
         r"\b(?:floor\s*)?(\d{1,3})(?:st|nd|rd|th)?\s*floor\b", cleaned_issue,
@@ -558,11 +569,13 @@ def validate_support_answer(issue: str, answer: str) -> list[str]:
     if size_match and not re.search(rf"\b{size_match.group(1)}\b", cleaned_answer):
         failures.append(f"{size_match.group(1)} sq. ft.")
 
-    explicit_projects = [
-        project_name for project_name in get_live_project_names()
-        if project_name.lower() in cleaned_issue
-    ]
-    if explicit_projects and not any(project.lower() in cleaned_answer for project in explicit_projects):
+    from services.acrobuild_company_service import resolve_project_candidates_from_text
+    catalogue = [{"projectName": name} for name in get_live_project_names()]
+    named = [p for p in catalogue if p["projectName"].lower() in cleaned_issue]
+    explicit_projects = [p["projectName"] for p in resolve_project_candidates_from_text(named, cleaned_issue)]
+    answer_named = [p for p in catalogue if p["projectName"].lower() in cleaned_answer]
+    answer_projects = {p["projectName"] for p in resolve_project_candidates_from_text(answer_named, cleaned_answer)}
+    if explicit_projects and not set(explicit_projects) <= answer_projects:
         failures.append("requested project")
 
     if any(term in cleaned_issue for term in (
@@ -629,16 +642,18 @@ def validate_support_answer(issue: str, answer: str) -> list[str]:
 def validate_support_node(state: ConversationState) -> ConversationState:
     response = dict(state.get("response") or {})
     issue = normalize_text(state.get("issue", ""))
+    from services.property_clarification_service import apply_clarification_contract
+    response = apply_clarification_contract(response, issue, state.get("conversation_messages", []))
+    if response.get("pending_project_lookup"):
+        return {**state, "response": response}
     failures = validate_support_answer(issue, response.get("answer", ""))
     if not failures:
         return {**state, "response": response}
-    constraint_text = ", ".join(failures)
     response.update({
         "agent_mode": "relevance_clarification",
         "answer": (
-            "I could not verify one live answer that matches all of your requested details: "
-            f"{constraint_text}. I will not substitute unrelated project or property data. Please confirm the "
-            "detail you want me to relax, or ask me to check the closest live match."
+            "I couldn't confirm the requested details from the property records available right now. "
+            "Please try again shortly, or request a call so the team can check for you."
         ),
         "confidence_label": "low",
         "source_label": "Conversation relevance guard",

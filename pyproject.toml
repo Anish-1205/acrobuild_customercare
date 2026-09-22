@@ -2,6 +2,7 @@
 target-version = "py312"
 line-length = 120
 exclude = [".venv", "qwen-env", "node_modules"]
+cache-dir = "data/.ruff_cache"
 
 [tool.ruff.lint]
 select = ["E9", "F63", "F7", "F82"]
@@ -11,6 +12,8 @@ python_version = "3.12"
 ignore_missing_imports = true
 follow_imports = "skip"
 files = ["services/migration_service.py", "services/intent_service.py"]
+cache_dir = "data/.mypy_cache"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-p no:cacheprovider"

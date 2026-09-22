@@ -23,6 +23,8 @@ is_small_talk_message = globals()["is_small_talk_message"]
 normalize_text = globals()["normalize_text"]
 resolve_contextual_support_issue = globals()["resolve_contextual_support_issue"]
 validate_support_node = globals()["validate_support_node"]
+get_live_project_names = globals()["get_live_project_names"]
+_conversation_project_name = globals()["_conversation_project_name"]
 
 _legacy_build_deterministic_conversation_answer = build_deterministic_conversation_answer
 _legacy_is_small_talk_message = is_small_talk_message
@@ -114,7 +116,20 @@ def build_deterministic_conversation_answer(issue):
     return _legacy_build_deterministic_conversation_answer(issue)
 
 def resolve_contextual_support_issue(issue, conversation_messages):
+    # "s?" -- a plural mention ("3bhks") names the type as specifically as
+    # the singular form and must not be dropped here either.
+    issue = _re.sub(r"\b([1-6])\s*b(?:h)?ks?\b", r"\1BHK", str(issue), flags=_re.I)
     cleaned = normalize_text(issue).lower()
+    if _re.search(r"\b[1-6]\s*bhk\b", cleaned):
+        from services.acrobuild_company_service import resolve_project_candidates_from_text
+        projects = [{"projectName": name} for name in get_live_project_names()]
+        if resolve_project_candidates_from_text(projects, issue):
+            return normalize_text(issue)
+        # A portfolio search starts a new scope; a short type follow-up keeps it.
+        if not _re.search(r"\b(?:other|another|across|any|which|all|different)\s+projects?\b", cleaned):
+            project = _conversation_project_name(conversation_messages)
+            if project:
+                return f"{normalize_text(issue)}\nRequested project: {project}"
     bare_cost_reference = bool(_re.fullmatch(
         r"(?:so\s+)?how much(?:\s+(?:is|does|will|would))?\s+(?:this|that|it)(?:\s+cost)?\??",
         cleaned.strip(),

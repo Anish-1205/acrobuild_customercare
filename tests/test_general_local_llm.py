@@ -13,7 +13,6 @@ from qwen import build_qwen_messages
 
 
 class GeneralLocalLlmTests(unittest.TestCase):
-    @patch.dict("os.environ", {"LLM_PROVIDER": "qwen"})
     def test_general_prompt_provides_current_date_context(self):
         with patch(
             "graph.main_orchestrator.generate_qwen_chat_response",
@@ -27,7 +26,7 @@ class GeneralLocalLlmTests(unittest.TestCase):
         system_prompt = generate.call_args.kwargs["system_prompt"]
         self.assertIn("current local date and time is", system_prompt)
         self.assertIn("Use this value directly", system_prompt)
-        self.assertEqual(response["agent_mode"], "live_local_llm")
+        self.assertEqual(response["agent_mode"], "live_remote_llm")
         self.assertTrue(response["used_llm"])
 
     def test_hallucinated_model_date_is_replaced_with_runtime_date(self):
