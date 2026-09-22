@@ -226,7 +226,6 @@ export function AppShell() {
         </div>
 
         <div className="support-shell-toolbar">
-          {role !== "agent" && <Link className="support-shell-link" to={`/${role}/automation`}>Automations</Link>}
           {role === "admin" ? (
             <a
               className="support-shell-link support-shell-test-home"
