@@ -71,3 +71,10 @@ The code is authoritative when older documents disagree.
   when changing routing. Run `scripts/live_disambiguation_check.py` for live
   acceptance (real LLM/API, no mocks); transcripts are written to
   `docs/live_disambiguation_results.json`.
+
+## Local test artifacts
+
+- Run pytest without `--basetemp`; its default temporary directory is outside
+  the project. Do not create unique root-level pytest temp directories.
+- The pytest cache plugin is disabled in `pyproject.toml`. Ruff and mypy store
+  their caches under ignored `data/`.
