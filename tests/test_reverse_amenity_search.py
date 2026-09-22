@@ -10,6 +10,7 @@ feature will ever talk about are iconName values the live
 not resolve to a live value must produce no match at all -- the turn falls
 through to the normal path -- never a guessed one.
 """
+import os
 import unittest
 from unittest.mock import patch
 
@@ -163,6 +164,12 @@ class AmenitySearchAssistTests(_FakeCatalogueTest):
                     self.assertIn(name, real, name)
 
 
+@unittest.skipIf(
+    os.getenv("CI"),
+    "live acceptance test: needs the real CS API and Sarvam LLM reachable, "
+    "not just their credentials configured; run locally with a real .env "
+    "instead (see AGENTS.md's live-acceptance-script convention).",
+)
 class AmenitySearchOverHttpTests(unittest.TestCase):
     """Through the real router against the real CS API, in all four supported
     languages. Asserts grounding (every project named is a live project)

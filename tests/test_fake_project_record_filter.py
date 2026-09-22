@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 import api_context
 from services import acrobuild_company_service
+from services import amenity_search_service
 from services.ai_agent_service import build_company_api_direct_answer
 
 _PROJECTS_WITH_FAKE_RECORD = [
@@ -44,12 +45,21 @@ class FakeProjectRecordFilterTests(unittest.TestCase):
 
     def test_amenities_project_selection_list_excludes_fake_record(self):
         request = api_context.SupportAssistRequest(issue="What amenities are available?")
-        with patch.object(api_context, "get_company_projects", return_value=_PROJECTS_WITH_FAKE_RECORD):
+        # The ambiguous-project path builds its amenity index via
+        # services/amenity_search_service.py's own get_project_amenities
+        # import, a separate binding from api_context's -- leaving that call
+        # live made this test flaky/network-dependent even though it is only
+        # asserting the fake-record filter, not real amenity data.
+        with patch.object(api_context, "get_company_projects", return_value=_PROJECTS_WITH_FAKE_RECORD), \
+                patch.object(amenity_search_service, "get_company_projects", return_value=_PROJECTS_WITH_FAKE_RECORD), \
+                patch.object(amenity_search_service, "get_project_amenities", return_value=[{"iconName": "Gym"}]):
             response = api_context.build_grounded_project_amenities_assist(request)
 
         self.assertIsNotNone(response)
-        listed_projects = response["matched_chunks"][0]["projects"]
-        names = [project["projectName"] for project in listed_projects]
+        # build_amenity_project_choices() offers the shortlist as quick
+        # replies / the pending selection's options, not a "projects" key on
+        # matched_chunks (that shape belongs to the ambiguous-name path).
+        names = [choice["value"] for choice in response["quick_replies"]]
         self.assertNotIn("GBK Group", names)
         self.assertIn("Vishwajeet Heights", names)
 
@@ -59,7 +69,14 @@ class FakeProjectRecordFilterTests(unittest.TestCase):
             for index in range(1, 10)
         ]
         api_projects = [*real_projects, _PROJECTS_WITH_FAKE_RECORD[1]]
-        with patch.object(acrobuild_company_service, "_cached_request", return_value=api_projects):
+        # search_company_knowledge() gates on is_cs_api_configured() before
+        # ever reaching the (mocked) request layer below -- these three
+        # module constants must look configured regardless of the real
+        # environment's credentials.
+        with patch.object(acrobuild_company_service, "CS_API_BASE_URL", "https://example.invalid"), \
+                patch.object(acrobuild_company_service, "CS_API_KEY", "test-key"), \
+                patch.object(acrobuild_company_service, "CS_API_COMPANY_ID", "1"), \
+                patch.object(acrobuild_company_service, "_cached_request", return_value=api_projects):
             chunks = acrobuild_company_service.search_company_knowledge("what projects do you have")
 
         answer = build_company_api_direct_answer("what projects do you have", chunks)
