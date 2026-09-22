@@ -1,6 +1,9 @@
 import type { RoleId } from "../contexts/RoleContext";
 
 export type WorkspacePanelId =
+  | "api-activity"
+  | "data-api-logs"
+  | "cs-api-settings"
   | "ai-agent"
   | "analytics"
   | "articles"
@@ -28,6 +31,9 @@ type RoleExperience = {
 };
 
 const allWorkspacePanels = new Set<WorkspacePanelId>([
+  "api-activity",
+  "data-api-logs",
+  "cs-api-settings",
   "ai-agent",
   "analytics",
   "articles",
@@ -48,7 +54,7 @@ const allWorkspacePanels = new Set<WorkspacePanelId>([
 
 const rolePanelAccessMap: Record<RoleId, Set<WorkspacePanelId>> = {
   admin: new Set(allWorkspacePanels),
-  owner: new Set(allWorkspacePanels),
+  owner: new Set([...allWorkspacePanels].filter((panel) => !["api-activity", "data-api-logs", "cs-api-settings"].includes(panel))),
   agent: new Set(["inbox"])
 };
 

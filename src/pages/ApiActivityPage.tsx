@@ -56,7 +56,7 @@ function statusText(record: ApiActivityRecord) {
   return "Answered";
 }
 
-export function ApiActivityPage() {
+export function ApiActivityPage({ basePath = "/home" }: { basePath?: "/home" | "/admin" }) {
   const [records, setRecords] = useState<ApiActivityRecord[]>(getApiActivity);
   const [selectedId, setSelectedId] = useState(records[0]?.id || "");
 
@@ -82,8 +82,8 @@ export function ApiActivityPage() {
       </header>
 
       <nav aria-label="Chatbot activity views" className="api-view-tabs">
-        <Link aria-current="page" className="active" to="/home/api-activity"><b>1</b><span><strong>Chat request</strong><small>Question, chatbot API, and answer</small></span></Link>
-        <Link to="/home/data-api-logs"><b>2</b><span><strong>Property data used</strong><small>Live Acrobuild lookups inside the answer</small></span></Link>
+        <Link aria-current="page" className="active" to={`${basePath}/api-activity`}><b>1</b><span><strong>Chat request</strong><small>Question, chatbot API, and answer</small></span></Link>
+        <Link to={`${basePath}/data-api-logs`}><b>2</b><span><strong>Property data used</strong><small>Live Acrobuild lookups inside the answer</small></span></Link>
       </nav>
 
       <section className="api-page-guide">
@@ -156,7 +156,7 @@ export function ApiActivityPage() {
                 </section>
               ) : null}
 
-              <Link className="api-next-link" to="/home/data-api-logs">
+              <Link className="api-next-link" to={`${basePath}/data-api-logs`}>
                 <span><strong>Want to see the live property data?</strong><small>Open the APIs used inside this answer.</small></span>
                 <b>View property data →</b>
               </Link>

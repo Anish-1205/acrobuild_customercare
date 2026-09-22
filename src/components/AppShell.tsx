@@ -11,7 +11,7 @@ import type {
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useRole } from "../contexts/RoleContext";
 import { useSearch } from "../contexts/SearchContext";
-import { roleExperienceMap } from "../lib/roleNavigation";
+import { getRoleHomePath, roleExperienceMap } from "../lib/roleNavigation";
 
 export function AppShell() {
   const navigate = useNavigate();
@@ -167,13 +167,13 @@ export function AppShell() {
   return (
     <div className={`support-console-shell support-console-shell-${role}`}>
       <header className="support-shell-bar">
-        <div className="support-shell-brand">
+        <Link aria-label={`${roleExperience.shortLabel} home`} className="support-shell-brand" to={getRoleHomePath(role)}>
           <div className="support-shell-brand-mark">{roleExperience.shortLabel.slice(0, 2).toUpperCase()}</div>
           <div>
             <div className="support-shell-kicker">{roleExperience.shortLabel} Experience</div>
             <div className="support-shell-title">{roleExperience.shortLabel}</div>
           </div>
-        </div>
+        </Link>
 
         <div className="support-shell-search-container">
           <div className="support-shell-searchbox" ref={searchContainerRef}>
@@ -226,7 +226,6 @@ export function AppShell() {
         </div>
 
         <div className="support-shell-toolbar">
-          {role === "admin" && <Link className="support-shell-link" to="/admin/cs-api-settings">CS API settings</Link>}
           {role !== "agent" && <Link className="support-shell-link" to={`/${role}/automation`}>Automations</Link>}
           {role === "admin" ? (
             <a

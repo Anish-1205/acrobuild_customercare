@@ -34,7 +34,7 @@ function resultText(call: DataApiCallTrace) {
   return "Data returned successfully";
 }
 
-export function DataApiLogsPage() {
+export function DataApiLogsPage({ basePath = "/home" }: { basePath?: "/home" | "/admin" }) {
   const [records, setRecords] = useState<ApiActivityRecord[]>(getApiActivity);
   const traceRecords = records.filter((record) => callsOf(record).length > 0);
   const [selectedId, setSelectedId] = useState(traceRecords[0]?.id || "");
@@ -62,8 +62,8 @@ export function DataApiLogsPage() {
       </header>
 
       <nav aria-label="Chatbot activity views" className="api-view-tabs">
-        <Link to="/home/api-activity"><b>1</b><span><strong>Chat request</strong><small>Question, chatbot API, and answer</small></span></Link>
-        <Link aria-current="page" className="active" to="/home/data-api-logs"><b>2</b><span><strong>Property data used</strong><small>Live Acrobuild lookups inside the answer</small></span></Link>
+        <Link to={`${basePath}/api-activity`}><b>1</b><span><strong>Chat request</strong><small>Question, chatbot API, and answer</small></span></Link>
+        <Link aria-current="page" className="active" to={`${basePath}/data-api-logs`}><b>2</b><span><strong>Property data used</strong><small>Live Acrobuild lookups inside the answer</small></span></Link>
       </nav>
 
       <section className="api-page-guide data-guide">
@@ -115,7 +115,7 @@ export function DataApiLogsPage() {
                 ))}
               </div>
 
-              <Link className="api-back-link" to="/home/api-activity">← Back to the question and final answer</Link>
+              <Link className="api-back-link" to={`${basePath}/api-activity`}>← Back to the question and final answer</Link>
             </>
           ) : <div className="api-activity-detail-empty"><strong>No property data selected</strong><span>Ask a property question in the chatbot, then return here.</span></div>}
         </article>

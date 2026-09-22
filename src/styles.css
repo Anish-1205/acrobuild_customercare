@@ -5043,6 +5043,8 @@ code {
   background: #fff;
 }
 
+.support-shell-brand { text-decoration: none; }
+
 .store-chat-home.menu-mode.conversation-welcome {
   min-height: 100%;
   padding: 0;
@@ -7507,6 +7509,8 @@ code {
   overflow: hidden;
   padding: 0.9rem 0.78rem 0.75rem;
 }
+
+.support-console-grid.workspace-mode .support-sidebar-panel { overflow-y: auto; }
 
 .support-console-grid.inbox-sidebar-compact .support-sidebar-panel {
   padding: 0.9rem 0.7rem 0.7rem;

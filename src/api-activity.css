@@ -5,6 +5,15 @@
   background: #f3f6f2;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
+
+.support-console-page-shell > .api-activity-page {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.support-workspace-body > .api-activity-page { min-height: 0; }
 .api-activity-topbar {
   max-width: 1380px;
   margin: 0 auto;

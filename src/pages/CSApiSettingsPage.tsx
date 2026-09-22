@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { getCSApiSettings, saveCSApiSettings } from "../lib/api";
 import "./CSApiSettingsPage.css";
 
-export function CSApiSettingsPage() {
+export function CSApiSettingsPage({ embedded = false }: { embedded?: boolean }) {
   const [baseUrl, setBaseUrl] = useState("");
   const [companyId, setCompanyId] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -44,7 +44,7 @@ export function CSApiSettingsPage() {
   }
 
   return <section className="cs-api-settings">
-    <Link to="/admin/workspace">← Back to dashboard</Link>
+    {!embedded && <Link to="/admin/workspace">← Back to dashboard</Link>}
     <h1>CS API settings</h1>
     <p>Configure the property data connection. Saved settings take effect immediately and remain after a restart.</p>
     {error && <p role="alert">{error}</p>}

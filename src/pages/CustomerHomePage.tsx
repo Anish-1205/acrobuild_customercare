@@ -113,7 +113,7 @@ function createDefaultChatMessages(): ChatMessage[] {
   }];
 }
 
-import { MessageLauncherIcon, PaperPlaneIcon, MicrophoneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
+import { MessageLauncherIcon, PaperPlaneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
 import { type BrowserSpeechRecognition, type SpeechRecognitionConstructor, VOICE_LANGUAGES, type VoiceLanguageCode, detectSpeechLanguage } from "../lib/voiceLanguage";
 import { FLOW_TEXT, type ChatLanguage, chatLanguageFromReply, detectChatLanguage } from "../lib/chatLanguage";
 
@@ -3298,8 +3298,6 @@ export function CustomerHomePage() {
                   <strong>Acrobuild Assistant</strong>
                   <span>Property support</span>
                 </div>
-                <Link className="store-chat-api-link" to="/home/api-activity">API activity</Link>
-                <Link className="store-chat-api-link" to="/home/data-api-logs">Data APIs</Link>
                 <span aria-label="Online" className="store-chat-online" title="Online"><i /></span>
               </div>
             </header>
@@ -3803,17 +3801,6 @@ export function CustomerHomePage() {
                     ref={chatContactComposeRef}
                     value={chatDraft}
                   />
-                  {/* <button
-                    aria-label={isVoiceConversation ? "Stop voice conversation" : "Start voice conversation"}
-                    aria-pressed={isVoiceConversation}
-                    className={`store-chat-voice-button${isListening ? " listening" : ""}${isVoiceConversation ? " active" : ""}`}
-                    disabled={!supportsSpeechRecognition}
-                    onClick={handleVoiceToggle}
-                    title={supportsSpeechRecognition ? (isVoiceConversation ? "Stop voice conversation" : "Start a hands-free voice conversation") : "Voice input is not supported in this browser"}
-                    type="button"
-                  >
-                    <MicrophoneIcon />
-                  </button>                   */}
                   <button
                     aria-label="Send message"
                     className="store-chat-compose-submit"
@@ -3881,17 +3868,6 @@ export function CustomerHomePage() {
                     placeholder={hasActiveConversation ? "Reply to the assistant" : "Ask a support question"}
                     value={chatDraft}
                   />
-                  {/* <button
-                    aria-label={isVoiceConversation ? "Stop voice conversation" : "Start voice conversation"}
-                    aria-pressed={isVoiceConversation}
-                    className={`store-chat-voice-button${isListening ? " listening" : ""}${isVoiceConversation ? " active" : ""}`}
-                    disabled={!supportsSpeechRecognition}
-                    onClick={handleVoiceToggle}
-                    title={supportsSpeechRecognition ? (isVoiceConversation ? "Stop voice conversation" : "Start a hands-free voice conversation") : "Voice input is not supported in this browser"}
-                    type="button"
-                  >
-                    <MicrophoneIcon />
-                  </button>                   */}
                   <button
                     aria-label="Send message"
                     className="store-chat-compose-submit"
