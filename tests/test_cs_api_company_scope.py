@@ -6,6 +6,12 @@ import pytest
 from services import acrobuild_company_service as cs
 
 
+@pytest.fixture(autouse=True)
+def use_module_defaults(monkeypatch):
+    """These tests exercise environment defaults, independent of local admin settings."""
+    monkeypatch.setattr(cs, "get_cs_api_settings", lambda defaults: defaults)
+
+
 @pytest.mark.parametrize("path,expected", [
     ("/api/cs/company", "/api/cs/16/company"),
     ("/api/cs/projects", "/api/cs/16/projects"),

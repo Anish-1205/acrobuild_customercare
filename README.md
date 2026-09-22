@@ -47,6 +47,15 @@ Sarvam endpoint or a RunPod-hosted one. The LLM and CS API are independent:
 `GET /` verifies only the local backend, not either external service. Keep
 `.env` private.
 
+Administrators can update the CS API base URL, API key, and company ID from
+**CS API settings** in the admin dashboard header, or open
+`http://127.0.0.1:5173/admin/cs-api-settings` after signing in. Save the three
+values there to apply them to new property data requests without restarting
+the backend. Saved values persist in the local SQLite database and take
+precedence over `.env` after a restart. The dashboard never displays the saved
+API key; leave its field blank to keep the current key. The settings API at
+`/api/admin/cs-api-settings` requires an administrator session.
+
 ## Run
 
 ```bash

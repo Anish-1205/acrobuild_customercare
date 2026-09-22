@@ -2,6 +2,7 @@ import { lazy, Suspense, type ReactElement } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useRole, type RoleId } from "./contexts/RoleContext";
 import { AppShell } from "./components/AppShell";
+import { CSApiSettingsPage } from "./pages/CSApiSettingsPage";
 import {
   getRoleHomePath,
   getRolePanelPath,
@@ -81,6 +82,7 @@ export default function App() {
       <Route element={<CustomerHomePage />} path="/home/articles/:articleSlug" />
       <Route element={<LoginRoute />} path="/login" />
       <Route element={<ProtectedAppShell />} path="/">
+        <Route element={<RoleRoute allowedRole="admin" element={<CSApiSettingsPage />} />} path="admin/cs-api-settings" />
         <Route element={<RoleRoute allowedRole="admin" element={<AutomationPage />} />} path="admin/automation" />
         <Route element={<RoleRoute allowedRole="owner" element={<AutomationPage />} />} path="owner/automation" />
         <Route element={<RoleRedirect />} index />

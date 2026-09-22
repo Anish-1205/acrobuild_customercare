@@ -1,5 +1,7 @@
 """Application entry point; domain routes live in routers/."""
 from api_context import api
+from routers.cs_api_settings import router as cs_api_settings_router
+api.include_router(cs_api_settings_router)
 from routers.automation import router as automation_router
 api.include_router(automation_router)
 from routers.health import router as health_router

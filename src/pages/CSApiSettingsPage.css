@@ -1,0 +1,8 @@
+.cs-api-settings { max-width: 680px; margin: 32px auto; padding: 28px; background: var(--bg-card, white); border: 1px solid #dce2eb; border-radius: 16px; }
+.cs-api-settings fieldset { border: 0; padding: 0; display: grid; gap: 12px; }
+.cs-api-settings label { font-weight: 600; margin-top: 12px; }
+.cs-api-settings input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #aab5c5; border-radius: 8px; font: inherit; }
+.cs-api-settings button { padding: 12px 18px; border: 0; border-radius: 8px; background: #224fc2; color: white; font: inherit; cursor: pointer; }
+.cs-api-settings button:disabled { opacity: .6; cursor: wait; }
+.cs-api-settings [role="alert"] { color: #b42318; }
+.cs-api-settings [role="status"] { color: #17663f; }

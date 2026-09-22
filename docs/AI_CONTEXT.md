@@ -41,6 +41,13 @@ flowchart LR
    `ACROBUILD_CS_API_BASE_URL`, `ACROBUILD_CS_API_KEY`, and
    `ACROBUILD_CS_API_COMPANY_ID`, plus network access
    to that API. The two external services can fail independently.
+   Administrators can edit the three CS API values using **CS API settings**
+   in the dashboard header (`/admin/cs-api-settings`). Saved values are stored
+   in SQLite and override the environment defaults on new API requests,
+   including after restarts; `.env` is not rewritten. The existing key is never
+   sent to the browser, and a blank key field preserves it. Cached responses
+   are isolated by connection configuration. Legacy snapshots are not reused
+   when the configured server differs from the environment default.
 
 ## File map for another AI
 

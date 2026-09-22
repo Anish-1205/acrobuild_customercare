@@ -1,4 +1,6 @@
 import json
+import hashlib
+from contextvars import ContextVar
 import os
 import re
 import socket
@@ -13,6 +15,7 @@ from time import monotonic, time
 from dotenv import load_dotenv
 
 from services.reply_language import strip_reply_language_directive
+from services.cs_api_settings_service import get_cs_api_settings
 
 from services.internal_api_log_service import (
     log_data_api_call,
@@ -40,6 +43,15 @@ CS_API_LIVE_ONLY = os.getenv("ACROBUILD_CS_API_LIVE_ONLY", "true").strip().lower
 
 _CACHE = {}
 _CACHE_LOCK = Lock()
+_CS_CONFIG = ContextVar("cs_api_config", default=None)
+
+
+def _cs_api_defaults():
+    return {"base_url": CS_API_BASE_URL, "api_key": CS_API_KEY, "company_id": CS_API_COMPANY_ID}
+
+
+def _cs_api_config():
+    return _CS_CONFIG.get() or get_cs_api_settings(_cs_api_defaults())
 
 # Words that mean "the customer wants company / contact details" vs. words that
 # mean "the customer is asking about property inventory". Used to decide whether
@@ -166,18 +178,20 @@ def _response_summary(value):
 
 
 def _company_scoped_path(path):
-    if not CS_API_COMPANY_ID.isdecimal() or int(CS_API_COMPANY_ID) <= 0:
+    company_id = _cs_api_config()["company_id"]
+    if not company_id.isdecimal() or int(company_id) <= 0:
         raise RuntimeError("ACROBUILD_CS_API_COMPANY_ID must be a positive integer.")
     if not path.startswith("/api/cs/"):
         raise ValueError(f"Unexpected CS API path: {path}")
-    return f"/api/cs/{CS_API_COMPANY_ID}/{path.removeprefix('/api/cs/')}"
+    return f"/api/cs/{company_id}/{path.removeprefix('/api/cs/')}"
 
 
 def _request_json(path, params=None):
-    if not CS_API_KEY:
+    config = _cs_api_config()
+    if not config["api_key"]:
         raise RuntimeError("ACROBUILD_CS_API_KEY is not configured.")
 
-    url = f"{CS_API_BASE_URL}{_company_scoped_path(path)}"
+    url = f"{config['base_url']}{_company_scoped_path(path)}"
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
 
@@ -186,7 +200,7 @@ def _request_json(path, params=None):
         headers={
             "Accept": "application/json",
             "User-Agent": "AcrobuildSupportAgent/1.0",
-            "apiKey": CS_API_KEY,
+            "apiKey": config["api_key"],
         },
         method="GET",
     )
@@ -229,6 +243,10 @@ def _snapshot_json_path():
 
 
 def _load_snapshot_fallback(path, params=None):
+    config = _cs_api_config()
+    # Legacy snapshots have no origin metadata. Never reuse them for a new server.
+    if config["base_url"] != CS_API_BASE_URL:
+        return None
     snapshot_path = _snapshot_json_path()
     if not snapshot_path.exists():
         return None
@@ -236,7 +254,8 @@ def _load_snapshot_fallback(path, params=None):
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
-    if not CS_API_COMPANY_ID.isdecimal() or snapshot.get("company", {}).get("id") != int(CS_API_COMPANY_ID):
+    company_id = config["company_id"]
+    if not company_id.isdecimal() or snapshot.get("company", {}).get("id") != int(company_id):
         return None
     if path == "/api/cs/company":
         return snapshot.get("company")
@@ -291,7 +310,17 @@ def normalize_inventory_status(record):
 
 
 def _cached_request(path, params=None, ttl_seconds=None):
-    turn_key = (path, tuple(sorted((params or {}).items())))
+    token = _CS_CONFIG.set(_cs_api_config())
+    try:
+        return _cached_configured_request(path, params, ttl_seconds)
+    finally:
+        _CS_CONFIG.reset(token)
+
+
+def _cached_configured_request(path, params=None, ttl_seconds=None):
+    config = _cs_api_config()
+    namespace = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()
+    turn_key = (namespace, path, tuple(sorted((params or {}).items())))
     memoised = turn_cache_get(turn_key)
     if memoised is not None:
         summary = _response_summary(memoised)
@@ -311,7 +340,7 @@ def _cached_request(path, params=None, ttl_seconds=None):
         if ttl_seconds is None
         else ttl_seconds
     )
-    cache_key = (path, tuple(sorted((params or {}).items())))
+    cache_key = turn_key
     with _CACHE_LOCK:
         cached = _CACHE.get(cache_key)
         if cached and time() - cached["stored_at"] < ttl_seconds:
@@ -510,8 +539,9 @@ def _knowledge_chunk(title, excerpt, source_key):
 # -----------------------------------
 
 def is_cs_api_configured():
-    return bool(CS_API_BASE_URL and CS_API_KEY and CS_API_COMPANY_ID.isdecimal()
-                and int(CS_API_COMPANY_ID) > 0)
+    config = _cs_api_config()
+    return bool(config["base_url"] and config["api_key"] and config["company_id"].isdecimal()
+                and int(config["company_id"]) > 0)
 
 
 def get_company_projects():
@@ -780,8 +810,8 @@ def search_company_knowledge(query, max_projects=20):
 def get_cs_api_status():
     return {
         "configured": is_cs_api_configured(),
-        "base_url": CS_API_BASE_URL,
-        "api_key_present": bool(CS_API_KEY),
+        "base_url": _cs_api_config()["base_url"],
+        "api_key_present": bool(_cs_api_config()["api_key"]),
     }
 # -----------------------------------
 # COMPLETE COMPANY DATA SNAPSHOT
