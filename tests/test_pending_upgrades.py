@@ -41,43 +41,6 @@ def test_runtime_header_fails_before_unmarshalling():
         validate_runtime_header(b"wrong-version!!!")
 
 
-def test_fallback_reports_actual_provider(monkeypatch):
-    import qwen
-    from services.provider_resilience_service import completion_metadata, mark_completion, _states
-    import httpx
-    _states.clear()
-    monkeypatch.setenv("LLM_PROVIDER", "sarvam")
-    monkeypatch.setenv("LLM_FALLBACK_PROVIDER", "qwen")
-    monkeypatch.setattr(qwen, "_generate_sarvam_chat_response", lambda **kw: (_ for _ in ()).throw(httpx.ConnectError("offline")))
-    monkeypatch.setattr(qwen, "_generate_local_qwen_chat_response", lambda **kw: "local answer")
-    try:
-        assert qwen.generate_qwen_chat_response("system", "question") == "local answer"
-        assert completion_metadata()["actual_provider"] == "qwen"
-        assert qwen.get_llm_source_label() == "Live local Qwen"
-    finally:
-        mark_completion("", "")
-        _states.clear()
-
-
-def test_stream_does_not_mix_providers(monkeypatch):
-    import qwen
-    monkeypatch.setenv("LLM_PROVIDER", "sarvam")
-    monkeypatch.setenv("LLM_FALLBACK_PROVIDER", "qwen")
-    calls = []
-    def stream(*args, provider=None):
-        calls.append(provider)
-        yield "partial"
-        raise RuntimeError("lost connection")
-    monkeypatch.setattr(qwen, "_stream_qwen_chat_response", stream)
-    result = qwen.stream_qwen_chat_response("system", "question")
-    assert next(result) == "partial"
-    with pytest.raises(RuntimeError):
-        next(result)
-    assert calls == ["sarvam"]
-    from services.provider_resilience_service import mark_completion
-    mark_completion("", "")
-
-
 def test_scanner_requires_engine_in_production(monkeypatch):
     from services.upload_security_service import scan_upload, validate_knowledge_upload
     monkeypatch.setenv("ACROBUILD_ENV", "production")

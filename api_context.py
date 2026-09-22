@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -22,11 +23,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from graph.workflow import run_workflow
 from services.acrobuild_company_service import (
     get_company_projects,
+    get_project_amenities,
+    customer_facing_projects,
     get_project_wings,
     get_wing_inventory,
     get_wing_typologies,
+    resolve_project_candidates_from_text,
     resolve_project_from_text,
     get_cs_api_status,
+    get_company_data_snapshot_path,
 )
 from services.internal_api_log_service import (
     begin_data_api_trace,
@@ -125,7 +130,17 @@ from graph.main_orchestrator import (
     stream_support_orchestration_events,
 )
 from graph.haystack_conversation_pipeline import is_property_support_message
-from qwen import warm_qwen_model_async
+from services.property_clarification_service import build_area_no_match_response, build_project_choice_answer, build_amenity_project_choices
+from services.amenity_search_service import (
+    is_amenity_lookup_query,
+    is_reverse_amenity_query,
+    live_amenity_index,
+    live_amenity_names,
+    match_amenity_terms,
+    projects_with_amenities,
+    scope_index_to_locality,
+    resolve_named_project,
+)
 from services.indic_translation_service import warm_translation_model_async
 from services.indic_tts_service import generate_fast_indic_speech, generate_indic_speech
 from services.otp_service import (
@@ -177,11 +192,37 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
     # The orchestrator's LLM turn analysis is authoritative; the keyword check only
     # covers payloads that carry no route (e.g. router-level grounded shortcuts).
     route = response_payload.get("route")
-    if route == "general" or (route != "property" and not is_property_support_message(issue)):
+    # call_booking/human_contact answers are deterministic template text with
+    # no CS API involvement; the live-data check below only makes sense for
+    # property answers and would otherwise misfire on a booking/contact
+    # message that happens to also contain a property-support word like
+    # "ticket" or "agent".
+    if route in {"general", "call_booking", "human_contact"} or (route != "property" and not is_property_support_message(issue)):
         return response_payload
+    # A resource can be requested more than once within a single turn (e.g.
+    # get_company_projects() is called from several independent steps); an
+    # earlier timeout that a later call to the SAME resource resolved live
+    # must not still make the final answer look like it used stale data.
+    # data_api_calls is chronological, so keeping only the last entry per
+    # (endpoint, params) keeps each resource's most recent, authoritative
+    # outcome -- the one that actually fed the answer below.
+    latest_calls = {}
+    for call in data_api_calls:
+        key = (call.get("endpoint"), tuple(sorted((call.get("params") or {}).items())))
+        latest_calls[key] = call
+    data_api_calls = list(latest_calls.values())
     failed_live_calls = [
         call for call in data_api_calls
         if call.get("provider") == "Acrobuild CS API" and call.get("status") == "failed"
+    ]
+    snapshot_calls = [
+        call for call in data_api_calls
+        if "snapshot" in str(call.get("provider", "")).lower()
+        and call.get("status") in {"cached", "completed"}
+    ]
+    snapshot_endpoints = {call.get("endpoint") for call in snapshot_calls}
+    uncovered_failures = [
+        call for call in failed_live_calls if call.get("endpoint") not in snapshot_endpoints
     ]
     non_live_calls = [
         call for call in data_api_calls
@@ -192,6 +233,10 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
         call for call in data_api_calls
         if call.get("provider") == "Acrobuild CS API" and call.get("status") == "completed"
         and (not call.get("cache_hit") or str((call.get("response_summary") or {}).get("kind")) == "turn_cache")
+    ]
+    cached_live_calls = [
+        call for call in data_api_calls
+        if call.get("provider") == "Acrobuild CS API" and call.get("status") == "cached"
     ]
 
     company_api_chunks = [
@@ -206,12 +251,35 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
         not company_api_chunks or bool(_HEDGE_RE.search(answer_text))
     )
 
-    if completed_live_calls and not failed_live_calls and not non_live_calls and not ungrounded_answer:
+    if (completed_live_calls or cached_live_calls) and not failed_live_calls and not snapshot_calls and not ungrounded_answer:
         response_payload["articles"] = []
         response_payload["knowledge_documents"] = []
         response_payload["matched_chunks"] = company_api_chunks
         response_payload["source_label"] = "Live Acrobuild CS API"
         response_payload["source_status"] = "live_api"
+        response_payload["agent_mode"] = normalize_agent_mode(response_payload.get("agent_mode"))
+        return response_payload
+
+    if snapshot_calls and not uncovered_failures and not ungrounded_answer:
+        snapshot_path = Path(get_company_data_snapshot_path()).with_suffix(".json")
+        try:
+            saved_at = datetime.fromtimestamp(snapshot_path.stat().st_mtime)
+            saved_date = f"{saved_at.day} {saved_at:%B %Y}"
+        except OSError:
+            # The fallback data actually used came from _load_snapshot_fallback()'s
+            # in-memory read, not this file lookup; a snapshot answer must not
+            # crash just because its on-disk copy is unavailable (e.g. an
+            # environment where the snapshot file is deliberately not present).
+            saved_date = "an earlier sync"
+        answer = answer_text.replace("Availability is live and may change.", "Availability may have changed.")
+        answer = re.sub(r"\blive (?:Acrobuild CS API|project data|property data|data|inventory|API)\b",
+                        "saved property data", answer, flags=re.IGNORECASE)
+        response_payload["answer"] = (
+            f"Live property data is unavailable. This answer uses saved data from {saved_date}; "
+            "prices and availability may have changed.\n\n" + answer
+        )
+        response_payload["source_label"] = f"Acrobuild property snapshot ({saved_date})"
+        response_payload["source_status"] = "snapshot"
         response_payload["agent_mode"] = normalize_agent_mode(response_payload.get("agent_mode"))
         return response_payload
 
@@ -235,11 +303,9 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
     )
     response_payload.update({
         "agent_mode": "live_data_error",
-        "answer": (
-            f"Live property data is unavailable: {reason}. "
-            "I did not use cached responses, server memory, snapshots, local knowledge, or predefined data. "
-            "Please try again shortly, or I can connect you with the sales team."
-        ),
+        "answer": ("I couldn't verify that from live property data. Please try again shortly."
+                   if source_status == "unverified" else
+                   "Live property data is unavailable right now. Please try again shortly."),
         "articles": [],
         "confidence_label": "low",
         "handoff_recommended": True,
@@ -249,6 +315,7 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
         "source_label": "Acrobuild CS API",
         "source_status": source_status,
         "used_llm": False,
+        "quick_replies": [],
     })
     return response_payload
 
@@ -430,7 +497,6 @@ def warm_ai_knowledge_index():
         refresh_workspace_index_async()
     if os.getenv("ACROBUILD_WARM_LOCAL_AI_MODELS", "false").strip().lower() in {"1", "true", "yes", "on"}:
         warm_translation_model_async()
-        warm_qwen_model_async()
 # -----------------------------------
 # REQUEST MODEL
 # -----------------------------------
@@ -830,6 +896,73 @@ def refresh_support_assist_state():
         rebuild_async=False,
     )
 
+def _customer_facing_projects(projects):
+    """Drop non-project records the live CS API mixes into the projects list
+    (e.g. id 55 "GBK Group" -- the company entity itself, with
+    address="palvinder@gbkgroup.in" instead of a street address). isPublished
+    is not usable as a signal here: it is False for every record, including
+    every legitimate project."""
+    return customer_facing_projects(projects)
+
+
+def _resolve_project_selection(projects, texts):
+    """Return ``(selected_project, ambiguous_candidates)`` for ordered text.
+
+    The current issue is passed first and therefore takes precedence over
+    conversation history. Multiple matches stop the search so an ambiguous new
+    name can never silently fall back to an older project selection.
+    """
+    for text in texts:
+        candidates = resolve_project_candidates_from_text(projects, text)
+        if len(candidates) == 1:
+            return candidates[0], []
+        if len(candidates) > 1:
+            return None, candidates
+    return None, []
+
+
+def _build_ambiguous_project_response(candidates, lookup_label):
+    candidate_names = list(dict.fromkeys(
+        str(project.get("projectName", "")).strip()
+        for project in candidates
+        if str(project.get("projectName", "")).strip()
+    ))
+    # Shared with services/property_clarification_service.py so the "which
+    # project did you mean?" wording is identical everywhere it is asked.
+    answer = build_project_choice_answer(candidate_names, lookup_label)
+    evidence = {
+        "body_text": "\n".join(candidate_names),
+        "category": "AcroBuild property data",
+        "excerpt": f"{len(candidate_names)} matching projects; clarification required",
+        "projects": candidates,
+        "record_kind": "company_api",
+        "score": 100.0,
+        "source_key": f"acrobuild-cs-projects-{lookup_label}-ambiguity",
+        "source_name": "AcroBuild CS API",
+        "title": f"Projects matching {lookup_label} question",
+        "url": "",
+    }
+    return {
+        "agent_mode": "knowledge_retrieval",
+        "answer": answer,
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": False,
+        "knowledge_documents": [],
+        "last_synced_at": None,
+        "matched_chunks": [evidence],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Retrieved AcroBuild project data",
+        "source_status": "live_api",
+        "support_base_url": get_support_base_url(),
+        "sync_error": "",
+        "used_llm": False,
+        "pending_project_lookup": lookup_label,
+    }
+
+
 def build_grounded_site_visit_document_assist(request):
 
     issue = str(request.issue or "").strip()
@@ -842,11 +975,13 @@ def build_grounded_site_visit_document_assist(request):
     if not asks_site_visit:
         return None
 
-    projects = get_company_projects()
+    projects = _customer_facing_projects(get_company_projects())
     customer_history = [str(message.text or "").strip() for message in request.conversation_messages if str(message.sender or "").lower() == "customer" and str(message.text or "").strip()]
-    selected_project = resolve_project_from_text(projects, issue)
-    if selected_project is None:
-        selected_project = next((resolved for text in reversed(customer_history) if (resolved := resolve_project_from_text(projects, text)) is not None), None)
+    selected_project, candidates = _resolve_project_selection(projects, [issue, *reversed(customer_history)])
+    if candidates or (selected_project is None and projects):
+        payload = _build_ambiguous_project_response(candidates or projects, "documents")
+        payload["clarification_entity"] = "project"
+        return payload
     project_name = (
         str(selected_project.get("projectName", "")).strip()
         if selected_project
@@ -904,15 +1039,24 @@ def build_grounded_project_amenities_assist(request):
     ):
         return None
 
-    projects = get_company_projects()
+    projects = _customer_facing_projects(get_company_projects())
     customer_history = [str(message.text or "").strip() for message in request.conversation_messages if str(message.sender or "").lower() == "customer" and str(message.text or "").strip()]
-    selected_project = resolve_project_from_text(projects, issue)
+    catalogue_request = is_reverse_amenity_query(issue) and not re.search(
+        r"\b(?:this|that|it|its|these|those|selected)\b", issue, re.I,
+    )
+    selected_project, ambiguous_candidates = _resolve_project_selection(
+        projects, [issue, *([] if catalogue_request else reversed(customer_history))],
+    )
+    if ambiguous_candidates:
+        return _build_ambiguous_project_response(
+            ambiguous_candidates, "amenities",
+        )
     if selected_project is None:
-        selected_project = next((resolved for text in reversed(customer_history) if (resolved := resolve_project_from_text(projects, text)) is not None), None)
-    if selected_project is None:
+        if projects:
+            index, locality = scope_index_to_locality(live_amenity_index(), issue)
+            return build_amenity_project_choices(issue, index, locality)
         answer = (
-            "Which project would you like me to check? Share the project name, "
-            "and I'll look up its confirmed amenities in the available project data."
+            "The live catalogue currently lists no projects to select. Please try again later."
         )
         evidence = {
             "body_text": "\n".join(
@@ -947,25 +1091,25 @@ def build_grounded_project_amenities_assist(request):
             "support_base_url": get_support_base_url(),
             "sync_error": "",
             "used_llm": False,
+            "pending_project_lookup": "amenities",
         }
 
     project_name = str(selected_project.get("projectName", "Project")).strip()
-    wings = get_project_wings(selected_project["id"])
-    amenity_values = []
-    for wing in wings:
-        for typology in get_wing_typologies(wing["id"]):
-            value = typology.get("unitAmenities")
-            if isinstance(value, list):
-                amenity_values.extend(
-                    str(item).strip() for item in value if str(item).strip()
-                )
-            elif str(value or "").strip():
-                amenity_values.extend(
-                    item.strip()
-                    for item in re.split(r"[,;|\n]", str(value))
-                    if item.strip()
-                )
-    amenities = list(dict.fromkeys(amenity_values))
+    # GET /api/cs/{companyId}/projects/{id}/amenities is the curated amenity list for
+    # the project ({iconName, type, url}, type is "Amenities" or "Facilities").
+    # typology.get("unitAmenities") (the old source) is empty on every
+    # typology of every project in the catalogue and can never return data.
+    amenity_records = get_project_amenities(selected_project["id"])
+    # Amenities and Facilities are merged into one flat list: the trigger
+    # condition above already treats "amenities" and "facilities" as the same
+    # customer intent, and the answer template below has always presented a
+    # single list under one heading, so this keeps that existing structure
+    # rather than introducing a second section customers didn't ask for.
+    amenities = list(dict.fromkeys(
+        str(record.get("iconName", "")).strip()
+        for record in amenity_records
+        if isinstance(record, dict) and str(record.get("iconName", "")).strip()
+    ))
     if amenities:
         answer = "\n".join([
             f"The available data lists these amenities for {project_name}:",
@@ -978,10 +1122,15 @@ def build_grounded_project_amenities_assist(request):
             "Please contact the sales team for the latest confirmed amenity details."
         )
 
+    if re.search(r"\b(location|address|located|where)\b", issue, re.I):
+        location = str(selected_project.get("location") or selected_project.get("address") or selected_project.get("city") or "").strip()
+        answer += f"\n\nLocation: {location or 'Not listed in the live project record.'}"
+    answer += "\n\nWould you like to raise a support ticket, book a site visit, or request a call?"
+
     evidence = {
         "body_text": answer,
         "category": "AcroBuild property data",
-        "excerpt": f"Amenity fields checked across {len(wings)} project wings",
+        "excerpt": f"{len(amenity_records)} amenity record(s) checked via the project amenities endpoint",
         "project": selected_project,
         "record_kind": "company_api",
         "score": 100.0,
@@ -989,7 +1138,7 @@ def build_grounded_project_amenities_assist(request):
         "source_name": "AcroBuild CS API",
         "title": f"{project_name} amenities",
         "url": "",
-        "wings_checked": len(wings),
+        "amenities_checked": len(amenity_records),
     }
     return {
         "agent_mode": "knowledge_retrieval",
@@ -1009,6 +1158,279 @@ def build_grounded_project_amenities_assist(request):
         "sync_error": "",
         "used_llm": False,
     }
+
+
+def _amenity_search_payload(answer, evidence_body, source_key, title, projects, amenities):
+    return {
+        "agent_mode": "knowledge_retrieval",
+        "answer": answer,
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": False,
+        "knowledge_documents": [],
+        "last_synced_at": None,
+        "matched_chunks": [{
+            "body_text": evidence_body,
+            "category": "AcroBuild property data",
+            "excerpt": f"{len(projects)} project(s) checked against live amenity records",
+            "projects": projects,
+            "amenities_matched": amenities,
+            "record_kind": "company_api",
+            "score": 100.0,
+            "source_key": source_key,
+            "source_name": "AcroBuild CS API",
+            "title": title,
+            "url": "",
+        }],
+        "model": "",
+        "retrieval_mode": "live_project_records",
+        "source_label": "Retrieved AcroBuild project data",
+        "source_status": "live_api",
+        "support_base_url": get_support_base_url(),
+        "sync_error": "",
+        "used_llm": False,
+        "amenity_search": True,
+    }
+
+
+def _amenity_phrase(terms):
+    if len(terms) == 1:
+        return terms[0]
+    return ", ".join(terms[:-1]) + " and " + terms[-1]
+
+
+def _pending_project_options(pending):
+    """Project names a pending "which project did you mean?" is waiting on."""
+    if not isinstance(pending, dict) or pending.get("kind") != "selection":
+        return []
+    if pending.get("entity") != "project":
+        return []
+    return [str(name).strip() for name in (pending.get("options") or []) if str(name).strip()]
+
+
+def build_grounded_amenity_search_assist(request, pending=None):
+    """Reverse amenity search: "which projects have a gym", "where can I find a
+    swimming pool", and the single-project "does X have a gym?" form.
+
+    Every project name and amenity name in the answer comes from the live CS
+    API (services/amenity_search_service.py builds the index off
+    /api/cs/{companyId}/projects and /api/cs/{companyId}/projects/{id}/amenities). If the customer's
+    words do not resolve to an amenity that actually exists in that live data,
+    this returns None and the turn continues down the normal path -- it never
+    guesses a match.
+
+    ``pending`` is the project selection this turn is answering, if any. The
+    disambiguation message offers "tell me an amenity that matters to you and
+    I'll shortlist the ones that fit", so a bare amenity reply ("one with a
+    swimming pool") has to be honoured here -- it is not shaped like a
+    question, and without this it fell through and re-showed the same list.
+    """
+    issue = str(request.issue or "").strip()
+    if not issue:
+        return None
+    narrowing_options = _pending_project_options(pending)
+    # Cheap shape test before touching the API at all. Skipped while narrowing
+    # a pending selection, where a bare amenity phrase is the whole reply.
+    if not narrowing_options and not (
+        is_reverse_amenity_query(issue)
+        or re.search(r"\b(?:does|do|has|have|is|are|got)\b", issue, re.I)
+    ):
+        return None
+
+    index = live_amenity_index()
+    live_names = live_amenity_names(index)
+    if narrowing_options:
+        if not match_amenity_terms(issue, live_names):
+            return None  # not an amenity reply; let selection handling have it
+        index = {key: entry for key, entry in index.items()
+                 if str(entry["project"].get("projectName", "")).strip() in narrowing_options}
+    elif not is_amenity_lookup_query(issue, live_names):
+        return None
+    terms = match_amenity_terms(issue, live_names)
+    phrase = _amenity_phrase(terms)
+
+    named_project = (
+        None if (narrowing_options or is_reverse_amenity_query(issue))
+        else resolve_named_project(issue)
+    )
+    if named_project is not None:
+        # "Does Vishwajeet Prime have a gym?" -- same live records, yes/no form.
+        entry = index.get(named_project["id"], {"amenities": []})
+        project_name = str(named_project.get("projectName", "Project")).strip()
+        present = [term for term in terms if term in entry["amenities"]]
+        missing = [term for term in terms if term not in entry["amenities"]]
+        if present and not missing:
+            answer = (
+                f"Yes — the live data for {project_name} lists {_amenity_phrase(present)}."
+            )
+        elif present:
+            answer = (
+                f"Partly — {project_name} lists {_amenity_phrase(present)}, but its live "
+                f"amenity record does not list {_amenity_phrase(missing)}."
+            )
+        else:
+            answer = (
+                f"The live amenity record for {project_name} does not list "
+                f"{phrase}. I can show you its full amenity list, or tell you which "
+                "of our projects do list it."
+            )
+        others = [
+            str(entry_value["project"].get("projectName", "")).strip()
+            for entry_value in index.values()
+            if entry_value["project"]["id"] != named_project["id"]
+            and all(term in entry_value["amenities"] for term in terms)
+        ]
+        if missing or not present:
+            if others:
+                answer += "\n\nThese projects do list it:\n\n" + "\n".join(f"- {name}" for name in others)
+        return _amenity_search_payload(
+            answer, "\n".join(entry["amenities"]),
+            f"acrobuild-cs-project-{named_project['id']}-amenity-check",
+            f"{project_name} amenity check", [named_project], terms,
+        )
+
+    # "which projects in Pune have a gym" must not be answered from the whole
+    # catalogue; scope to the live locality/city the customer named, if any.
+    index, locality = scope_index_to_locality(index, issue)
+    where = f" in {locality}" if locality else ""
+    matches, per_term = projects_with_amenities(index, terms)
+    names = [str(project.get("projectName", "")).strip() for project in matches]
+    if names and narrowing_options:
+        # Narrowing an open "which project?" question: shortlist, and keep the
+        # original request pending so naming one of these resumes it.
+        answer = "\n".join([
+            f"Of those, {'this one lists' if len(names) == 1 else 'these list'} {phrase}:",
+            "",
+            *[f"- {name}" for name in names],
+            "",
+            "Shall I go ahead with " + (f"{names[0]}?" if len(names) == 1
+                                        else "one of these? Just tell me which."),
+        ])
+    elif names:
+        answer = "\n".join([
+            f"These projects{where} list {phrase} in their live amenity data:",
+            "",
+            *[f"- {name}" for name in names],
+            "",
+            "Tell me which one you'd like and I'll pull up its full amenity list, "
+            "pricing or location.",
+        ])
+    elif len(terms) > 1 and any(per_term[term] for term in terms):
+        lines = [f"No project{where} currently lists all of {phrase} together. Here is what the live data does list:", ""]
+        for term in terms:
+            found = [str(project.get("projectName", "")).strip() for project in per_term[term]]
+            lines.append(f"- {term}: " + (", ".join(found) if found else "not listed for any project right now"))
+        lines += ["", "Tell me which of these matters most and I'll take it from there."]
+        answer = "\n".join(lines)
+    else:
+        answer = (
+            f"None of our projects{where} currently list {phrase} in their live amenity data. "
+            "That data only covers what each project has published, so it is worth asking "
+            "the sales team as well. I can also show you the full amenity list for any project."
+        )
+    payload = _amenity_search_payload(
+        answer, "\n".join(f"{name}: {', '.join(entry['amenities'])}" for name, entry in
+                          ((str(v["project"].get("projectName", "")).strip(), v) for v in index.values())),
+        f"acrobuild-cs-amenity-search-{'-'.join(t.lower().replace(' ', '-') for t in terms)}",
+        f"Projects listing {phrase}", matches, terms,
+    )
+    if narrowing_options:
+        # Keep the customer's ORIGINAL request alive, now waiting on a shorter
+        # list, so naming one of these answers what they first asked.
+        payload["pending_project_lookup"] = {
+            **pending,
+            "options": names or narrowing_options,
+        }
+    elif names:
+        payload["pending_project_lookup"] = {
+            "kind": "selection", "entity": "project", "options": names,
+            "scope": {}, "original_issue": issue, "purpose": "amenity_search",
+        }
+    if payload.get("pending_project_lookup"):
+        payload["clarification_entity"] = "project"
+        payload["quick_replies"] = [
+            {"label": name, "value": name}
+            for name in payload["pending_project_lookup"]["options"]
+        ]
+    return payload
+
+
+def build_grounded_project_cost_clarification_assist(request):
+    """Clarify an ambiguous project fragment before price retrieval.
+
+    Non-ambiguous cost questions return ``None`` and continue through the
+    existing detailed pricing/inventory pipeline.
+    """
+    issue = str(request.issue or "").strip()
+    cleaned_issue = issue.lower()
+    if not (
+        any(term in cleaned_issue for term in ("cost", "price", "pricing", "rate", "budget"))
+        or "how much" in cleaned_issue
+    ):
+        return None
+
+    projects = _customer_facing_projects(get_company_projects())
+    customer_history = [
+        str(message.text or "").strip()
+        for message in request.conversation_messages
+        if str(message.sender or "").lower() == "customer" and str(message.text or "").strip()
+    ]
+    selected_project, ambiguous_candidates = _resolve_project_selection(
+        projects, [issue, *reversed(customer_history)],
+    )
+    if selected_project is not None:
+        # Detailed unit/budget/comparison requests retain their inventory path.
+        if re.search(r"\b(?:wing|floor|flat|unit|shop|budget|under|below|above|cheapest|highest|lowest|compare|total)\b|\d\s*bhk", cleaned_issue):
+            return None
+        from services.acrobuild_company_service import get_project_typologies
+        records = get_project_typologies(selected_project["id"])
+        prices = list(dict.fromkeys(
+            f"{record.get('typologyName') or 'Home type'}: INR {record.get('minBasePrice')}"
+            f" to INR {record.get('maxBasePrice')} ({record.get('rateType') or 'rate basis not specified'})"
+            for record in records
+            if record.get("minBasePrice") is not None and record.get("maxBasePrice") is not None
+        ))
+        payload = _build_ambiguous_project_response([selected_project], "pricing")
+        payload.pop("pending_project_lookup", None)
+        payload["answer"] = (
+            f"Live API-listed base pricing for {selected_project['projectName']}:\n\n"
+            + "\n".join(f"- {price}" for price in prices)
+            + "\n\nThese are the API-listed base rates, not an all-inclusive flat quotation."
+            if prices else f"The live API currently lists no base pricing for {selected_project['projectName']}."
+        )
+        payload["matched_chunks"][0].update(body_text=payload["answer"], typologies=records,
+                                          source_key=f"acrobuild-cs-project-{selected_project['id']}-pricing")
+        return payload
+    ambiguous_candidates = ambiguous_candidates or projects
+    if not ambiguous_candidates:
+        return None
+    return _build_ambiguous_project_response(
+        ambiguous_candidates, "pricing",
+    )
+
+def _known_localities(projects):
+    """Real city/locality values pulled straight from live project records --
+    the only values a resolved "location" is ever allowed to be, so a noisy
+    or over-captured piece of text can never leak into a customer answer."""
+    values = set()
+    for project in projects:
+        for key in ("city", "locality"):
+            value = str(project.get(key, "") or "").strip()
+            if value:
+                values.add(value)
+    return values
+
+
+def _resolve_known_location(candidate_text, known_localities):
+    """Match loosely-captured candidate text against real localities, longest
+    first so a more specific match (e.g. "Ambernath East") wins over a
+    shorter one (e.g. "Ambernath") that also happens to appear in it."""
+    for locality in sorted(known_localities, key=len, reverse=True):
+        if re.search(rf"\b{re.escape(locality.lower())}\b", candidate_text):
+            return locality
+    return None
+
 
 def build_grounded_project_location_assist(request):
 
@@ -1049,16 +1471,32 @@ def build_grounded_project_location_assist(request):
         ))
         or inherits_project_subject
     )
-    if not asks_location:
+    # "What is there / what's available / what do you have in <area>?" names an
+    # area but no project word (the English rendering of e.g. "Kompally lo em
+    # unnai?" varies between these forms). It is only an area question when it
+    # names no project ("what is there in Vishwajeet Heights?" is about that
+    # project, not a place).
+    asks_area = not asks_location and bool(re.search(
+        r"^(?:what(?:'s|\s+is|\s+are|\s+all)*|anything)"
+        r"(?:\s+(?:there|available|do\s+you\s+have|you\s+have|have\s+you\s+got))*\s+in\s+[a-z]",
+        cleaned_issue,
+    ))
+    if not (asks_location or asks_area):
         return None
 
-    projects = get_company_projects()
+    projects = _customer_facing_projects(get_company_projects())
     if not projects:
         return None
+    if asks_area and resolve_project_candidates_from_text(projects, issue):
+        return None
 
-    selected_project = resolve_project_from_text(projects, issue)
-    if selected_project is None:
-        selected_project = resolve_project_from_text(projects, prior_customer_text)
+    selected_project, ambiguous_candidates = _resolve_project_selection(
+        projects, [issue, prior_customer_text],
+    )
+    if ambiguous_candidates:
+        return _build_ambiguous_project_response(
+            ambiguous_candidates, "location",
+        )
     asks_selected_project_location = (
         selected_project is not None
         and (
@@ -1084,55 +1522,58 @@ def build_grounded_project_location_assist(request):
             cleaned_issue,
         )
         if not location_match:
-            return None
-        requested_location = " ".join(
-            location_match.group(1).strip().split()
-        )
-        ignored_trailing_words = ("project", "projects", "property", "properties")
-        for trailing_word in ignored_trailing_words:
-            suffix = f" {trailing_word}"
-            if requested_location.endswith(suffix):
-                requested_location = requested_location[:-len(suffix)].strip()
-        if not requested_location:
+            return _build_ambiguous_project_response(projects, "location")
+        # Loosely-captured candidate text (may contain extra words the LLM's
+        # English rendering added, e.g. "the properties in thane" or "pune
+        # with you") -- never used directly. The resolved location must be a
+        # real city/locality value from live project data, matched inside it.
+        candidate_text = " ".join(location_match.group(1).strip().split())
+        if not candidate_text:
             return None
 
-        matching_projects = []
-        for project in projects:
-            location_text = " ".join(
-                str(project.get(key, "") or "")
-                for key in ("address", "locality", "city", "location", "zipcode")
-            ).lower()
-            if requested_location in location_text:
-                matching_projects.append(project)
-
-        location_label = requested_location.title()
-        if matching_projects:
-            lines = [
-                f"Yes, we currently have {len(matching_projects)} project"
-                + ("" if len(matching_projects) == 1 else "s")
-                + f" in {location_label}:",
-                "",
-            ]
-            lines.extend(
-                f"- {str(project.get('projectName', 'Project')).strip()}: "
-                f"{str(project.get('location') or project.get('address') or project.get('city') or '').strip()}"
-                for project in matching_projects
-            )
-            answer = "\n".join(lines)
+        resolved_location = _resolve_known_location(candidate_text, _known_localities(projects))
+        if resolved_location is None:
+            return build_area_no_match_response(issue, projects)
         else:
-            city_values = sorted({
-                str(project.get("city", "")).strip()
-                for project in projects
-                if str(project.get("city", "")).strip()
-            })
-            answer = f"No, we currently don't have any projects in {location_label}."
-            if city_values:
-                available_cities = ", ".join(city_values)
-                answer += (
-                    f" Our available projects are in {available_cities}."
-                    if len(city_values) == 1
-                    else f" Our available projects are in these cities: {available_cities}."
+            matching_projects = []
+            for project in projects:
+                location_text = " ".join(
+                    str(project.get(key, "") or "")
+                    for key in ("address", "locality", "city", "location", "zipcode")
+                ).lower()
+                if resolved_location.lower() in location_text:
+                    matching_projects.append(project)
+
+            location_label = resolved_location
+            if matching_projects:
+                lines = [
+                    f"Yes, we currently have {len(matching_projects)} project"
+                    + ("" if len(matching_projects) == 1 else "s")
+                    + f" in {location_label}:",
+                    "",
+                ]
+                lines.extend(
+                    f"- {str(project.get('projectName', 'Project')).strip()}: "
+                    f"{str(project.get('location') or project.get('address') or project.get('city') or '').strip()}"
+                    for project in matching_projects
                 )
+                answer = "\n".join(lines)
+            else:
+                # Defensive only: resolved_location came from real project
+                # city/locality data, so this should be unreachable.
+                city_values = sorted({
+                    str(project.get("city", "")).strip()
+                    for project in projects
+                    if str(project.get("city", "")).strip()
+                })
+                answer = f"No, we currently don't have any projects in {location_label}."
+                if city_values:
+                    available_cities = ", ".join(city_values)
+                    answer += (
+                        f" Our available projects are in {available_cities}."
+                        if len(city_values) == 1
+                        else f" Our available projects are in these cities: {available_cities}."
+                    )
 
     project_chunk = {
         "body_text": "\n".join(
@@ -1235,9 +1676,6 @@ def workspace_login(request: WorkspaceLoginRequest):
     public_user = {key: value for key, value in user.items() if key != "password"}
     token = create_access_token({"sub": str(user["id"]), "email": user["email"], "role": user["role"]})
     return {"access_token": token, "token_type": "bearer", "user": public_user}
-
-
-
 
 
 

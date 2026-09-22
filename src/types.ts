@@ -434,6 +434,9 @@ export interface SupportAssistResponse {
   last_synced_at?: string | null;
   matched_chunks?: SupportAssistChunkMatch[];
   model?: string;
+  offer_action_menu?: boolean;
+  phone_rejection_reason?: string;
+  quick_replies?: { label: string; value: string; action?: "ticket" | "site_visit" | "call"; project_name?: string }[];
   rag_evaluation?: RagEvaluation;
   reply_language?: string;
   reply_script?: "latin" | "native";
@@ -444,4 +447,3 @@ export interface SupportAssistResponse {
   sync_error?: string;
   used_llm?: boolean;
 }
-

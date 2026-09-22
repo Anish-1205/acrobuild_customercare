@@ -91,6 +91,8 @@ type ChatMessage = {
   id: number;
   isAutomated?: boolean;
   isComplete?: boolean;
+  offerActionMenu?: boolean;
+  quickReplies?: { label: string; value: string; action?: "ticket" | "site_visit" | "call" | "browse_projects"; project_name?: string }[];
   relatedArticles: KnowledgeArticle[];
   sender: "bot" | "customer";
   showHelpfulPrompt?: boolean;
@@ -111,9 +113,9 @@ function createDefaultChatMessages(): ChatMessage[] {
   }];
 }
 
-import { MessageLauncherIcon, PaperPlaneIcon, MicrophoneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
+import { MessageLauncherIcon, PaperPlaneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
 import { type BrowserSpeechRecognition, type SpeechRecognitionConstructor, VOICE_LANGUAGES, type VoiceLanguageCode, detectSpeechLanguage } from "../lib/voiceLanguage";
-import { FLOW_TEXT, type ChatLanguage, chatLanguageFromReply, detectChatLanguage, extractLocationHint, isProjectBrowseRequest } from "../lib/chatLanguage";
+import { FLOW_TEXT, type ChatLanguage, chatLanguageFromReply, detectChatLanguage } from "../lib/chatLanguage";
 
 const helpCenterArticlesPath = "/home";
 const helpCenterHomePath = "/home";
@@ -1078,6 +1080,12 @@ function getNumberedProjectSelection(messages: ChatMessage[], value: string) {
   const selectedNumber = Number(selectionMatch[1]);
   return numberedProjects.find((match) => Number(match[1]) === selectedNumber)?.[2]?.trim() ?? "";
 }
+// The answer's bullet list is the plain-text fallback for API clients; when the
+// same options are shown as quick-reply buttons, show and speak only the prompt.
+function visibleMessageText(message: ChatMessage) {
+  return message.quickReplies?.length && message.quickReplies.every((option) => !option.action)
+    ? message.text.split(/\n\s*[-•*]\s/)[0].trim() : message.text;
+}
 function getNamedProjectSelection(messages: ChatMessage[], value: string) {
   const normalizedValue = value.trim().toLowerCase();
   if (!normalizedValue) return "";
@@ -1366,11 +1374,11 @@ export function CustomerHomePage() {
     setIsSiteVisitFormVisible(false);
   }
 
-  function openFollowUpForm(issue: string) {
+  function openFollowUpForm(issue: string, prefillNote = "") {
     setActiveFollowUpIssue(issue.trim());
     setIsFollowUpFormVisible(true);
     setStorefrontError("");
-    setChatDraft("");
+    setChatDraft(prefillNote);
     window.setTimeout(() => {
       if (chatEmail.trim()) {
         chatComposeRef.current?.focus();
@@ -1568,6 +1576,7 @@ export function CustomerHomePage() {
 
     setStorefrontError("");
     setIsTypingReply(true);
+    setPropertyFlow(null);
     setIsChatOpen(true);
     setIsFollowUpFormVisible(false);
     setActiveFollowUpIssue("");
@@ -1647,6 +1656,8 @@ export function CustomerHomePage() {
             finalizeBotMessage(current, botMessageId, trimmedIssue, {
               feedbackState: undefined,
               isAutomated: true,
+              offerActionMenu: assistResponse.offer_action_menu ?? false,
+              quickReplies: assistResponse.quick_replies ?? [],
               relatedArticles: [],
               showHelpfulPrompt: false,
               text: assistResponse.answer
@@ -1689,6 +1700,8 @@ export function CustomerHomePage() {
           finalizeBotMessage(current, botMessageId, trimmedIssue, {
             feedbackState: undefined,
             isAutomated: true,
+            offerActionMenu: assistResponse.offer_action_menu ?? false,
+            quickReplies: assistResponse.quick_replies ?? [],
             relatedArticles: [],
             showHelpfulPrompt: false,
             text: assistResponse.answer
@@ -2017,7 +2030,7 @@ export function CustomerHomePage() {
     }
   }
 
-  async function openSiteVisitBooking() {
+  async function openSiteVisitBooking(projectName?: string) {
     setStorefrontError("");
     let projects = propertyFlow?.projects ?? siteVisitProjects;
     if (!projects.length) {
@@ -2029,12 +2042,12 @@ export function CustomerHomePage() {
         return;
       }
     }
-    const selectedProjectName = propertyFlow?.selectedProject?.projectName ?? "";
+    const selectedProjectName = projectName ?? propertyFlow?.selectedProject?.projectName ?? "";
     setSiteVisitProjects(projects);
     setSiteVisitForm((current) => ({
       ...current,
       customer_email: current.customer_email || chatEmail,
-      project_name: selectedProjectName || current.project_name
+      project_name: projectName !== undefined ? projectName : selectedProjectName || current.project_name
     }));
     setIsSiteVisitFormVisible(true);
     setIsFollowUpFormVisible(false);
@@ -2319,7 +2332,7 @@ export function CustomerHomePage() {
     }
 
     lastSpokenMessageIdRef.current = latestBotMessage.id;
-    const spokenText = prepareConversationalSpeech(latestBotMessage.text);
+    const spokenText = prepareConversationalSpeech(visibleMessageText(latestBotMessage));
     const utterance = new SpeechSynthesisUtterance(spokenText);
     speechUtteranceRef.current = utterance;
     const availableVoices = window.speechSynthesis.getVoices();
@@ -3285,8 +3298,6 @@ export function CustomerHomePage() {
                   <strong>Acrobuild Assistant</strong>
                   <span>Property support</span>
                 </div>
-                <Link className="store-chat-api-link" to="/home/api-activity">API activity</Link>
-                <Link className="store-chat-api-link" to="/home/data-api-logs">Data APIs</Link>
                 <span aria-label="Online" className="store-chat-online" title="Online"><i /></span>
               </div>
             </header>
@@ -3394,12 +3405,40 @@ export function CustomerHomePage() {
                                     isCustomerMessage ? undefined : "store-chat-automated-card"
                                   }
                                 >
-                                  <div className="store-chat-message-text">{message.text}</div>
+                                  <div className="store-chat-message-text">{visibleMessageText(message)}</div>
                                 </div>
                               ) : null}
 
                               {!isCustomerMessage && message.id === latestCompletedBotMessageId && !isSiteVisitFormVisible ? (
-                                propertyFlow?.messageId === message.id ? (
+                                message.quickReplies?.length ? (
+                                  <div className="store-chat-guided-grid project-grid store-chat-quick-replies">
+                                    {message.quickReplies.map((option) => (
+                                      <button
+                                        className="store-chat-guided-button"
+                                        disabled={isTypingReply}
+                                        key={option.value}
+                                        onClick={() => {
+                                          if (option.action === "ticket") {
+                                            openFollowUpForm(message.contextIssue || message.text);
+                                          } else if (option.action === "site_visit") {
+                                            void openSiteVisitBooking(option.project_name ?? "");
+                                          } else if (option.action === "browse_projects") {
+                                            // Fresh catalogue browse: starts a new
+                                            // conversation so no stale project scope
+                                            // carries over, same as the guided-flow menu.
+                                            void queueBotResponse(option.value, undefined, true, option.label);
+                                          } else {
+                                            void queueBotResponse(option.value, undefined, false);
+                                          }
+                                        }}
+                                        type="button"
+                                      >
+                                        <span className="store-chat-guided-label">{option.label}</span>
+                                        <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                ) : propertyFlow?.messageId === message.id ? (
                                   <div className="store-chat-guided-grid project-grid">
                                     {propertyFlow.level === "projects"
                                       ? propertyFlow.projects.map((project, index) => (
@@ -3497,6 +3536,25 @@ export function CustomerHomePage() {
                                         <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
                                       </button>
                                     ))}
+                                  </div>
+                                ) : message.offerActionMenu ? (
+                                  <div className="store-chat-guided-grid action-menu">
+                                    <button
+                                      className="store-chat-guided-button"
+                                      onClick={() => openFollowUpForm(message.contextIssue ?? "")}
+                                      type="button"
+                                    >
+                                      <span className="store-chat-guided-label">Raise a ticket</span>
+                                      <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
+                                    </button>
+                                    <button
+                                      className="store-chat-guided-button"
+                                      onClick={() => void openSiteVisitBooking()}
+                                      type="button"
+                                    >
+                                      <span className="store-chat-guided-label">Book a site visit</span>
+                                      <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
+                                    </button>
                                   </div>
                                 ) : null
                               ) : null}
@@ -3744,16 +3802,6 @@ export function CustomerHomePage() {
                     value={chatDraft}
                   />
                   <button
-                    aria-label={isVoiceConversation ? "Stop voice conversation" : "Start voice conversation"}
-                    aria-pressed={isVoiceConversation}
-                    className={`store-chat-voice-button${isListening ? " listening" : ""}${isVoiceConversation ? " active" : ""}`}
-                    disabled={!supportsSpeechRecognition}
-                    onClick={handleVoiceToggle}
-                    title={supportsSpeechRecognition ? (isVoiceConversation ? "Stop voice conversation" : "Start a hands-free voice conversation") : "Voice input is not supported in this browser"}
-                    type="button"
-                  >
-                    <MicrophoneIcon />
-                  </button>                  <button
                     aria-label="Send message"
                     className="store-chat-compose-submit"
                     disabled={isCreatingTicket || !chatDraft.trim()}
@@ -3779,7 +3827,8 @@ export function CustomerHomePage() {
                     return;
                   }
 
-                  const namedProject = getNamedProjectSelection(chatMessages, chatDraft);
+                  const hasServerChoices = [...chatMessages].reverse().find((message) => message.sender === "bot")?.quickReplies?.length;
+                  const namedProject = hasServerChoices ? null : getNamedProjectSelection(chatMessages, chatDraft);
                   if (namedProject) {
                     const customerSelection = chatDraft.trim();
                     setChatDraft("");
@@ -3787,7 +3836,7 @@ export function CustomerHomePage() {
                     return;
                   }
 
-                  const numberedProject = getNumberedProjectSelection(chatMessages, chatDraft);
+                  const numberedProject = hasServerChoices ? null : getNumberedProjectSelection(chatMessages, chatDraft);
                   if (numberedProject) {
                     const customerSelection = chatDraft.trim();
                     setChatDraft("");
@@ -3795,13 +3844,6 @@ export function CustomerHomePage() {
                     return;
                   }
 
-                  if (isProjectBrowseRequest(chatDraft, (propertyFlow?.projects ?? siteVisitProjects).map((project) => project.projectName))) {
-                    const projectRequest = chatDraft.trim();
-                    const location = extractLocationHint(chatDraft);
-                    setChatDraft("");
-                    void startProjectsFlow(projectRequest, location);
-                    return;
-                  }
                   if (isSiteVisitBookingRequest(chatDraft)) {
                     setChatDraft("");
                     void openSiteVisitBooking();
@@ -3827,16 +3869,6 @@ export function CustomerHomePage() {
                     value={chatDraft}
                   />
                   <button
-                    aria-label={isVoiceConversation ? "Stop voice conversation" : "Start voice conversation"}
-                    aria-pressed={isVoiceConversation}
-                    className={`store-chat-voice-button${isListening ? " listening" : ""}${isVoiceConversation ? " active" : ""}`}
-                    disabled={!supportsSpeechRecognition}
-                    onClick={handleVoiceToggle}
-                    title={supportsSpeechRecognition ? (isVoiceConversation ? "Stop voice conversation" : "Start a hands-free voice conversation") : "Voice input is not supported in this browser"}
-                    type="button"
-                  >
-                    <MicrophoneIcon />
-                  </button>                  <button
                     aria-label="Send message"
                     className="store-chat-compose-submit"
                     disabled={isTypingReply || !chatDraft.trim()}

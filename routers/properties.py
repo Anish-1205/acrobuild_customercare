@@ -4,6 +4,7 @@ from api_context import (
     HTTPException,
     SiteVisitRequest,
     _cs_api_response,
+    _customer_facing_projects,
     get_company_projects,
     get_project_wings,
     get_wing_inventory,
@@ -15,7 +16,9 @@ router = APIRouter(tags=["properties"])
 
 @router.get("/api/property-flow/projects")
 def property_flow_projects():
-    return _cs_api_response(get_company_projects, "Browse live projects")
+    # Same customer-facing list the chat offers, so "Browse projects" and a
+    # typed "what projects do you have?" never show different choices.
+    return _cs_api_response(lambda: _customer_facing_projects(get_company_projects()), "Browse live projects")
 
 @router.get("/api/property-flow/projects/{project_id}/wings")
 def property_flow_wings(project_id: int):

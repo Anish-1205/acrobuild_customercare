@@ -5043,6 +5043,8 @@ code {
   background: #fff;
 }
 
+.support-shell-brand { text-decoration: none; }
+
 .store-chat-home.menu-mode.conversation-welcome {
   min-height: 100%;
   padding: 0;
@@ -5539,6 +5541,8 @@ code {
 
 .store-chat-guided-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; margin-top: 0.2rem; }
 .store-chat-guided-grid.project-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+.store-chat-quick-replies { max-height: 18rem; overflow-y: auto; }
+.store-chat-quick-replies .store-chat-guided-button { grid-template-columns: minmax(0, 1fr) auto !important; }
 .store-chat-guided-grid.greeting-action { grid-template-columns: 1fr; margin-top: 0.65rem; }
 .store-chat-guided-grid.greeting-action .store-chat-guided-button { width: 100%; min-height: 3rem; padding: 0.8rem 1rem; border-color: #17241f; border-radius: 14px; background: #17241f; color: #fff; font-size: 0.8rem; box-shadow: 0 8px 18px rgba(18, 34, 29, 0.14); }
 .store-chat-guided-grid.greeting-action .store-chat-guided-button:hover { border-color: #263a33; background: #263a33; }
@@ -7505,6 +7509,8 @@ code {
   overflow: hidden;
   padding: 0.9rem 0.78rem 0.75rem;
 }
+
+.support-console-grid.workspace-mode .support-sidebar-panel { overflow-y: auto; }
 
 .support-console-grid.inbox-sidebar-compact .support-sidebar-panel {
   padding: 0.9rem 0.7rem 0.7rem;

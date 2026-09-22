@@ -30,6 +30,17 @@ type ImportMetaWithOptionalEnv = ImportMeta & {
 
 const configuredBackendUrl = String((import.meta as ImportMetaWithOptionalEnv).env?.VITE_BACKEND_URL ?? "").trim().replace(/\/+$/, "");
 const DEFAULT_STREAM_ACTIVITY_TIMEOUT_MS = 120000;
+export type CSApiSettings = { base_url: string; company_id: string; api_key_configured: boolean };
+
+export function getCSApiSettings() {
+  return apiRequest<CSApiSettings>("/api/admin/cs-api-settings");
+}
+
+export function saveCSApiSettings(settings: { base_url: string; company_id: number; api_key: string }) {
+  return apiRequest<CSApiSettings>("/api/admin/cs-api-settings", {
+    method: "PUT", body: JSON.stringify(settings)
+  });
+}
 let refreshRequest: Promise<Response> | null = null;
 const backendPorts = ["8000", "8001"];
 
