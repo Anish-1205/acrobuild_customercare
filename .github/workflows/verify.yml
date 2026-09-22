@@ -27,6 +27,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt -r requirements/dev.txt
+      # Table creation normally happens in api_context.py's FastAPI lifespan
+      # (startup event), which only runs for tests that enter TestClient as
+      # a context manager. A fresh checkout has no support_system.db at all,
+      # so a test that touches the DB without going through that lifespan
+      # first (e.g. services/request_security_service.py's rate limiter)
+      # hits "no such table" before any lifespan-triggering test happens to
+      # run first. Initialize it explicitly instead of depending on test order.
+      - name: Initialize test database
+        run: python -c "from services.database_service import initialize_database, DB_PATH; from services.migration_service import apply_migrations; initialize_database(); apply_migrations(DB_PATH)"
       - run: python -m pytest -q -p no:cacheprovider
       - run: ruff check .
       - run: mypy

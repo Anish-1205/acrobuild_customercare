@@ -262,8 +262,15 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
 
     if snapshot_calls and not uncovered_failures and not ungrounded_answer:
         snapshot_path = Path(get_company_data_snapshot_path()).with_suffix(".json")
-        saved_at = datetime.fromtimestamp(snapshot_path.stat().st_mtime)
-        saved_date = f"{saved_at.day} {saved_at:%B %Y}"
+        try:
+            saved_at = datetime.fromtimestamp(snapshot_path.stat().st_mtime)
+            saved_date = f"{saved_at.day} {saved_at:%B %Y}"
+        except OSError:
+            # The fallback data actually used came from _load_snapshot_fallback()'s
+            # in-memory read, not this file lookup; a snapshot answer must not
+            # crash just because its on-disk copy is unavailable (e.g. an
+            # environment where the snapshot file is deliberately not present).
+            saved_date = "an earlier sync"
         answer = answer_text.replace("Availability is live and may change.", "Availability may have changed.")
         answer = re.sub(r"\blive (?:Acrobuild CS API|project data|property data|data|inventory|API)\b",
                         "saved property data", answer, flags=re.IGNORECASE)

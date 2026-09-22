@@ -1,5 +1,19 @@
-from api_context import _enforce_live_property_data
+from pathlib import Path
+
+import pytest
+
+from api_context import _enforce_live_property_data, get_company_data_snapshot_path
 from services import acrobuild_company_service as company_service
+
+# data/ is gitignored (the on-disk snapshot is a dump of real, non-public
+# property data), so it does not exist in a fresh CI checkout. These two
+# tests assert on its actual mtime/content and need the real file; every
+# other test here exercises graceful degradation when it is absent, which
+# does not.
+_snapshot_present = Path(get_company_data_snapshot_path()).with_suffix(".json").exists()
+_needs_snapshot_file = pytest.mark.skipif(
+    not _snapshot_present, reason="data/acrobuild_all_company_data.json is gitignored and absent in CI",
+)
 
 
 def _call(provider, status, endpoint):
@@ -7,6 +21,7 @@ def _call(provider, status, endpoint):
             "cache_hit": provider.endswith("snapshot"), "response_summary": {"kind": "list"}}
 
 
+@_needs_snapshot_file
 def test_snapshot_fallback_keeps_project_answer_and_discloses_date():
     endpoint = "/api/cs/projects"
     payload = {"route": "property", "answer": "Which project should I check? - Vishwajeet Paradise",
@@ -64,6 +79,7 @@ def test_missing_snapshot_endpoint_does_not_claim_missing_amenities():
     assert "no amenities" not in result["answer"]
 
 
+@_needs_snapshot_file
 def test_cs_api_failure_reads_september_snapshot(monkeypatch):
     monkeypatch.setattr(company_service, "CS_API_COMPANY_ID", "16")
     monkeypatch.setattr(company_service, "CS_API_LIVE_ONLY", False)
