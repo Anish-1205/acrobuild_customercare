@@ -23,6 +23,8 @@ is_small_talk_message = globals()["is_small_talk_message"]
 normalize_text = globals()["normalize_text"]
 resolve_contextual_support_issue = globals()["resolve_contextual_support_issue"]
 validate_support_node = globals()["validate_support_node"]
+get_live_project_names = globals()["get_live_project_names"]
+_conversation_project_name = globals()["_conversation_project_name"]
 
 _legacy_build_deterministic_conversation_answer = build_deterministic_conversation_answer
 _legacy_is_small_talk_message = is_small_talk_message
