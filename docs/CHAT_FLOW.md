@@ -140,3 +140,54 @@ re-fetched from several independent steps); only the **latest** call per
 `(endpoint, params)` is authoritative, so an earlier timeout that a later
 retry resolved live no longer makes the final answer falsely claim it used
 saved/stale data.
+
+### Discovery slot memory (flag `ACROBUILD_DISCOVERY_SLOTS`, default off)
+
+Inquiry to Sales §28: the customer should not repeat configuration, area or
+budget. `services/discovery_slot_service.py` builds the answers;
+`routers/assist.py` wires them in the same way on both assist endpoints. With
+the flag off none of this runs.
+
+```mermaid
+flowchart TD
+  Ask["'Show me 3 BHK' (no project in scope)"] --> Areas{"Live areas with 3BHK?"}
+  Areas -->|none| NoConfig["'None of the projects ... list 3BHK'"]
+  Areas -->|one| Budget["Budget question (+ 'Any budget')"]
+  Areas -->|two or more| AreaQ["'Which area should I check?' (+ 'Any area')"]
+  AreaQ -->|live area, typed city or 'Any area'| Budget
+  AreaQ -->|unknown place| NotFound["'I couldn't find ... in X' + live areas again"]
+  NotFound --> AreaQ
+  Budget -->|'1.5 crore' / 'any budget'| Shortlist["Shortlist: estimated base amount + disclaimer"]
+  Shortlist -->|project tap| HomeTypes["build_project_home_type_answer: 'Home types in ...'"]
+```
+
+- Placement: `_grounded_property_shortcut()` calls the discovery builder right
+  after `build_grounded_site_visit_document_assist()` and before the existing
+  chain. It runs only when there is no pending selection or the pending
+  selection is discovery's own (`source` or `purpose` is `discovery`).
+- A project in scope wins: a named project, or `Requested project:` added
+  from `current_project`, bypasses discovery. After a project tap, "and 2
+  BHK?" is answered for that project.
+- Every discovery answer reads live data through
+  `property_tools_service.search_projects()` and carries `company_api`
+  evidence, so `_enforce_live_property_data()` sees a real source status.
+  Drafts pass through `apply_clarification_contract()` unchanged.
+- Discovery answers set `catalogue_home_type_search`, so they never set
+  `current_project`, even when only one project matches.
+- Forced property turn: `_prepare_lookup_turn()` forces `intent="property"`
+  (and `unsure=False`) only when the stored slots await `budget` or
+  `locality`, there is no pending selection, the intent is not
+  `call_booking`/`human_contact`, and `is_slot_reply()` is true for the
+  customer text or its English rendering.
+- The `discovery_slots` marker is written when the answer carries slots. If
+  a question was awaited and the turn did not answer it, the question lapses
+  (`awaiting` becomes null) and the slots stay.
+- Reset: a message that starts with "start over", "reset", "new search" or
+  "clear my preferences" (also "clear my filters"/"clear my search", optionally
+  after "please") clears the slots. "start over, show me 3 BHK" starts a new search from empty
+  slots and stores the new slots. "Browse all projects" also starts empty.
+- Budget results always say "estimated base amount" (minimum listed rate x
+  saleable area) with a disclaimer. Projects without a per-sq-ft rate are
+  listed under "Pricing not listed". Skipped projects are named only; raw CS
+  API error text is redacted from discovery responses.
+- Step 7b corrections: a live locality or city in the customer's own words, with a BHK type and no named project ("3 BHK in Thane"), is a catalogue search even when `Requested project:` was added from `current_project` (`explicit_locality_search_text()`; "this project", a place that is not live and a bare "2 BHK?" keep the routing above), and a bare "start over" with stored slots gets the fixed `RESET_ANSWER` (route `general`, no LLM, no place or configuration taken from history).

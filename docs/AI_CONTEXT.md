@@ -56,6 +56,8 @@ flowchart LR
 | App and HTTP contracts | `app.py`, `api_context.py`, relevant file in `routers/` |
 | Chat routing | `routers/assist.py`, `graph/main_orchestrator.py`, `docs/CHAT_FLOW.md` |
 | Property answers and clarification | `services/acrobuild_company_service.py`, `services/property_clarification_service.py`, `services/ai_agent_service.py` |
+| Typed CS API tools (additive) | `services/property_tools_service.py`: `ToolResult` with `source_status`, `BLOCKED_TOOLS`/`blocked()`, `clean_place_text()`, `search_projects()`, `list_localities()` |
+| Discovery slot memory (flag `ACROBUILD_DISCOVERY_SLOTS`) | `services/discovery_slot_service.py`, the `discovery_slots` marker helpers in `services/conversation_store_service.py`, the discovery wiring in `routers/assist.py`, `docs/PHASE1_PLAN.md` |
 | LLM calls | `qwen.py`, `sarvam_client.py`, `services/llm_service.py` |
 | Workspace knowledge/RAG | `services/knowledge_index_service.py`, `services/knowledge_ingestion_service.py` |
 | Tickets and routing | `graph/workflow.py`, `services/ticket_metadata_service.py`, `services/database_service.py` |
@@ -63,6 +65,7 @@ flowchart LR
 | Frontend | `src/App.tsx`, task-specific files in `src/`, `src/lib/api.ts`, `vite.config.ts` |
 | Dependencies and configuration | `requirements.txt`, `requirements/`, `package.json`, `.env.example` |
 | Tests | Relevant files in `tests/`; use `scripts/live_disambiguation_check.py` for live property clarification acceptance |
+| Discovery and tool tests | `tests/test_property_tools_service.py`, `tests/test_discovery_slots.py`, `tests/test_discovery_slot_service.py`, `tests/test_locality_clarification_contract.py`, `tests/test_discovery_flow.py`, `tests/test_locality_sanitise_match.py`, `tests/test_discovery_review_fixes.py` |
 
 ## Behavior and boundaries
 
@@ -72,9 +75,12 @@ flowchart LR
 - Chat selects a conversational LLM path or a property/knowledge path. Property
   facts should come from the live CS API or workspace knowledge. When live data
   is unavailable, the assistant should say so instead of inventing inventory.
-- Project, wing, floor, flat, and home-type disambiguation uses
+- Project, wing, floor, flat, home-type, and locality disambiguation uses
   `services/property_clarification_service.py`. Read the mandatory contract in
   `AGENTS.md` before editing these flows.
+- The discovery slot flow (configuration, area, budget) is off unless
+  `ACROBUILD_DISCOVERY_SLOTS` is true. See `docs/CHAT_FLOW.md` and the
+  discovery rules in `AGENTS.md`.
 - `qwen.py` retains old function names for callers but dispatches to Sarvam
   only. Local Qwen inference is not a supported chat provider.
 - `support_system.db`, `.env`, logs, uploads, model caches, and generated

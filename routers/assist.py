@@ -20,15 +20,28 @@ from time import monotonic
 from dataclasses import replace
 
 from fastapi import APIRouter, Request
+from services import acrobuild_company_service as company_service
 from services.conversation_store_service import (
     COOKIE_NAME,
     PENDING_CALL_BOOKING_MARKER,
     PENDING_HUMAN_CONTACT_MARKER,
     ConversationSession,
     build_current_project_marker,
+    build_discovery_slots_marker,
     build_pending_project_lookup_marker,
     get_pending_project_lookup,
+    latest_discovery_slots,
 )
+from services.discovery_slot_service import (
+    build_discovery_answer,
+    build_reset_answer,
+    discovery_enabled,
+    explicit_locality_search_text,
+    is_reset_only,
+    is_reset_request,
+    is_slot_reply,
+)
+from services.property_tools_service import project_localities
 
 from services.observability import (
     get_logger,
@@ -127,7 +140,109 @@ def _history(request):
     return [message.model_dump() for message in request.conversation_messages if str(message.text or "").strip()]
 
 
-def _grounded_property_shortcut(request, turn, failure_state=None, pending=None):
+# -----------------------------------
+# DISCOVERY SLOTS (Inquiry to Sales §28), behind ACROBUILD_DISCOVERY_SLOTS
+# -----------------------------------
+# Every helper here returns None / "" / False when the flag is off, so the
+# existing request path is unchanged.
+
+class _LiveProjectNames:
+    """Live project names, fetched only if the discovery check needs them (a
+    configuration question). An unavailable catalogue yields no names; the
+    discovery builder's own live read then reports the outage honestly."""
+
+    def __iter__(self):
+        try:
+            projects = company_service.customer_facing_projects(company_service.get_company_projects())
+        except (RuntimeError, TimeoutError):
+            return iter(())
+        return iter([str(project.get("projectName") or "").strip() for project in projects])
+
+
+def _live_places():
+    """Live locality and city values. Empty when the catalogue is unavailable, so
+    the turn keeps today's routing and its own reads report the outage."""
+    try:
+        projects = company_service.customer_facing_projects(company_service.get_company_projects())
+    except (RuntimeError, TimeoutError):
+        return []
+    return sorted({place for project in projects for place in project_localities(project)})
+
+
+_REDACTED_CS_ERROR = "Live data request failed; details are in the server log."
+
+
+def _discovery_slots(request):
+    """Stored discovery slots for this conversation, or None when the flag is off."""
+    if not discovery_enabled():
+        return None
+    return latest_discovery_slots(request.conversation_messages)
+
+
+def _discovery_texts(cleaned_issue, turn):
+    return [text for text in (cleaned_issue, getattr(turn.analysis, "english", "")) if text]
+
+
+def _discovery_slot_reply(slots, cleaned_issue, turn):
+    """This turn answers the awaited discovery slot (budget or area)."""
+    return bool(slots) and any(is_slot_reply(slots, text) for text in _discovery_texts(cleaned_issue, turn))
+
+
+def _discovery_reset(slots, cleaned_issue, turn):
+    """"start over" / "reset" / "new search" / "clear my preferences" with slots stored."""
+    return bool(slots) and any(is_reset_request(text) for text in _discovery_texts(cleaned_issue, turn))
+
+
+def _discovery_reset_only(slots, cleaned_issue, turn):
+    """A bare "start over" with slots stored: answered by a fixed reply, no LLM."""
+    return bool(slots) and turn.analysis.intent not in {"call_booking", "human_contact"} and any(
+        is_reset_only(text) for text in _discovery_texts(cleaned_issue, turn))
+
+
+def _is_discovery_pending(pending):
+    return isinstance(pending, dict) and (pending.get("source") == "discovery" or pending.get("purpose") == "discovery")
+
+
+def _discovery_answer(issue, slots, pending):
+    """Discovery draft for this turn, or None. A pending selection from another
+    flow keeps priority: discovery only continues its own pending state."""
+    if slots is None or not discovery_enabled() or (pending is not None and not _is_discovery_pending(pending)):
+        return None
+    # A live area named in the customer's own words is a catalogue search even with
+    # a project in context: answer their text, without the project the resolver
+    # appended. A project they name themselves never reaches here (no suffix).
+    project_names = _LiveProjectNames()
+    payload = build_discovery_answer(
+        explicit_locality_search_text(issue, _live_places, project_names) or issue, slots, pending, project_names)
+    if payload is None:
+        return None
+    # A discovery answer is a catalogue-wide search: it must never set
+    # current_project, even when a single project matches. Skipped projects
+    # are disclosed by name only; their raw CS API error stays in server logs.
+    payload = {**payload, "catalogue_home_type_search": True,
+               "skipped": [{"project": str(entry.get("project") or "")}
+                           for entry in payload.get("skipped") or [] if isinstance(entry, dict)]}
+    if isinstance(payload.get("pending_project_lookup"), dict):
+        payload["pending_project_lookup"] = {**payload["pending_project_lookup"], "source": "discovery"}
+    return payload
+
+
+def _discovery_slots_marker(response_payload, slots=None, slot_reply=False, reset=False):
+    """The discovery_slots marker to store with this turn ("" = keep the previous one)."""
+    if slots is None:
+        return ""
+    # A discovery answer built this turn (after any reset) carries the slots to keep.
+    if "discovery_slots" in response_payload:
+        return build_discovery_slots_marker(response_payload.get("discovery_slots") or {})
+    if reset:
+        return build_discovery_slots_marker({}) if slots else ""
+    if slots.get("awaiting") and not slot_reply:
+        # The customer moved on: the stored question lapses, the slots stay.
+        return build_discovery_slots_marker({**slots, "awaiting": None})
+    return ""
+
+
+def _grounded_property_shortcut(request, turn, failure_state=None, pending=None, slots=None):
     """Router-level grounded answers only for property turns, matched on the English
     rendering so they work for questions asked in any language."""
     if not turn.analysis.is_property:
@@ -142,6 +257,8 @@ def _grounded_property_shortcut(request, turn, failure_state=None, pending=None)
     try:
         payload = (
             build_grounded_site_visit_document_assist(shortcut_request)
+            # Discovery slot flow (IS §28); None whenever the flag is off.
+            or _discovery_answer(shortcut_request.issue, slots, pending)
             # A catalogue home-type filter is also shaped like a reverse
             # amenity query ("what properties have ..."). Handle the explicit
             # BHK signal first so an amenity lookup cannot intercept it or,
@@ -257,11 +374,12 @@ def _unmatched_selection_reply(pending, issue, turn):
                 and not is_small_talk_message(turn.analysis.english or ""))
 
 
-def _prepare_lookup_turn(request, cleaned_issue):
+def _prepare_lookup_turn(request, cleaned_issue, slots=None):
     turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
     pending = _pending_project_lookup(request.conversation_messages)
     selection_reply = bool(pending and continues_selection(pending, cleaned_issue))
-    can_narrow = bool(pending and not selection_reply
+    # A bare reset answers no pending choice, so it must not read live amenity or area data for one.
+    can_narrow = bool(pending and not selection_reply and not _discovery_reset_only(slots, cleaned_issue, turn)
                       and turn.analysis.intent not in {"call_booking", "human_contact"})
     narrows_by_amenity = bool(can_narrow and _narrows_selection_by_amenity(pending, turn.property_issue))
     narrows_by_locality = bool(can_narrow and _narrows_selection_by_locality(pending, turn.property_issue))
@@ -312,6 +430,13 @@ def _prepare_lookup_turn(request, cleaned_issue):
             turn = replace(turn, analysis=replace(turn.analysis, intent="property", unsure=False))
         elif turn.analysis.is_property:
             turn = replace(turn, analysis=replace(turn.analysis, unsure=False))
+    # "1.5 crore" answering the discovery budget question, or "Wakad lo"
+    # answering the area question after its pending selection was dropped, is a
+    # property turn whatever the analyzer called it (IS §28). Only then.
+    if (slots and slots.get("awaiting") in {"budget", "locality"} and pending is None
+            and turn.analysis.intent not in {"call_booking", "human_contact"}
+            and _discovery_slot_reply(slots, cleaned_issue, turn)):
+        turn = replace(turn, analysis=replace(turn.analysis, intent="property", unsure=False))
     return pending, processing_request, processing_issue, turn
 
 
@@ -359,11 +484,25 @@ def _current_project_marker(response_payload, pending=None):
     return build_current_project_marker(names[0]) if len(names) == 1 else ""
 
 
-def _conversation_state_marker(response_payload, pending=None, customer_issue="", shortcut_failed=False):
+def _conversation_state_marker(response_payload, pending=None, customer_issue="", shortcut_failed=False,
+                               slots=None, slot_reply=False, reset=False):
     return (
         _project_lookup_marker(response_payload, pending, customer_issue, shortcut_failed)
         + _current_project_marker(response_payload, pending)
+        + _discovery_slots_marker(response_payload, slots, slot_reply, reset)
     )
+
+
+def _turn_marker(response_payload, pending=None, customer_issue="", shortcut_failed=False,
+                 slots=None, slot_reply=False, reset=False):
+    """Server-only state stored with a completed turn, shared by both endpoints."""
+    discovery = _discovery_slots_marker(response_payload, slots, slot_reply, reset)
+    if response_payload.get("pending_call_booking"):
+        return PENDING_CALL_BOOKING_MARKER + discovery
+    if response_payload.get("pending_human_contact"):
+        return PENDING_HUMAN_CONTACT_MARKER + discovery
+    return (_project_lookup_marker(response_payload, pending, customer_issue, shortcut_failed)
+            + _current_project_marker(response_payload, pending) + discovery)
 
 
 def _complete_payload(response_payload, cleaned_issue, turn):
@@ -408,6 +547,12 @@ def _complete_payload(response_payload, cleaned_issue, turn):
     response_payload = localize_response(response_payload, turn.analysis)
     response_payload["data_api_calls"] = data_api_calls
     response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
+    if response_payload.get("discovery_kind"):
+        # Discovery never sends raw CS API error text to the client; the full
+        # text is already in the server log (log_data_api_call / _log_turn_result).
+        response_payload["data_api_calls"] = [
+            {**call, "error": _REDACTED_CS_ERROR} if call.get("error") else call for call in data_api_calls
+        ]
     return response_payload
 
 
@@ -427,22 +572,32 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
     clear_assist_response_cache()
     trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
     try:
-        pending_lookup, processing_request, processing_issue, turn = _prepare_lookup_turn(request, cleaned_issue)
-        shortcut_failure = {}
+        slots = _discovery_slots(request)
+        pending_lookup, processing_request, processing_issue, turn = _prepare_lookup_turn(
+            request, cleaned_issue, slots=slots)
+        slot_reply = _discovery_slot_reply(slots, cleaned_issue, turn)
+        reset_slots = _discovery_reset(slots, cleaned_issue, turn)
+        shortcut_failure: dict[str, bool] = {}
         # call_booking/human_contact are explicit/actionable by construction
         # (regex-matched phrasing) — the LLM's fuzzy "unsure" judgement must
         # not divert either to the generic action menu instead of their own
         # phone/time or name/phone prompt below.
         # Checked on the resumed issue too, so "retry" after a catalogue outage
         # re-offers the catalogue instead of falling into generic routing.
-        if _is_broad_project_request(processing_issue, turn.property_issue):
+        if _discovery_reset_only(slots, cleaned_issue, turn):
+            turn_logger.info("turn branch %s", kv(branch="discovery_reset"))
+            response_payload = build_reset_answer()
+        elif _is_broad_project_request(processing_issue, turn.property_issue):
             turn_logger.info("turn branch %s", kv(branch="project_browse"))
             response_payload = build_project_browse_response(processing_issue)
+            reset_slots = True  # browsing the whole catalogue starts a fresh search
         elif turn.analysis.unsure and turn.analysis.intent not in {"call_booking", "human_contact"}:
             turn_logger.info("turn branch %s", kv(branch="confusion_action_menu"))
             response_payload = build_confusion_response(turn.analysis)
         else:
-            response_payload = _grounded_property_shortcut(processing_request, turn, shortcut_failure, pending_lookup)
+            # "start over, show me 3 BHK": the new search starts from empty slots.
+            response_payload = _grounded_property_shortcut(processing_request, turn, shortcut_failure, pending_lookup,
+                                                           slots={} if reset_slots else slots)
             if response_payload is not None:
                 turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
             else:
@@ -463,11 +618,8 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
                 )
         response_payload = _complete_payload(response_payload, cleaned_issue, turn)
         _log_turn_result("assist", cleaned_issue, response_payload, started)
-        pending_marker = (
-            PENDING_CALL_BOOKING_MARKER if response_payload.get("pending_call_booking")
-            else PENDING_HUMAN_CONTACT_MARKER if response_payload.get("pending_human_contact")
-            else _conversation_state_marker(response_payload, pending_lookup, cleaned_issue, shortcut_failure.get("failed", False))
-        )
+        pending_marker = _turn_marker(response_payload, pending_lookup, cleaned_issue,
+                                      shortcut_failure.get("failed", False), slots, slot_reply, reset_slots)
         session.append(cleaned_issue, response_payload.get("answer"), marker=pending_marker)
         return response_payload
     except Exception:
@@ -524,12 +676,27 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
         clear_assist_response_cache()
         trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
         try:
-            pending_lookup, processing_request, processing_issue, turn = _prepare_lookup_turn(request, cleaned_issue)
+            slots = _discovery_slots(request)
+            pending_lookup, processing_request, processing_issue, turn = _prepare_lookup_turn(
+                request, cleaned_issue, slots=slots)
+            slot_reply = _discovery_slot_reply(slots, cleaned_issue, turn)
+            reset_slots = _discovery_reset(slots, cleaned_issue, turn)
             shortcut_failure = {}
+            if _discovery_reset_only(slots, cleaned_issue, turn):
+                turn_logger.info("turn branch %s", kv(branch="discovery_reset"))
+                response_payload = _complete_payload(build_reset_answer(), cleaned_issue, turn)
+                session.append(cleaned_issue, response_payload.get("answer"),
+                               marker=_discovery_slots_marker(response_payload, slots, slot_reply, True))
+                yield json.dumps({"text": response_payload["answer"], "type": "delta"}, ensure_ascii=True) + "\n"
+                yield json.dumps({"response": response_payload, "type": "done"}, ensure_ascii=True) + "\n"
+                _log_turn_result("stream", cleaned_issue, response_payload, started)
+                return
             if _is_broad_project_request(processing_issue, turn.property_issue):
                 turn_logger.info("turn branch %s", kv(branch="project_browse"))
                 response_payload = _complete_payload(build_project_browse_response(processing_issue), cleaned_issue, turn)
-                marker = _conversation_state_marker(response_payload, None, cleaned_issue)
+                # Browsing the whole catalogue starts a fresh search (reset=True).
+                marker = _conversation_state_marker(response_payload, None, cleaned_issue,
+                                                    slots=slots, slot_reply=slot_reply, reset=True)
                 session.append(cleaned_issue, response_payload.get("answer"), marker=marker)
                 yield json.dumps({"text": response_payload["answer"], "type": "delta"}, ensure_ascii=True) + "\n"
                 yield json.dumps({"response": response_payload, "type": "done"}, ensure_ascii=True) + "\n"
@@ -538,7 +705,8 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
             if turn.analysis.unsure and turn.analysis.intent not in {"call_booking", "human_contact"}:
                 turn_logger.info("turn branch %s", kv(branch="confusion_action_menu"))
                 response_payload = _complete_payload(build_confusion_response(turn.analysis), cleaned_issue, turn)
-                session.append(cleaned_issue, response_payload.get("answer"))
+                session.append(cleaned_issue, response_payload.get("answer"),
+                               marker=_discovery_slots_marker(response_payload, slots, slot_reply, reset_slots))
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
                 }, ensure_ascii=True) + "\n"
@@ -547,11 +715,16 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 }, ensure_ascii=True) + "\n"
                 _log_turn_result("stream", cleaned_issue, response_payload, started)
                 return
-            shortcut_payload = _grounded_property_shortcut(processing_request, turn, shortcut_failure, pending_lookup)
+            # "start over, show me 3 BHK": the new search starts from empty slots.
+            shortcut_payload = _grounded_property_shortcut(processing_request, turn, shortcut_failure, pending_lookup,
+                                                           slots={} if reset_slots else slots)
             if shortcut_payload is not None:
                 turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
                 response_payload = _complete_payload(shortcut_payload, cleaned_issue, turn)
-                session.append(cleaned_issue, response_payload.get("answer"), marker=_conversation_state_marker(response_payload, pending_lookup, cleaned_issue, shortcut_failure.get("failed", False)))
+                session.append(cleaned_issue, response_payload.get("answer"),
+                               marker=_turn_marker(response_payload, pending_lookup, cleaned_issue,
+                                                   shortcut_failure.get("failed", False), slots, slot_reply,
+                                                   reset_slots))
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
                 }, ensure_ascii=True) + "\n"
@@ -595,11 +768,9 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 if event_type == "done" and isinstance(event.get("response"), dict):
                     response_payload = _complete_payload(event["response"], cleaned_issue, turn)
                     event["response"] = response_payload
-                    pending_marker = (
-                        PENDING_CALL_BOOKING_MARKER if response_payload.get("pending_call_booking")
-                        else PENDING_HUMAN_CONTACT_MARKER if response_payload.get("pending_human_contact")
-                        else _conversation_state_marker(response_payload, pending_lookup, cleaned_issue, shortcut_failure.get("failed", False))
-                    )
+                    pending_marker = _turn_marker(response_payload, pending_lookup, cleaned_issue,
+                                                  shortcut_failure.get("failed", False), slots, slot_reply,
+                                                  reset_slots)
                     session.append(cleaned_issue, response_payload.get("answer"), marker=pending_marker)
                 if property_request:
                     property_events.append(event)

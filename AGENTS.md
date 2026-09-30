@@ -52,13 +52,13 @@ The code is authoritative when older documents disagree.
 
 ## Mandatory property clarification contract
 
-- Every project/wing/floor/flat/home-type clarification must use
+- Every project/wing/floor/flat/home-type/locality clarification must use
   `services/property_clarification_service.py` before relevance validation,
   localization, and conversation persistence.
 - New answer builders must set `clarification_entity` (`project`, `wing`,
-  `floor`, `flat`, or `home_type`). Do not generate a bare "specify the project"
-  prompt. The contract fetches real matching names from the live CS API; an
-  empty or unavailable catalogue must be reported honestly.
+  `floor`, `flat`, `home_type`, or `locality`). Do not generate a bare "specify
+  the project" prompt. The contract fetches real matching names from the live
+  CS API; an empty or unavailable catalogue must be reported honestly.
 - Preserve the complete original question, selected scope, offered options,
   and retry query in the server-side pending selection marker. Do not derive
   intent from translated bot prose. Do not expire state after a fixed number
@@ -71,6 +71,25 @@ The code is authoritative when older documents disagree.
   when changing routing. Run `scripts/live_disambiguation_check.py` for live
   acceptance (real LLM/API, no mocks); transcripts are written to
   `docs/live_disambiguation_results.json`.
+
+## Discovery slot memory (Inquiry to Sales §28)
+
+- The flow lives in `services/discovery_slot_service.py` and is off unless
+  `ACROBUILD_DISCOVERY_SLOTS` is true (default false; read on every call).
+  With the flag off, `routers/assist.py` runs no discovery code path.
+- `services/property_clarification_service.py` must never import
+  `services/discovery_slot_service.py` (the discovery module depends on it
+  through `services/project_home_type_service.py`). A test enforces this.
+- Discovery drafts already carry their pending selection or
+  `discovery_prompt`, so `apply_clarification_contract()` returns them
+  unchanged. Do not add a second live read per turn.
+- Locality options come only from live project `locality`/`city` values.
+  Never store the customer's own text as a locality; an unknown place is
+  quoted back once and live options are offered again.
+- The "Any area" quick reply is never part of the pending option list.
+- Live data reads for new property tools go through
+  `services/property_tools_service.py`, which never imports the compiled
+  runtime or `graph/`.
 
 ## Local test artifacts
 

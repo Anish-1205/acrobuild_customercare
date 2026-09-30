@@ -1,15 +1,23 @@
 """Shared live-option and durable-intent contract for all property clarifications.
 
-New handlers should set clarification_entity (project/wing/floor/flat/home_type).
-The text detector also covers legacy and generated clarification answers. Always
-run this contract before localization and before storing a response.
+New handlers should set clarification_entity (project/wing/floor/flat/home_type/
+locality). The text detector also covers legacy and generated clarification
+answers. Always run this contract before localization and before storing a
+response.
+
+This module must not import services/discovery_slot_service.py: that module
+depends on this one (through services/project_home_type_service.py).
 """
 import re
 
+from services import property_tools_service
 from services.acrobuild_company_service import (
     customer_facing_projects, get_company_projects, get_project_wings,
     get_wing_inventory, get_wing_typologies, resolve_project_candidates_from_text,
 )
+
+# Customer-facing names for entities whose key is not already readable.
+_ENTITY_LABELS = {"home_type": "home type", "locality": "area"}
 
 
 # -----------------------------------
@@ -147,7 +155,7 @@ def narrow_project_choice_by_locality(pending, text):
 
 def clarification_entity(payload):
     explicit = payload.get("clarification_entity")
-    if explicit in {"project", "wing", "floor", "flat", "home_type"}:
+    if explicit in {"project", "wing", "floor", "flat", "home_type", "locality"}:
         return explicit
     if payload.get("pending_project_lookup"):
         return "project"
@@ -200,7 +208,48 @@ def _wing_matches(wings, issue):
     return result
 
 
+# -----------------------------------
+# LOCALITY OPTIONS (Inquiry to Sales §28, §32)
+# -----------------------------------
+# The discovery flow asks "Which area should I check?" with live localities.
+# These options must equal the ones services/discovery_slot_service.py showed
+# (same read, values, order and cap), so a re-ask or a resumed selection never
+# disagrees with the question the customer saw.
+
+_LOCALITY_OPTION_CAP = 50
+_MARKER_CHAR = "⁣"
+_CONTROL_CHARS_RE = re.compile("[\\x00-\\x1f\\x7f-\\x9f]")
+# Same pattern as project_home_type_service.requested_home_types(), which
+# cannot be imported here (it imports this module).
+_HOME_TYPE_NUMBER_RE = re.compile(r"\b([1-6])\s*b(?:h)?ks?\b", re.I)
+
+
+def _clean_option_text(value):
+    """Option text without marker or control characters, single-spaced."""
+    text = str(value or "").replace(_MARKER_CHAR, "")
+    return " ".join(_CONTROL_CHARS_RE.sub(" ", text).split())
+
+
+def locality_options(issue):
+    """Live areas (a project's locality, else its city) for the BHK
+    configuration named in ``issue``; every project when none is named.
+
+    Raises RuntimeError when live data is unavailable, like every other
+    live_options() read, so callers keep the request for a retry."""
+    config = list(dict.fromkeys(_HOME_TYPE_NUMBER_RE.findall(str(issue or ""))))
+    result = property_tools_service.search_projects(config, "any")
+    if (result["status"] not in {"ok", "empty", "partial"}
+            or result["source_status"] not in {"live_api", "snapshot", "failed"}):
+        raise RuntimeError(result.get("error") or "Live locality options are unavailable.")
+    items = (result.get("data") or {}).get("items") or []
+    places = {_clean_option_text(item["project"].get("locality")) or _clean_option_text(item["project"].get("city"))
+              for item in items}
+    return sorted((place for place in places if place), key=str.lower)[:_LOCALITY_OPTION_CAP]
+
+
 def live_options(entity, issue, history):
+    if entity == "locality":
+        return "locality", locality_options(issue), {}
     projects = customer_facing_projects(get_company_projects())
     candidates = _scope(projects, issue, history)
     if entity == "project" or len(candidates) != 1:
@@ -238,19 +287,25 @@ def apply_clarification_contract(payload, issue, history=None):
         return payload
     if isinstance(payload.get("pending_project_lookup"), dict):
         return payload
+    # The discovery budget question is free text with no options; its copy
+    # must never be read as a selection prompt by the detector below.
+    if payload.get("discovery_prompt"):
+        return payload
     entity = clarification_entity(payload)
     if not entity:
         return payload
+    # Only the discovery flow asks for an area; its resume path needs the purpose.
+    purpose = {"purpose": "discovery"} if entity == "locality" else {}
     try:
         entity, options, scope = live_options(entity, issue, history)
     except (RuntimeError, TimeoutError):
         return {**payload, "route": "property", "source_status": "failed",
                 "answer": "I could not fetch the live selection options right now. Please retry; I have kept your request.",
                 "pending_project_lookup": {"kind": "selection", "original_issue": issue,
-                                           "entity": entity, "options": [], "scope": {}}}
+                                           "entity": entity, "options": [], "scope": {}, **purpose}}
     state = {"kind": "selection", "original_issue": issue, "entity": entity,
-             "options": options, "scope": scope}
-    label = {"home_type": "home type"}.get(entity, entity)
+             "options": options, "scope": scope, **purpose}
+    label = _ENTITY_LABELS.get(entity, entity)
     if options and entity == "project":
         answer = build_project_choice_answer(options, payload.get("pending_project_lookup") or "", issue)
     elif options:
@@ -408,7 +463,7 @@ def build_unmatched_selection_answer(state):
     options = [str(option) for option in state.get("options") or [] if str(option) in live]
     if not options:
         return None
-    label = {"home_type": "home type"}.get(state.get("entity"), state.get("entity") or "option")
+    label = _ENTITY_LABELS.get(state.get("entity"), state.get("entity") or "option")
     context = ", ".join(str(value) for value in (state.get("scope") or {}).values())
     answer = f"That doesn't match any {label} option. " + build_entity_choice_answer(label, options, context)
     return {"answer": answer,
