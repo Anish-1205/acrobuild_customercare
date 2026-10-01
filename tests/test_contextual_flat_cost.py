@@ -1,10 +1,45 @@
 import unittest
 
 from services.ai_agent_service import build_company_api_direct_answer
-from graph.haystack_conversation_pipeline import validate_support_node
+from graph.haystack_conversation_pipeline import resolve_contextual_support_issue, validate_support_node
+from services.conversation_store_service import build_current_project_marker
 
 
 class ContextualFlatCostTests(unittest.TestCase):
+    def test_short_cost_question_requires_one_recent_verified_selected_flat(self):
+        marker = build_current_project_marker("Vishwajeet Prime")
+        full_line = ("- Flat 101; floor 1; saleable area: 1500 sq. ft.; "
+                     "base rate: INR 4000 to INR 7500 (Rate Per Sq.Ft.)")
+
+        def resolved(lines, *, selection="101", project_marker=marker):
+            question = "What will be the total cost?"
+            history = [
+                {"sender": "customer", "text": selection},
+                {"sender": "bot", "text": (
+                    "Live available homes in Vishwajeet Prime, A wing:\n\n"
+                    + lines + project_marker
+                )},
+                {"sender": "customer", "text": question},
+            ]
+            return resolve_contextual_support_issue(question, history)
+
+        self.assertIn("selected Flat 101", resolved(full_line))
+        unsafe_cases = (
+            full_line + "\n- Flat 102; floor 1; saleable area: 1200 sq. ft.; "
+            "base rate: INR 3500 to INR 6500 (Rate Per Sq.Ft.)",
+            "- Flat 101; floor 1; base rate: INR 4000 to INR 7500 (Rate Per Sq.Ft.)",
+            "- Flat 101; floor 1; saleable area: 1500 sq. ft.",
+            "- Flat 101; floor 1; saleable area: 1500 sq. ft.; "
+            "base rate: INR 4000 to INR 7500 (Lumpsum)",
+        )
+        for lines in unsafe_cases:
+            with self.subTest(lines=lines):
+                self.assertNotIn("selected Flat", resolved(lines))
+        self.assertNotIn("selected Flat", resolved(full_line, selection="Show all flats"))
+        self.assertNotIn("selected Flat", resolved(
+            full_line, project_marker=build_current_project_marker("Vishwajeet Town"),
+        ))
+
     def test_total_cost_follow_up_uses_flat_from_chat_history(self):
         history = [
             {"sender": "customer", "text": "Flat 206"},

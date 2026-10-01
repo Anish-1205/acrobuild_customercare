@@ -275,12 +275,9 @@ def _run_flow(monkeypatch, module, app, analysis, turns):
 
 
 @pytest.mark.parametrize("flow", sorted(FLOWS))
-@pytest.mark.parametrize("flag", [None, "false"])
+@pytest.mark.parametrize("flag", ["off", "false"])
 def test_flag_off_call_markers_are_identical_to_head(monkeypatch, tmp_path, flow, flag):
-    if flag is None:
-        monkeypatch.delenv("ACROBUILD_DISCOVERY_SLOTS", raising=False)
-    else:
-        monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", flag)
+    monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", flag)
     monkeypatch.setattr(company_service, "_request_json", lambda *a, **k: pytest.fail("no network in tests"))
     monkeypatch.setattr(pipeline, "get_live_project_names", lambda: [])
     analysis, turns = FLOWS[flow]

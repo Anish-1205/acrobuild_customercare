@@ -193,6 +193,19 @@ def latest_discovery_slots(messages):
     return {}
 
 
+def customer_visible_history(messages):
+    """Return only displayable turns; server state stays in stored bot rows."""
+    visible = []
+    for message in messages:
+        sender = str(_message_field(message, "sender") or "").lower()
+        if sender not in {"customer", "bot"}:
+            continue
+        text = str(_message_field(message, "text") or "")
+        text = text.split(_MARKER_CHAR, 1)[0]
+        visible.append({"sender": sender, "text": text})
+    return visible
+
+
 class ConversationSession:
     def __init__(self, cookie, conversation_id):
         self.token = cookie if re.fullmatch(r"[A-Za-z0-9_-]{43}", cookie or "") else secrets.token_urlsafe(32)

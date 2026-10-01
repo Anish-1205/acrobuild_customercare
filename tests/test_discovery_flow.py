@@ -247,7 +247,12 @@ def test_locality_question_reflects_current_eligible_projects(chat, env, endpoin
 # -----------------------------------
 
 @pytest.mark.parametrize("endpoint", ENDPOINTS)
-def test_locality_budget_shortlist_and_project_tap(chat, endpoint):
+@pytest.mark.parametrize("flag", [None, "true"], ids=["default-on", "explicit-on"])
+def test_locality_budget_shortlist_and_project_tap(chat, monkeypatch, endpoint, flag):
+    if flag is None:
+        monkeypatch.delenv("ACROBUILD_DISCOVERY_SLOTS", raising=False)
+    else:
+        monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", flag)
     c = chat(endpoint)
     c.ask("Show me 3 BHK")
     budget = c.ask("Wakad")
@@ -499,12 +504,9 @@ def test_browse_all_projects_starts_empty(chat, endpoint):
 # -----------------------------------
 
 @pytest.mark.parametrize("endpoint", ENDPOINTS)
-@pytest.mark.parametrize("flag", [None, "false", "0", "off"])
+@pytest.mark.parametrize("flag", ["false", "0", "off", ""])
 def test_flag_off_keeps_the_project_list(chat, env, monkeypatch, endpoint, flag):
-    if flag is None:
-        monkeypatch.delenv("ACROBUILD_DISCOVERY_SLOTS", raising=False)
-    else:
-        monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", flag)
+    monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", flag)
     c = chat(endpoint)
     payload = c.ask("Show me 3 BHK")
     names = [p["projectName"] for p in PROJECTS if p["id"] != 55]

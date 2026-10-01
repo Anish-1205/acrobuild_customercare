@@ -1,4 +1,5 @@
 from collections import deque
+from copy import deepcopy
 from contextvars import ContextVar
 from datetime import datetime, timezone
 from threading import Lock
@@ -11,6 +12,11 @@ _MAX_LOGS = 500
 _LOGS = deque(maxlen=_MAX_LOGS)
 _LOG_LOCK = Lock()
 _TRACE_CONTEXT = ContextVar("data_api_trace", default={})
+PUBLIC_DATA_API_ERROR = "Live data request failed; details are in the server log."
+_PUBLIC_TRACE_FIELDS = (
+    "id", "provider", "endpoint", "method", "params", "status", "duration_ms",
+    "cache_hit", "response_summary", "created_at",
+)
 
 
 def begin_data_api_trace(conversation_id="", question=""):
@@ -115,6 +121,19 @@ def get_current_data_api_logs():
         }
         for record in reversed(records)
     ]
+
+
+def public_data_api_calls(records):
+    """Return response-safe trace copies without changing internal diagnostics."""
+    return [
+        {
+            **{field: deepcopy(record[field]) for field in _PUBLIC_TRACE_FIELDS if field in record},
+            "error": PUBLIC_DATA_API_ERROR if record.get("error") else "",
+        }
+        for record in records
+    ]
+
+
 def get_data_api_logs(conversation_id="", limit=200):
     normalized_id = str(conversation_id or "").strip()
     safe_limit = min(max(int(limit or 200), 1), _MAX_LOGS)

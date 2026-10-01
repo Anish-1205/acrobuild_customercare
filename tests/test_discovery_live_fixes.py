@@ -446,12 +446,9 @@ def _transcript(module, monkeypatch, endpoint, questions, seeded_history):
 
 
 @pytest.mark.parametrize("endpoint", ENDPOINTS)
-@pytest.mark.parametrize("flag", [None, "false"])
+@pytest.mark.parametrize("flag", ["off", "false"])
 def test_flag_off_matches_git_head(env, monkeypatch, tmp_path, endpoint, flag):
-    if flag is None:
-        monkeypatch.delenv("ACROBUILD_DISCOVERY_SLOTS", raising=False)
-    else:
-        monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", flag)
+    monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", flag)
     head = _load_head_assist(tmp_path)
     seeded = [
         {"sender": "customer", "text": "Show me 3 BHK"},

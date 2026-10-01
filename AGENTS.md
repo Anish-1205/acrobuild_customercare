@@ -74,8 +74,9 @@ The code is authoritative when older documents disagree.
 
 ## Discovery slot memory (Inquiry to Sales §28)
 
-- The flow lives in `services/discovery_slot_service.py` and is off unless
-  `ACROBUILD_DISCOVERY_SLOTS` is true (default false; read on every call).
+- The flow lives in `services/discovery_slot_service.py` and defaults on after
+  Phase 1 live acceptance. `ACROBUILD_DISCOVERY_SLOTS` is read on every call;
+  set it to `false` to disable discovery explicitly.
   With the flag off, `routers/assist.py` runs no discovery code path.
 - `services/property_clarification_service.py` must never import
   `services/discovery_slot_service.py` (the discovery module depends on it

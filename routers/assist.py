@@ -9,8 +9,9 @@ from services.property_clarification_service import (
     apply_clarification_contract, resume_selection, continues_selection, build_inventory_selection_answer,
     narrow_project_choice_by_locality, build_project_browse_response, is_unmatched_selection_reply,
     build_unmatched_selection_answer, project_detail_followup, build_project_detail_choice,
+    is_amenity_shortlist_detail_followup,
 )
-from graph.haystack_conversation_pipeline import is_small_talk_message
+from graph.haystack_conversation_pipeline import is_short_flat_cost_question, is_small_talk_message
 from services.project_home_type_service import (
     build_catalogue_home_type_answer, build_generic_home_type_answer,
     build_project_home_type_answer, requested_home_types,
@@ -29,6 +30,8 @@ from services.conversation_store_service import (
     build_current_project_marker,
     build_discovery_slots_marker,
     build_pending_project_lookup_marker,
+    customer_visible_history,
+    get_discovery_slots,
     get_pending_project_lookup,
     latest_discovery_slots,
 )
@@ -42,6 +45,7 @@ from services.discovery_slot_service import (
     is_slot_reply,
 )
 from services.property_tools_service import project_localities
+from services.internal_api_log_service import public_data_api_calls
 
 from services.observability import (
     get_logger,
@@ -63,8 +67,11 @@ from api_context import (
     build_grounded_amenity_search_assist,
     build_grounded_project_amenities_assist,
     build_grounded_project_cost_clarification_assist,
+    build_complete_cost_sheet_limitation_assist,
     build_grounded_project_location_assist,
     build_grounded_site_visit_document_assist,
+    build_unsupported_capability_assist,
+    strip_capability_overstatements,
     clear_assist_response_cache,
     end_data_api_trace,
     evaluate_rag_response,
@@ -169,9 +176,6 @@ def _live_places():
     return sorted({place for project in projects for place in project_localities(project)})
 
 
-_REDACTED_CS_ERROR = "Live data request failed; details are in the server log."
-
-
 def _discovery_slots(request):
     """Stored discovery slots for this conversation, or None when the flag is off."""
     if not discovery_enabled():
@@ -242,6 +246,26 @@ def _discovery_slots_marker(response_payload, slots=None, slot_reply=False, rese
     return ""
 
 
+def _short_flat_cost_choice(turn, issue):
+    """Re-offer live flat options when a short cost ask has no selected flat."""
+    if not is_short_flat_cost_question(issue) or len(turn.conversation_messages) < 2:
+        return None
+    previous = turn.conversation_messages[-2]
+    if previous.get("sender") != "bot":
+        return None
+    state = get_pending_project_lookup(previous.get("text"))
+    if not isinstance(state, dict) or state.get("entity") != "flat":
+        return None
+    payload = build_unmatched_selection_answer(state)
+    if payload is None:
+        return None
+    options = [reply["label"] for reply in payload.get("quick_replies") or []]
+    payload["answer"] = "Which flat should I use for a base-cost estimate?\n" + "\n".join(
+        f"- {option}" for option in options
+    )
+    return payload
+
+
 def _grounded_property_shortcut(request, turn, failure_state=None, pending=None, slots=None):
     """Router-level grounded answers only for property turns, matched on the English
     rendering so they work for questions asked in any language."""
@@ -256,7 +280,11 @@ def _grounded_property_shortcut(request, turn, failure_state=None, pending=None,
                                  pending.get("effective_issue") == request.issue) else pending
     try:
         payload = (
-            build_grounded_site_visit_document_assist(shortcut_request)
+            (build_project_detail_choice(pending)
+             if is_amenity_shortlist_detail_followup(pending, turn.analysis.english or request.issue) else None)
+            or build_complete_cost_sheet_limitation_assist(request)
+            or _short_flat_cost_choice(turn, request.issue)
+            or build_grounded_site_visit_document_assist(shortcut_request)
             # Discovery slot flow (IS §28); None whenever the flag is off.
             or _discovery_answer(shortcut_request.issue, slots, pending)
             # A catalogue home-type filter is also shaped like a reverse
@@ -282,6 +310,7 @@ def _grounded_property_shortcut(request, turn, failure_state=None, pending=None,
                 if _unmatched_selection_reply(narrowing_pending, request.issue, turn) else None)
             or build_inventory_selection_answer(request.issue, pending)
             or build_grounded_project_amenities_assist(shortcut_request)
+            or build_unsupported_capability_assist(shortcut_request)
             or build_grounded_project_cost_clarification_assist(shortcut_request)
             or build_grounded_project_location_assist(shortcut_request)
         )
@@ -377,16 +406,25 @@ def _unmatched_selection_reply(pending, issue, turn):
 def _prepare_lookup_turn(request, cleaned_issue, slots=None):
     turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
     pending = _pending_project_lookup(request.conversation_messages)
-    selection_reply = bool(pending and continues_selection(pending, cleaned_issue))
+    selection_reply = bool(pending and continues_selection(
+        pending, cleaned_issue,
+        starts_new_intent=bool(not pending.get("options") and is_small_talk_message(cleaned_issue)),
+    ))
     # A bare reset answers no pending choice, so it must not read live amenity or area data for one.
     can_narrow = bool(pending and not selection_reply and not _discovery_reset_only(slots, cleaned_issue, turn)
                       and turn.analysis.intent not in {"call_booking", "human_contact"})
-    narrows_by_amenity = bool(can_narrow and _narrows_selection_by_amenity(pending, turn.property_issue))
-    narrows_by_locality = bool(can_narrow and _narrows_selection_by_locality(pending, turn.property_issue))
-    unmatched_reply = bool(can_narrow and not (narrows_by_amenity or narrows_by_locality)
+    generic_shortlist_details = bool(can_narrow and is_amenity_shortlist_detail_followup(
+        pending, turn.analysis.english or turn.property_issue,
+    ))
+    narrows_by_amenity = bool(can_narrow and not generic_shortlist_details
+                              and _narrows_selection_by_amenity(pending, turn.property_issue))
+    narrows_by_locality = bool(can_narrow and not generic_shortlist_details
+                               and _narrows_selection_by_locality(pending, turn.property_issue))
+    unmatched_reply = bool(can_narrow and not generic_shortlist_details
+                           and not (narrows_by_amenity or narrows_by_locality)
                            and _unmatched_selection_reply(pending, cleaned_issue, turn))
-    detail_followup = None
-    if can_narrow and not (narrows_by_amenity or narrows_by_locality or unmatched_reply):
+    detail_followup = pending if generic_shortlist_details else None
+    if can_narrow and not (generic_shortlist_details or narrows_by_amenity or narrows_by_locality or unmatched_reply):
         try:
             detail_followup = project_detail_followup(pending, turn.analysis.english or turn.property_issue)
         except (RuntimeError, TimeoutError):
@@ -441,6 +479,8 @@ def _prepare_lookup_turn(request, cleaned_issue, slots=None):
 
 
 def _project_lookup_marker(response_payload, pending=None, customer_issue="", shortcut_failed=False):
+    if response_payload.get("retrieval_mode") == "unsupported_capability":
+        return ""
     kind = response_payload.get("pending_project_lookup")
     if kind:
         return build_pending_project_lookup_marker(kind)
@@ -544,15 +584,14 @@ def _complete_payload(response_payload, cleaned_issue, turn):
             {"label": "Book a site visit", "value": "Book a site visit", "action": "site_visit", "project_name": project_name},
             {"label": "Raise a support ticket", "value": "Raise a support ticket", "action": "ticket"},
         ]
+    if response_payload.get("used_llm"):
+        answer = response_payload.get("answer", "")
+        sanitized = strip_capability_overstatements(answer)
+        if sanitized != answer:
+            response_payload = {**response_payload, "answer": sanitized}
     response_payload = localize_response(response_payload, turn.analysis)
-    response_payload["data_api_calls"] = data_api_calls
+    response_payload["data_api_calls"] = public_data_api_calls(data_api_calls)
     response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
-    if response_payload.get("discovery_kind"):
-        # Discovery never sends raw CS API error text to the client; the full
-        # text is already in the server log (log_data_api_call / _log_turn_result).
-        response_payload["data_api_calls"] = [
-            {**call, "error": _REDACTED_CS_ERROR} if call.get("error") else call for call in data_api_calls
-        ]
     return response_payload
 
 
@@ -600,7 +639,11 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
                                                            slots={} if reset_slots else slots)
             if response_payload is not None:
                 turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
-            else:
+            if response_payload is None:
+                response_payload = build_unsupported_capability_assist(processing_request)
+                if response_payload is not None:
+                    turn_logger.info("turn branch %s", kv(branch="unsupported_capability"))
+            if response_payload is None:
                 response_payload = run_support_orchestration(
                     issue=processing_issue,
                     conversation_id=request.conversation_id,
@@ -733,6 +776,22 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 }, ensure_ascii=True) + "\n"
                 _log_turn_result("stream", cleaned_issue, response_payload, started)
                 return
+            unsupported_payload = build_unsupported_capability_assist(processing_request)
+            if unsupported_payload is not None:
+                turn_logger.info("turn branch %s", kv(branch="unsupported_capability"))
+                response_payload = _complete_payload(unsupported_payload, cleaned_issue, turn)
+                session.append(cleaned_issue, response_payload.get("answer"),
+                               marker=_turn_marker(response_payload, pending_lookup, cleaned_issue,
+                                                   shortcut_failure.get("failed", False), slots, slot_reply,
+                                                   reset_slots))
+                yield json.dumps({
+                    "text": response_payload["answer"], "type": "delta",
+                }, ensure_ascii=True) + "\n"
+                yield json.dumps({
+                    "response": response_payload, "type": "done",
+                }, ensure_ascii=True) + "\n"
+                _log_turn_result("stream", cleaned_issue, response_payload, started)
+                return
             property_events = []
             # Property answers are buffered because validation, the live-data guard and
             # localization can replace the draft text before it is final.
@@ -809,7 +868,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                     "matched_chunks": [], "model": "", "retrieval_mode": "empty",
                     "source_label": "Streaming fallback", "source_status": "fallback",
                     "support_base_url": get_support_base_url(), "sync_error": "", "used_llm": False,
-                    "data_api_calls": get_current_data_api_logs(),
+                    "data_api_calls": public_data_api_calls(get_current_data_api_logs()),
                 },
                 "type": "error",
             }, ensure_ascii=True) + "\n"
@@ -819,6 +878,32 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
     response = StreamingResponse(event_stream(), media_type="application/x-ndjson")
     session.set_cookie(response)
     return response
+
+
+@router.get("/api/support/conversations/{conversation_id}/history")
+def get_conversation_history(conversation_id: str, http_request: Request, response: Response):
+    """Restore this browser session's completed turns without server-only state."""
+    session = ConversationSession(http_request.cookies.get(COOKIE_NAME, ""), conversation_id)
+    stored = session.load()
+    response.headers["Cache-Control"] = "no-store"
+    if not stored:
+        return {"exists": False, "messages": [], "quick_replies": []}
+
+    last_bot = next((row["text"] for row in reversed(stored) if row["sender"] == "bot"), "")
+    pending = get_pending_project_lookup(last_bot)
+    quick_replies = []
+    if pending and pending.get("kind") == "selection":
+        options = pending.get("options") if isinstance(pending.get("options"), list) else []
+        quick_replies = [
+            {"label": option, "value": option}
+            for option in options
+            if isinstance(option, str) and option.strip()
+        ]
+        if pending.get("entity") == "locality" and pending.get("purpose") == "discovery":
+            quick_replies.append({"label": "Any area", "value": "Any area"})
+    elif (get_discovery_slots(last_bot) or {}).get("awaiting") == "budget":
+        quick_replies = [{"label": "Any budget", "value": "any budget"}]
+    return {"exists": True, "messages": customer_visible_history(stored), "quick_replies": quick_replies}
 
 
 @router.delete("/api/support/conversations/{conversation_id}")

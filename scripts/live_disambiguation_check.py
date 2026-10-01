@@ -3,8 +3,8 @@
 Default run: the original disambiguation scenarios (stream endpoint).
 
 ``--discovery``: live acceptance of discovery slot memory (Inquiry to Sales
-§28, §32) on both assist endpoints. Requires ACROBUILD_DISCOVERY_SLOTS=true on
-the command line for this process only. Adds a "discovery" key to
+§28, §32) on both assist endpoints. Uses the configured discovery flag (default
+on after Step 8); explicit false stops the run. Adds a "discovery" key to
 docs/live_disambiguation_results.json and leaves the other transcripts as they
 are. Never prints or stores keys, tokens, headers or .env contents.
 """
@@ -16,6 +16,7 @@ import sys
 import time
 import uuid
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -441,7 +442,10 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
         try:
             turn = ask("Show me 3 BHK")
         finally:
-            os.environ["ACROBUILD_DISCOVERY_SLOTS"] = previous or "true"
+            if previous is None:
+                os.environ.pop("ACROBUILD_DISCOVERY_SLOTS", None)
+            else:
+                os.environ["ACROBUILD_DISCOVERY_SLOTS"] = previous
         expect(not turn["discovery_kind"] and turn["clarification_entity"] == "project"
                and (turn["pending_options"] or []) and set(turn["pending_options"]) <= set(data["project_names"]),
                f"flag off -> entity={turn['clarification_entity']}, options={turn['pending_options']}")
@@ -456,6 +460,9 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
         else:
             expect(True, "N/A: every 3BHK project has a per-sq-ft rate")
     for turn in conversation.turns:
+        if turn["discovery_kind"]:
+            expect(turn["source_status"] == "live_api",
+                   f"turn '{turn['user']}': discovery source={turn['source_status']}")
         for problem in _name_checks(turn, data) + _honesty(turn):
             expect(False, f"turn '{turn['user']}': {problem}")
         if turn["leaks"]:
@@ -467,15 +474,20 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
 
 def _run_discovery_acceptance():
     from services.acrobuild_company_service import _cs_api_config
-    if os.environ.get("ACROBUILD_DISCOVERY_SLOTS", "").strip().lower() not in {"1", "true", "yes", "on"}:
-        raise SystemExit("Set ACROBUILD_DISCOVERY_SLOTS=true on the command line for this run.")
+    from services.discovery_slot_service import discovery_enabled
+    if not discovery_enabled():
+        raise SystemExit("Discovery is disabled. Set ACROBUILD_DISCOVERY_SLOTS=true for this acceptance run.")
     preflight = _preflight()
     print("PREFLIGHT:", json.dumps(preflight), flush=True)
-    if "cs_api_error" in preflight or "llm_error" in preflight or not preflight["cs_api_configured"]:
+    if ("cs_api_error" in preflight or "llm_error" in preflight
+            or not preflight["cs_api_configured"] or not preflight["llm_configured"]
+            or not preflight.get("cs_api_projects") or not preflight.get("llm_reply_chars")):
         raise SystemExit("Live dependency unavailable; stopping without transcripts.")
     data = _data_checks()
     public = {k: v for k, v in data.items() if not k.startswith("_")}
     print("DATA CHECKS:", json.dumps(public, ensure_ascii=False, indent=2), flush=True)
+    if data["typology_fetch_errors"] or not data["projects"] or not data["typologies"]:
+        raise SystemExit("Incomplete live discovery catalogue; stopping without acceptance.")
 
     # Secrets are held in memory only, to detect echoes; never printed or stored.
     secrets = [_cs_api_config().get("api_key") or "", os.environ.get("RUNPOD_API_KEY", "")]
@@ -499,7 +511,9 @@ def _run_discovery_acceptance():
     print("TRANSCRIPT INPUTS:", json.dumps(live, ensure_ascii=False), flush=True)
 
     results = json.loads(RESULTS_PATH.read_text(encoding="utf-8")) if RESULTS_PATH.exists() else {}
-    discovery = {"flag": "ACROBUILD_DISCOVERY_SLOTS=true (process env only)",
+    discovery = {"flag": ("ACROBUILD_DISCOVERY_SLOTS=true (explicit configuration)"
+                          if "ACROBUILD_DISCOVERY_SLOTS" in os.environ else "default-on (flag unset)"),
+                 "started_at": datetime.now(timezone.utc).isoformat(),
                  "preflight": preflight, "data_checks": public, "inputs": live, "transcripts": {}}
     with TestClient(api) as client:
         for name in [f"T{i}" for i in range(1, 13)]:
@@ -524,15 +538,18 @@ def _run_discovery_acceptance():
                                  "over_8s": sum(1 for d in durations if d > SLOW_TURN_MS)}
     discovery["latency"] = latency
     discovery["summary"] = {name: {k: v["result"] for k, v in t.items()} for name, t in discovery["transcripts"].items()}
+    discovery["completed_at"] = datetime.now(timezone.utc).isoformat()
+    discovery["passed"] = all(result == "PASS" for endpoints in discovery["summary"].values()
+                              for result in endpoints.values())
     results["discovery"] = discovery
     RESULTS_PATH.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     print("LATENCY:", json.dumps(latency), flush=True)
     print("SUMMARY:", json.dumps(discovery["summary"]), flush=True)
+    return discovery["passed"]
 
 
 if __name__ == "__main__" and "--discovery" in sys.argv[1:]:
-    _run_discovery_acceptance()
-    raise SystemExit(0)
+    raise SystemExit(0 if _run_discovery_acceptance() else 1)
 
 scenarios = {
     "precious": ["vishwajeet lo amenities em em vunnai?", "Vishwajeet Precious"],

@@ -137,6 +137,13 @@ Every `/api/admin/*` and `/admin/*` path is additionally gated by `enforce_admin
 
 ### b) "Show me 3 BHK" (ambiguous → clarification)
 
+The trace below describes **explicit flag-off** behavior. With the Phase 1
+default now on, an unscoped BHK request goes through
+`discovery_slot_service.build_discovery_answer()` before the home-type builder:
+configuration → live locality → budget → project shortlist. The Step 7b
+locality override and deterministic reset apply on both assist endpoints.
+See [CHAT_FLOW.md](CHAT_FLOW.md) and [PHASE1_PLAN.md](PHASE1_PLAN.md).
+
 1–3. Same as (a). In `prepare_turn()` `_HARD_PROPERTY_SIGNAL_RE` (`\b[1-6]\s*bhk\b…`) forces `intent="property"`; the text is normalised to `3BHK`. `resolve_contextual_support_issue()` appends `"\nRequested project: X"` **only if** a live project name appears in history (`_conversation_project_name`); otherwise, it passes the text through to the legacy resolver.
 4. `_grounded_property_shortcut()`: site-visit docs → None; `build_catalogue_home_type_answer` → None (`is_catalogue_home_type_query` needs "projects"/"which project"); **`build_project_home_type_answer`** (project_home_type_service.py) → `resolve_project_candidates_from_text()` finds 0 → `apply_clarification_contract({"clarification_entity": "project"}, issue, history)`.
 5. `apply_clarification_contract()` → `clarification_entity()` = `project` → `live_options()` → `get_company_projects()` (**GET /api/cs/{companyId}/projects**) → `customer_facing_projects()` → `_scope()` (issue, then customer history) → no match → all live names → `build_project_choice_answer(options, "", issue)` → "Which project should I check?\n- …".
@@ -144,7 +151,7 @@ Every `/api/admin/*` and `/admin/*` path is additionally gated by `enforce_admin
 7. `_complete_payload()`: the contract returns early (pending is a dict) → `_enforce_live_property_data()` (live_api) → no next-step replies (pending set) → `localize_response()` (bullet names must survive verbatim, §12).
 8. Persist: `_project_lookup_marker()` → `build_pending_project_lookup_marker(state)`; `_current_project_marker()` → `build_current_project_marker("")` (clears scope). Stream: one `delta` + `done`.
 9. **Next turn** ("<Project A>" tap): `_prepare_lookup_turn()` → `continues_selection()` (exact option) → `_resume_project_lookup_request()` → `resume_selection()` → effective issue `"Show me 3BHK. Selected project: <Project A>"` → `build_project_home_type_answer()` → `get_project_typologies()` (GET `/projects/{id}/typologies`), `get_project_wings()` (GET `/projects/{id}/wings`), `get_wing_inventory()` per wing (GET `/wings/{id}/inventory?availableOnly=true`) → "Home types in …" with counts, areas, base-rate range.
-   - The spec (Inquiry to Sales §28) expects "Which location?" → "Budget?"; the code asks for **project** only (see GAP_ANALYSIS).
+   - With discovery explicitly disabled, the code asks for **project**; the default discovery flow supplies the locality/budget sequence from Inquiry to Sales §28.
 
 ---
 
@@ -273,7 +280,7 @@ The Haystack branch is only reachable when `prefer_qwen_response=False`; the fro
 
 `_remember_response()` is a no-op and `_CONVERSATION_MEMORY` is unused.
 
-"Yes (flag)" means only when `ACROBUILD_DISCOVERY_SLOTS` is true (default false). The project is deliberately not a discovery slot; `current_project` stays its single source of truth, and discovery answers never set it.
+"Yes (flag)" means when discovery is enabled (default true; `ACROBUILD_DISCOVERY_SLOTS=false` disables it). The project is deliberately not a discovery slot; `current_project` stays its single source of truth, and discovery answers never set it.
 
 ---
 

@@ -10,12 +10,14 @@ import {
   getPropertyProjects,
   getPropertyTypologies,
   getPropertyWings,
+  getConversationHistory,
   getSupportAssist,
   streamSupportAssist
 } from "../lib/api";
 import { knowledgeArticles, type KnowledgeArticle } from "../lib/articleAssist";
 import { getRoleHomePath } from "../lib/roleNavigation";
 import { loadWidgetConfig } from "../lib/widgetConfig";
+import { activeConversation, clearConversation, matchingPropertyFlow, matchingTranscript, replaceConversation, restoredTranscript, savePropertyFlow, saveTranscript } from "../lib/conversationSession";
 import { AcrobuildLogo } from "../components/AcrobuildLogo";
 import type {
   CreateTicketResponse,
@@ -86,6 +88,7 @@ type HelpCenterCategory = {
 };
 
 type ChatMessage = {
+  backendText?: string;
   contextIssue?: string;
   feedbackState?: "negative" | "positive";
   id: number;
@@ -95,6 +98,7 @@ type ChatMessage = {
   quickReplies?: { label: string; value: string; action?: "ticket" | "site_visit" | "call" | "browse_projects"; project_name?: string }[];
   relatedArticles: KnowledgeArticle[];
   sender: "bot" | "customer";
+  serverTurn?: boolean;
   showHelpfulPrompt?: boolean;
   text: string;
   ticketResult?: CreateTicketResponse | null;
@@ -1164,11 +1168,11 @@ export function CustomerHomePage() {
     project_name: ""
   });
   const chatBodyRef = useRef<HTMLDivElement | null>(null);
-  const conversationIdRef = useRef<string>(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `conv-${Date.now()}-${Math.random().toString(16).slice(2)}`
-  );
+  const initialConversationRef = useRef<ReturnType<typeof activeConversation> | null>(null);
+  if (!initialConversationRef.current) initialConversationRef.current = activeConversation();
+  const conversationIdRef = useRef<string>(initialConversationRef.current.id);
+  const [isRestoringChat, setIsRestoringChat] = useState(initialConversationRef.current.restored);
+  const [canSaveTranscript, setCanSaveTranscript] = useState(!initialConversationRef.current.restored);
   const chatEmailRef = useRef<HTMLInputElement | null>(null);
   const chatComposeRef = useRef<HTMLTextAreaElement | null>(null);
   const chatContactComposeRef = useRef<HTMLInputElement | null>(null);
@@ -1183,6 +1187,42 @@ export function CustomerHomePage() {
   const submittedVoiceTranscriptRef = useRef("");
   const voiceMutedRef = useRef(false);
   const voiceLanguageRef = useRef<VoiceLanguageCode>("en-IN");
+
+  useEffect(() => {
+    if (!initialConversationRef.current?.restored) return;
+    const id = initialConversationRef.current.id;
+    let cancelled = false;
+    void getConversationHistory(id).then((history) => {
+      if (cancelled || conversationIdRef.current !== id) return;
+      const snapshot = matchingTranscript(id, history.messages);
+      if (snapshot && (history.exists || !history.messages.length)) {
+        setChatMessages(snapshot.map((message) => ({ ...message, relatedArticles: [], isAutomated: message.sender === "bot" })));
+        setPropertyFlow(matchingPropertyFlow<PropertyFlowState>(id, history.messages, snapshot));
+      } else if (history.exists) {
+        setChatMessages(restoredTranscript(id, history.messages, history.quick_replies).map((message) => ({
+          ...message, relatedArticles: [], isAutomated: message.sender === "bot"
+        })));
+      } else {
+        clearConversation(id);
+        conversationIdRef.current = activeConversation().id;
+        setChatMessages(createDefaultChatMessages());
+      }
+      setIsRestoringChat(false);
+      setCanSaveTranscript(true);
+    }).catch(() => {
+      if (cancelled || conversationIdRef.current !== id) return;
+      setIsRestoringChat(false);
+      setStorefrontError("Your earlier chat could not be loaded. Refresh to try again.");
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (canSaveTranscript && !isRestoringChat) {
+      saveTranscript(conversationIdRef.current, chatMessages);
+      savePropertyFlow(conversationIdRef.current, propertyFlow);
+    }
+  }, [canSaveTranscript, isRestoringChat, chatMessages, propertyFlow]);
 
   const normalizedHelpCenterQuery = helpCenterQuery.trim().toLowerCase();
   const publishedSupportArticles = useMemo(() => {
@@ -1553,6 +1593,7 @@ export function CustomerHomePage() {
     shouldResetConversation: boolean,
     customerMessageText = issue
   ) {
+    if (isRestoringChat) return;
     const trimmedIssue = issue.trim();
     const trimmedCustomerMessage = customerMessageText.trim();
     const customerMessageId = Date.now();
@@ -1567,9 +1608,7 @@ export function CustomerHomePage() {
       return;
     }
 
-    if (shouldResetConversation && typeof crypto !== "undefined" && "randomUUID" in crypto) {
-      conversationIdRef.current = crypto.randomUUID();
-    }
+    if (shouldResetConversation) conversationIdRef.current = replaceConversation();
 
     const primaryArticle =
       publishedSupportArticles.find((article) => article.id === primaryArticleId) ?? undefined;
@@ -1583,10 +1622,12 @@ export function CustomerHomePage() {
     setChatDraft("");
     setChatMessages((current) => {
       const nextCustomerMessage: ChatMessage = {
+        backendText: trimmedIssue,
         contextIssue: trimmedIssue,
         id: customerMessageId,
         relatedArticles: [],
         sender: "customer",
+        serverTurn: widgetConfig.aiResponsesEnabled,
         text: trimmedCustomerMessage || trimmedIssue
       };
 
@@ -1659,6 +1700,7 @@ export function CustomerHomePage() {
               offerActionMenu: assistResponse.offer_action_menu ?? false,
               quickReplies: assistResponse.quick_replies ?? [],
               relatedArticles: [],
+              serverTurn: true,
               showHelpfulPrompt: false,
               text: assistResponse.answer
             })
@@ -1703,6 +1745,7 @@ export function CustomerHomePage() {
             offerActionMenu: assistResponse.offer_action_menu ?? false,
             quickReplies: assistResponse.quick_replies ?? [],
             relatedArticles: [],
+            serverTurn: true,
             showHelpfulPrompt: false,
             text: assistResponse.answer
           })
@@ -3415,7 +3458,7 @@ export function CustomerHomePage() {
                                     {message.quickReplies.map((option) => (
                                       <button
                                         className="store-chat-guided-button"
-                                        disabled={isTypingReply}
+                                        disabled={isTypingReply || isRestoringChat}
                                         key={option.value}
                                         onClick={() => {
                                           if (option.action === "ticket") {
@@ -3817,7 +3860,7 @@ export function CustomerHomePage() {
                 onSubmit={(event) => {
                   event.preventDefault();
 
-                  if (!chatDraft.trim() || isTypingReply) {
+                  if (!chatDraft.trim() || isTypingReply || isRestoringChat) {
                     return;
                   }
 
@@ -3871,7 +3914,7 @@ export function CustomerHomePage() {
                   <button
                     aria-label="Send message"
                     className="store-chat-compose-submit"
-                    disabled={isTypingReply || !chatDraft.trim()}
+                    disabled={isTypingReply || isRestoringChat || !chatDraft.trim()}
                     type="submit"
                   >
                     <PaperPlaneIcon />

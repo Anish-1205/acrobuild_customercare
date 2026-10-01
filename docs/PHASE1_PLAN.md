@@ -1,6 +1,46 @@
 # Phase 1 plan: discovery slot memory + typed CS API tool layer
 
-Status: Steps 1-5c implemented, flag default false, live acceptance pending. Source code is authoritative; "unverified" marks unconfirmed facts.
+Status: Steps 1–7b implemented; fresh Step 7/7b live acceptance passed on both assist endpoints on 2026-10-01. Step 8 applied: discovery defaults **true**; `ACROBUILD_DISCOVERY_SLOTS=false` disables it. Source code is authoritative; "unverified" marks unconfirmed facts.
+
+## Activation gate (2026-10-01)
+
+- Before changing the default, `scripts/live_disambiguation_check.py --discovery`
+  passed T1–T12 on JSON and streaming (24 endpoint transcripts, 72 turns) using
+  the real configured CS API and Sarvam with live-only property reads. Every
+  discovery turn had `source_status=live_api`; name/estimate and leak checks passed.
+- After activation, the same 24 transcripts and 72 turns passed again with the
+  flag **unset**, exercising the new default and T11's explicit false opt-out.
+  Live checks used the real application through `TestClient`; a browser `/home`
+  walkthrough was not performed in this run.
+- Step 7b was already implemented. T7 confirmed a live locality search replaces
+  inherited project scope; T8 confirmed the deterministic bare reset and reset
+  with a new BHK request. No discovery behavior defect needed a fix.
+- The live catalogue supplied 9 customer-facing projects and 305 typologies,
+  all with `Rate Per Sq.Ft.`. Missing localities used live city values. Typology
+  images remain content-unverified. A city absent from offered area options and
+  an unpriced 3BHK project were not present in this catalogue; those branches and
+  repeated API failures are covered by automated regression tests.
+- Focused regression: **767 passed + 16 subtests** before activation;
+  **769 passed + 16 subtests** after adding default-on endpoint coverage. Explicit
+  false/off values still preserve the prior response and stored-marker behavior.
+- Full backend regression after activation: **1617 passed + 136 subtests,
+  1 pre-existing snapshot test failure**. The legacy snapshot test assumes nine
+  records and the old server; the configured server differs, and in the live
+  full-suite run the test observes ten records from the turn cache. No snapshot
+  or cache behavior was changed for activation. A network-permission error in
+  the initial sandbox run and temporary-directory permission errors in the
+  first elevated run were resolved by rerunning with network access and a
+  writable system-temp parent outside the repository (no `--basetemp`).
+- Changed Python files pass Ruff; configured mypy checks pass. Repo-wide Ruff
+  still reports two pre-existing F821 diagnostics in the restricted
+  `graph/haystack_conversation_pipeline.py` loader (`get_live_project_names`,
+  `_conversation_project_name`, populated by its exec-loaded source).
+
+The results file retains a `phase1_activation.pre_activation` summary and the
+latest full `discovery` transcript. The checker now records timestamps, checks
+live grounding and exits nonzero on a failed transcript. Set the flag to false
+to roll back activation. The original step table below is retained as history;
+its Step 5/6 default-false settings describe the pre-activation rollout.
 
 ## Corrections after implementation
 
@@ -15,9 +55,9 @@ Where the code differs from the plan below, the code is right:
   `purpose: "home_type_search"`.
 - (c) Discovery payloads set `catalogue_home_type_search`, so one matching
   project never sets `current_project`.
-- (d) On discovery payloads only, `skipped[]` entries keep just the project
-  name and `data_api_calls[].error` is replaced with a generic message. The
-  full text stays in the server log.
+- (d) On discovery payloads, `skipped[]` entries keep just the project name.
+  All public `data_api_calls[].error` values now use a shared generic message;
+  the full text stays in the server log.
 - (e) The contract's own re-ask (`build_unmatched_selection_answer()`) has no
   "Any area" button. Discovery handles place-like replies first, so it is
   reached only for non-place replies such as "A1".
@@ -45,9 +85,8 @@ Where the code differs from the plan below, the code is right:
 - (a) Teach `_enforce_live_property_data()` a "partial" status, so "N
   project(s) could not be checked" can reach the customer instead of the
   generic outage message.
-- (b) Repo-wide redaction of CS API error text in `data_api_calls` for
-  non-discovery answers. This is existing HEAD behaviour and security
-  relevant.
+- (b) Public response redaction of CS API error text in `data_api_calls` is
+  implemented for discovery, non-discovery, streaming and property-flow paths.
 - (c) Consolidate the duplicate locality helpers (`api_context._known_localities`,
   `property_clarification_service._project_locality_values`, the discovery and
   tool helpers) and the copies of the cleaning rule.
@@ -317,7 +356,7 @@ It does **not** fetch inventory. Availability is confirmed after selection.
 - `routers/assist.py`: `_prepare_lookup_turn`, `_grounded_property_shortcut` (keyword argument + chain position), `_conversation_state_marker` (keyword argument), and the call sites in `get_support_assist` and `stream_support_assist`.
 - `scripts/live_disambiguation_check.py`: discovery transcripts.
 - Docs: `AGENTS.md` (entity list, slot rules), `docs/CHAT_FLOW.md`, `docs/AI_CONTEXT.md` (file map), `docs/PROJECT_MAP.md` §5/§10.
-- `.env.example`: append exactly one line, `ACROBUILD_DISCOVERY_SLOTS=false`. Approved by the user; no other edits to the file.
+- `.env.example`: Step 6 planned `ACROBUILD_DISCOVERY_SLOTS=false`; Step 8 now sets it to `true` and documents the explicit false opt-out.
 
 **Out of scope / do not touch (addendum):**
 
@@ -367,7 +406,7 @@ The pattern follows `tests/test_project_home_type_followups.py`: a fake `Session
 2. **Collision with the budget recommenders in `services/ai_agent_service.py`** (`_is_budget_project_recommendation`, `_is_multi_bhk_budget_recommendation`, `_build_recommendation_budget_follow_up`; phrasing in `test_global_recommendation`). `is_discovery_request` must exclude recommend/suggest/best/cheapest/affordable, quantity phrasing ("two 2BHK flats"), and "is it sufficient".
 3. **The no-call trap in `_enforce_live_property_data`.** A property-route payload with no CS call becomes `failed`. Every discovery payload, including the budget question, must perform a live read and carry `company_api` evidence.
 4. **CS API load and latency.** `list_localities(config)` and `search_projects` each make 1+N serial calls (2.5 s timeout each; there is no cross-turn cache when `ACROBUILD_CS_API_LIVE_ONLY=true`). Mitigation: filter by locality before fetching typologies. Parallelising is deferred.
-5. **`rateType` semantics unverified.** Budget maths is only applied to per-sq-ft rates; everything else is reported as "pricing not listed". Check live values before enabling the flag.
+5. **`rateType` coverage.** The activation run verified `Rate Per Sq.Ft.` in the current live catalogue. Budget maths remains limited to per-sq-ft rates; other rate types are reported as "pricing not listed" and covered by regression fixtures.
 6. **Locality data quality.** `locality` may be empty or inconsistent, and the catalogue may not contain "Wakad" at all. Fall back to `city`. Unknown places are handled honestly.
 7. **Forged markers.** When no `conversation_id` is sent, markers can come from client-supplied history (the pending marker already has this risk). Validate on read and re-check `locality` against live data.
 8. **Analyzer labels.** "1.5 crore" may be labelled general or unsure. Covered by the forced-property rule, which only applies when `is_slot_reply` parses the reply.

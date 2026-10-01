@@ -23,6 +23,8 @@ is_small_talk_message = globals()["is_small_talk_message"]
 normalize_text = globals()["normalize_text"]
 resolve_contextual_support_issue = globals()["resolve_contextual_support_issue"]
 validate_support_node = globals()["validate_support_node"]
+get_live_project_names = globals()["get_live_project_names"]
+_conversation_project_name = globals()["_conversation_project_name"]
 
 _legacy_build_deterministic_conversation_answer = build_deterministic_conversation_answer
 _legacy_is_small_talk_message = is_small_talk_message
@@ -108,10 +110,72 @@ def build_deterministic_conversation_answer(issue):
         return (
             "I can answer general questions and help with verified Acrobuild information. "
             "For properties, I can check projects, locations, wings, floors, configurations, "
-            "live availability, API-listed pricing, and site visits. I can also guide you on "
-            "documents, payments, construction updates, handover, maintenance, and support tickets."
+            "live availability, and API-listed pricing. I can also help with site-visit "
+            "requests, callback requests, and support tickets."
         )
     return _legacy_build_deterministic_conversation_answer(issue)
+
+
+_SHORT_FLAT_COST_QUESTIONS = frozenset({
+    "what will be the total cost", "how much will it cost", "what would this cost",
+    "what is the total", "how much is it", "what will it cost", "how much would it cost",
+})
+
+
+def is_short_flat_cost_question(issue):
+    cleaned = normalize_text(issue).lower().strip(" .!?")
+    if cleaned.startswith("so "):
+        cleaned = cleaned[3:]
+    return cleaned in _SHORT_FLAT_COST_QUESTIONS
+
+
+def _recent_selected_flat_for_cost(issue, conversation_messages):
+    """Use only the immediately preceding live, single-flat selection answer."""
+    if not is_short_flat_cost_question(issue):
+        return ""
+
+    messages = list(conversation_messages or [])
+    if messages and str(messages[-1].get("sender") or "").lower() == "customer":
+        messages.pop()  # prepare_turn appends the current customer question.
+    if (len(messages) < 2 or str(messages[-1].get("sender") or "").lower() != "bot"
+            or str(messages[-2].get("sender") or "").lower() != "customer"):
+        return ""
+
+    from services.conversation_store_service import get_current_project_context
+
+    stored_answer = str(messages[-1].get("text") or "")
+    project = (get_current_project_context(stored_answer) or {}).get("project") or ""
+    visible_answer = stored_answer.split("\u2063", 1)[0]
+    header = visible_answer.split("\n", 1)[0].strip()
+    if not project or not header.lower().startswith(f"live available homes in {project}, ".lower()):
+        return ""
+
+    flat_lines = [line for line in visible_answer.splitlines()
+                  if _re.match(r"^\s*-\s*Flat\s+", line, _re.I)]
+    if len(flat_lines) != 1:
+        return ""
+    flat_match = _re.match(r"^\s*-\s*Flat\s+([a-z0-9-]+)\s*;", flat_lines[0], _re.I)
+    if not flat_match:
+        return ""
+    flat_number = flat_match[1]
+    selection = normalize_text(messages[-2].get("text", "")).lower().strip(" .!?")
+    if not _re.fullmatch(rf"(?:select\s+)?(?:flat\s*)?{_re.escape(flat_number.lower())}", selection):
+        return ""
+
+    area = _re.search(r"\bsaleable\s+area:\s*([\d,.]+)\s*sq\.?\s*ft\.?\b", flat_lines[0], _re.I)
+    rate = _re.search(
+        r"\bbase\s+rate:\s*INR\s*([\d,.]+)\s+to\s+INR\s*([\d,.]+)"
+        r"\s*\(\s*Rate\s+Per\s+Sq\.?\s*Ft\.?\s*\)", flat_lines[0], _re.I,
+    )
+    if not area or not rate:
+        return ""
+    try:
+        area_value, low_rate, high_rate = (float(value.replace(",", ""))
+                                           for value in (area[1], rate[1], rate[2]))
+    except ValueError:
+        return ""
+    return flat_number if area_value > 0 and 0 < low_rate <= high_rate else ""
+
 
 def resolve_contextual_support_issue(issue, conversation_messages):
     # "s?" -- a plural mention ("3bhks") names the type as specifically as
@@ -128,16 +192,9 @@ def resolve_contextual_support_issue(issue, conversation_messages):
             project = _conversation_project_name(conversation_messages)
             if project:
                 return f"{normalize_text(issue)}\nRequested project: {project}"
-    bare_cost_reference = bool(_re.fullmatch(
-        r"(?:so\s+)?how much(?:\s+(?:is|does|will|would))?\s+(?:this|that|it)(?:\s+cost)?\??",
-        cleaned.strip(),
-    ))
-    if bare_cost_reference:
-        for message in reversed(conversation_messages or []):
-            text = normalize_text(message.get("text", ""))
-            flat_match = _re.search(r"\bflat\s*[:#-]?\s*(\d+[a-z0-9-]*)\b", text, flags=_re.IGNORECASE)
-            if flat_match and "saleable area" in text.lower():
-                return f"How much does the selected Flat {flat_match.group(1)} cost?"
+    selected_flat = _recent_selected_flat_for_cost(issue, conversation_messages)
+    if selected_flat:
+        return f"What is the total cost of the selected Flat {selected_flat}?"
     budget_follow_up_phrases = (
         "is it sufficient", "is this sufficient", "is that sufficient",
         "can i buy it", "can i afford it", "is it enough", "will it be enough",

@@ -6,6 +6,21 @@ the code; the only supported generative provider is Sarvam.
 
 Primary path: widget → `/api/support/assist/stream` → orchestrator → (LLM | property/RAG/CS API).
 
+### Refresh and conversation scope
+
+The customer page keeps the active `conversation_id` in tab-scoped session storage.
+On `/home` reload it reads `GET /api/support/conversations/{conversation_id}/history`
+using the existing HttpOnly `support_conversation_session` cookie. The endpoint
+returns only completed, customer-visible turns and pending selection replies;
+server-only state markers remain in the SQLite rows used by the next assist turn.
+The page reconciles its short-lived display snapshot with those server turns so
+locally rendered chat bubbles keep their original wording and controls. A missing
+or expired server conversation is never reconstructed from a stale snapshot.
+`Browse all projects` as a new-conversation action generates a new ID and clears
+the old tab snapshot. Server turns remain limited to 60 messages with two-hour
+sliding expiry. This is anonymous, same-browser-session history, not account or
+cross-device history.
+
 ```mermaid
 flowchart TD
   UI["CustomerHomePage / widget"] -->|"POST stream prefer_qwen=true"| AssistStream["/api/support/assist/stream"]
@@ -141,12 +156,13 @@ re-fetched from several independent steps); only the **latest** call per
 retry resolved live no longer makes the final answer falsely claim it used
 saved/stale data.
 
-### Discovery slot memory (flag `ACROBUILD_DISCOVERY_SLOTS`, default off)
+### Discovery slot memory (flag `ACROBUILD_DISCOVERY_SLOTS`, default on)
 
 Inquiry to Sales §28: the customer should not repeat configuration, area or
 budget. `services/discovery_slot_service.py` builds the answers;
-`routers/assist.py` wires them in the same way on both assist endpoints. With
-the flag off none of this runs.
+`routers/assist.py` wires them in the same way on both assist endpoints. Phase 1
+live acceptance passed before activation. Set `ACROBUILD_DISCOVERY_SLOTS=false`
+to restore the earlier project-first behavior; with the flag off none of this runs.
 
 ```mermaid
 flowchart TD
@@ -189,5 +205,6 @@ flowchart TD
 - Budget results always say "estimated base amount" (minimum listed rate x
   saleable area) with a disclaimer. Projects without a per-sq-ft rate are
   listed under "Pricing not listed". Skipped projects are named only; raw CS
-  API error text is redacted from discovery responses.
+  API error text stays in server logs. All public `data_api_calls` use a shared
+  sanitized copy, including discovery, other assist answers and property flow.
 - Step 7b corrections: a live locality or city in the customer's own words, with a BHK type and no named project ("3 BHK in Thane"), is a catalogue search even when `Requested project:` was added from `current_project` (`explicit_locality_search_text()`; "this project", a place that is not live and a bare "2 BHK?" keep the routing above), and a bare "start over" with stored slots gets the fixed `RESET_ANSWER` (route `general`, no LLM, no place or configuration taken from history).

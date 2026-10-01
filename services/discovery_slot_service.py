@@ -55,8 +55,8 @@ DISCLAIMER = (
 # -----------------------------------
 
 def discovery_enabled() -> bool:
-    """ACROBUILD_DISCOVERY_SLOTS, read on every call. Default off."""
-    return os.getenv("ACROBUILD_DISCOVERY_SLOTS", "").strip().lower() in {"1", "true", "yes", "on"}
+    """ACROBUILD_DISCOVERY_SLOTS, read on every call. Default on after live acceptance."""
+    return os.getenv("ACROBUILD_DISCOVERY_SLOTS", "true").strip().lower() in {"1", "true", "yes", "on"}
 
 
 # -----------------------------------

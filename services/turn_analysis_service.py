@@ -42,13 +42,21 @@ _HI_MR_DO_VERB = r"kar(?:o|ein|en|iye|ijiye)|kar\s*do|kara|karaa"
 # Hindi "chahiye" / Marathi "pahije" = "(I) want/need".
 _HI_MR_WANT = r"chahiye|pahije"
 
+_SOMEONE = r"(?:someone|somebody|(?:your|the|our)\s+(?:sales\s+)?team)"
 _CALL_BOOKING_RE = re.compile(
     rf"\b(?:{_EN_BOOKING_VERB})\s+(?:a|an)\s+(?:{_CALL_WORD})\b"          # "arrange a call/callback"
     rf"|\b(?:{_CALL_WORD})\s+(?:{_EN_BOOKING_VERB})\b"                    # "call/callback arrange" (HI/MR order)
     rf"|\b(?:{_CALL_WORD})\s+(?:{_HI_MR_DO_VERB})\b"                      # "call karo" / "callback kara"
     rf"|\b(?:{_CALL_WORD})\s+(?:{_HI_MR_WANT})\b"                         # "call chahiye" / "callback pahije"
     rf"|\bwapas\s+(?:{_CALL_WORD})\b|\bparat\s+(?:{_CALL_WORD})\b"        # "wapas call" (HI) / "parat call" (MR)
-    r"|\bcall\s+me\s+back\b",
+    r"|\bcall\s+me\s+back\b"
+    rf"|\b(?:have|ask|get)\s+{_SOMEONE}\s+(?:to\s+)?call\s+me\b"          # "have someone call me"
+    rf"|\b(?:can|could|would|will)\s+{_SOMEONE}\s+(?:please\s+)?call\s+me\b"  # "can someone call me?"
+    r"|\b(?:I\s+)?(?:want|need|would\s+like)\s+(?:a\s+)?(?:call\s*back|callback)\b"  # "I want a callback"
+    rf"|\b(?:can|could)\s+I\s+(?:get|have|request)\s+(?:a\s+)?(?:{_CALL_WORD})\b"  # "can I get a callback?"
+    r"|\bplease\s+call\s+me\b"                                             # "please call me"
+    rf"|\b(?:can|could|would)\s+{_SOMEONE}\s+contact\s+me\s+(?:by\s+)?(?:phone|call)\b"  # "could someone contact me by phone?"
+    rf"|\b(?:I\s+)?(?:want|need|would\s+like)\s+{_SOMEONE}\s+to\s+call\s+me\b",  # "I would like someone to call me"
     re.IGNORECASE,
 )
 

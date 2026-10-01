@@ -34,9 +34,11 @@ from services.acrobuild_company_service import (
     get_company_data_snapshot_path,
 )
 from services.internal_api_log_service import (
+    PUBLIC_DATA_API_ERROR,
     begin_data_api_trace,
     end_data_api_trace,
     get_current_data_api_logs,
+    public_data_api_calls,
 )
 from services.rag_evaluation_service import evaluate_rag_response
 
@@ -198,6 +200,8 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
     # message that happens to also contain a property-support word like
     # "ticket" or "agent".
     if route in {"general", "call_booking", "human_contact"} or (route != "property" and not is_property_support_message(issue)):
+        return response_payload
+    if response_payload.get("source_status") == "unavailable":
         return response_payload
     # A resource can be requested more than once within a single turn (e.g.
     # get_company_projects() is called from several independent steps); an
@@ -1611,6 +1615,279 @@ def build_grounded_project_location_assist(request):
     }
 
 # -----------------------------------
+# UNSUPPORTED CAPABILITY DETECTION
+# -----------------------------------
+
+_OFFERS_RE = re.compile(
+    r"\b(?:offer|offers|discount|discounts|promotion|promotions|scheme|schemes"
+    r"|special\s+price|special\s+pricing|festive\s+offer"
+    r"|(?:is|are)\s+(?:there|that|this)\s+(?:any\s+)?(?:offer|discount)"
+    r"|(?:any|current|active|latest|running|available)\s+(?:offer|discount|promotion|scheme)s?"
+    r"|offer\s+(?:active|valid|running|available|eligible)"
+    r"|discount\s+(?:active|valid|running|available))\b",
+    re.IGNORECASE,
+)
+
+_NEARBY_PLACES_RE = re.compile(
+    r"\b(?:hospital|school|college|university|mall|restaurant|metro|railway"
+    r"|airport|station|temple|church|mosque|park|market|gym|cinema|theater|theatre"
+    r"|landmark|bus\s+stop|pharmacy|atm|bank|supermarket)s?\b"
+    r"|\b(?:within\s+\d+\s*(?:km|kilometer|kilometre|mile|minute|min))"
+    r"|\b(?:nearby|near\s+by|how\s+far|distance\s+(?:to|from)|travel\s+time|commute|commuting)"
+    r"|\b(?:close\s+to|walking\s+distance|driving\s+distance)\b",
+    re.IGNORECASE,
+)
+
+_DOCUMENTS_RE = re.compile(
+    r"\b(?:brochure|floor\s*plan|master\s*plan|layout\s*plan"
+    r"|project\s+document|download\s+(?:the\s+)?(?:brochure|document|plan)"
+    r"|send\s+(?:me\s+)?(?:the\s+)?(?:brochure|floor\s*plan|master\s*plan|document)"
+    r"|show\s+(?:me\s+)?(?:the\s+)?floor\s*plan"
+    r"|(?:can\s+I\s+)?(?:get|download|have)\s+(?:the\s+)?(?:brochure|floor\s*plan|plan|document))\b",
+    re.IGNORECASE,
+)
+
+_CUSTOMER_FINANCE_RE = re.compile(
+    r"\b(?:(?:how\s+much\s+have\s+I\s+paid)|outstanding\s+(?:balance|amount|dues?)"
+    r"|(?:my|customer)\s+(?:payment|balance|receipt|statement|account|dues?)"
+    r"|overdue\s+(?:amount|payment|balance)"
+    r"|payment\s+(?:status|history|receipt|statement|details?|summary)"
+    r"|amount\s+(?:paid|due|outstanding|pending|remaining)"
+    r"|(?:what|how\s+much)\s+(?:is|are)\s+(?:my|the)\s+(?:outstanding|balance|due|paid|payment)"
+    r"|(?:tell|show|check)\s+(?:me\s+)?(?:my\s+)?(?:outstanding|balance|payment|receipt|statement|dues?)"
+    r"|demand\s+(?:letter|notice|amount))\b",
+    re.IGNORECASE,
+)
+
+_INVESTMENT_GUARANTEE_RE = re.compile(
+    r"\b(?:(?:will|would|can|does)\s+(?:the\s+|this\s+|that\s+|my\s+)?(?:project'?s?\s+)?(?:price|value|property|project|investment)"
+    r"\s+(?:definitely|surely|certainly|guaranteed?|for\s+sure)?\s*(?:double|triple|increase|appreciate|grow|rise|go\s+up))"
+    r"|\b(?:guarantee(?:d|s)?\s+(?:return|appreciation|growth|profit|income|value))"
+    r"|\b(?:appreciation\s+(?:guaranteed|certain|assured|definite))"
+    r"|\b(?:definitely\s+(?:make|earn|get|give)\s+(?:money|profit|return))"
+    r"|\b(?:will\s+I\s+(?:definitely|surely|certainly)?\s*(?:make|earn|get)\s+(?:money|profit|return|\d+\s*%))"
+    r"|\b(?:guaranteed?\s+\d+\s*%)"
+    r"|\b(?:is\s+(?:appreciation|return|growth|profit)\s+guaranteed)\b",
+    re.IGNORECASE,
+)
+
+# Negative guard: ordinary pricing/cost questions must not be intercepted.
+_SUPPORTED_PRICE_RE = re.compile(
+    r"\b(?:(?:what\s+is\s+the\s+)?(?:price|cost|rate|pricing)"
+    r"\s+(?:of|for|per|in)\b"
+    r"|(?:how\s+much\s+(?:does|is|will)\s+(?:a|the|this)\s+(?:\d\s*bhk|flat|apartment|unit))"
+    r"|(?:base\s+rate|per\s+sq\s*\.?\s*ft|carpet\s+area|saleable\s+area))\b",
+    re.IGNORECASE,
+)
+
+
+_COMPLETE_COST_SHEET_RE = re.compile(
+    r"\b(?:cost\s*[- ]?\s*sheet|(?:cost|price|charge)\s*[- ]?\s*(?:breakdown|breakup))s?\b"
+    r"|\b(?:all|every|complete|full)\s+(?:the\s+)?(?:charges?|fees?)\b"
+    r"|\b(?:final|total|full|all[- ]?in)\s+(?:price|cost|amount)\b"
+    r".{0,85}?\b(?:including|with|covering)\b.{0,85}?"
+    r"\b(?:tax(?:es)?|stamp\s+duty|parking|floor\s*rise|plc|registration|charges?)\b"
+    r"|\btotal\s+(?:including|with|covering)\b.{0,85}?"
+    r"\b(?:tax(?:es)?|stamp\s+duty|floor\s*rise|plc|registration|charges?)\b",
+    re.IGNORECASE,
+)
+
+
+def build_complete_cost_sheet_limitation_assist(request):
+    """Distinguish an all-charge quotation from supported base pricing."""
+    if not _COMPLETE_COST_SHEET_RE.search(str(request.issue or "")):
+        return None
+    answer = (
+        "I can't provide a verified complete cost sheet or all-inclusive final price "
+        "from the connected data sources. They do not include a verified breakdown "
+        "of taxes, stamp duty, parking charges, floor rise, and other charges. "
+        "API-listed base rates are only partial pricing, not a complete cost sheet. "
+        "Please request the current official cost sheet from the sales team."
+    )
+    return _unsupported_capability_response(answer, "complete_cost_sheet")
+
+
+def build_unsupported_capability_assist(request):
+    """Intercept customer requests for capabilities whose verified data sources
+    do not exist yet.  Returns an honest deterministic limitation response
+    instead of letting the question fall through to the LLM or project-overview
+    builders where it would receive an unrelated answer.
+
+    Returns None when the question does not match any unsupported intent family,
+    so normal property shortcuts and the orchestrator remain unaffected.
+    """
+    issue = str(request.issue or "").strip()
+    if not issue:
+        return None
+
+    cost_sheet = build_complete_cost_sheet_limitation_assist(request)
+    if cost_sheet is not None:
+        return cost_sheet
+
+    cleaned = issue.lower()
+
+    # 1. Customer finance / payment data — most specific, check first
+    if _CUSTOMER_FINANCE_RE.search(cleaned):
+        answer = (
+            "I'm unable to retrieve your personal payment or account information "
+            "through this chat. Verified customer finance data requires "
+            "authenticated access that is not currently available here. "
+            "Please contact the sales office or your relationship manager "
+            "for payment status, outstanding balance, or receipt queries."
+        )
+        return _unsupported_capability_response(answer, "customer_finance")
+
+    # 2. Investment guarantees — before generic pricing check
+    if _INVESTMENT_GUARANTEE_RE.search(cleaned):
+        # Don't intercept ordinary pricing questions
+        if not _SUPPORTED_PRICE_RE.search(cleaned):
+            answer = (
+                "I cannot guarantee future property appreciation or investment "
+                "returns. Property values depend on market conditions and many "
+                "other factors. I can share currently available verified pricing "
+                "and project details if that would help."
+            )
+            return _unsupported_capability_response(answer, "investment_guarantee")
+
+    # 3. Offers / discounts
+    if _OFFERS_RE.search(cleaned):
+        # Don't intercept supported pricing ("what is the price of 3BHK")
+        if not _SUPPORTED_PRICE_RE.search(cleaned):
+            answer = (
+                "I'm unable to verify current offers or discounts through the "
+                "available live data. For the latest offer details, eligibility "
+                "and validity, please check with the sales team directly."
+            )
+            return _unsupported_capability_response(answer, "offers")
+
+    # 4. Project documents (brochure, floor plan)
+    if _DOCUMENTS_RE.search(cleaned):
+        answer = (
+            "Verified project documents such as brochures and floor plans "
+            "are not currently available through the chatbot. "
+            "Please contact the sales office or request a site visit "
+            "to obtain the official project documents."
+        )
+        return _unsupported_capability_response(answer, "documents")
+
+    # 5. Nearby places / distance / travel
+    if _NEARBY_PLACES_RE.search(cleaned):
+        # Don't intercept project location questions ("where is the project")
+        if not any(term in cleaned for term in ("address", "located", "location", "where is")):
+            answer = (
+                "I don't currently have verified information about nearby "
+                "places, distances, or travel times. An approved location "
+                "data source is not yet integrated. I can share the project's "
+                "address and locality if that would help."
+            )
+            return _unsupported_capability_response(answer, "nearby_places")
+
+    return None
+
+
+def _unsupported_capability_response(answer, capability_family):
+    return {
+        "agent_mode": "knowledge_retrieval",
+        "answer": answer,
+        "articles": [],
+        "assist_error": "",
+        "confidence_label": "high",
+        "handoff_recommended": False,
+        "knowledge_documents": [],
+        "last_synced_at": None,
+        "matched_chunks": [],
+        "model": "",
+        "retrieval_mode": "unsupported_capability",
+        "source_label": "Capability limitation",
+        "source_status": "unavailable",
+        "support_base_url": get_support_base_url(),
+        "sync_error": "",
+        "unsupported_capability": capability_family,
+        "used_llm": False,
+    }
+
+
+# -----------------------------------
+# LLM capability-claim post-processing
+# -----------------------------------
+
+# Blocked capability nouns/phrases that the bot must not promise.
+_BLOCKED_CAPABILITY_TERM = (
+    r"floor\s*plans?"
+    r"|brochures?"
+    r"|master\s*plans?"
+    r"|layout\s*plans?"
+    r"|(?:project\s+)?documents?"
+    r"|(?:current|latest|active|running|live)\s+offers?"
+    r"|(?:live\s+)?(?:offer|discount|promotion|scheme)s?"
+    r"|nearby\s+(?:places?|hospitals?|schools?|malls?|restaurants?|metros?|stations?|landmarks?)"
+    r"|(?:distances?|travel\s+times?|commute)"
+    r"|(?:your|customer|my)\s+(?:payments?|balance|outstanding|receipts?|statements?|accounts?|dues?)"
+    r"|(?:payment|balance|outstanding)\s+(?:status|history|details?|summary)"
+    r"|booking\s+(?:status|form|details?)"
+    r"|demand\s+(?:letters?|notices?|amounts?)"
+    r"|(?:CRM|lead|sales\s+assignment)"
+)
+
+# Full sentences where the bot claims it can do a blocked capability.
+_BLOCKED_SENTENCE_RE = re.compile(
+    r"(?:^|(?<=\.)\s+|(?<=!)\s+|(?<=\?)\s+)"
+    r"(?:I\s+can|I\s+could|I(?:'|'|')m\s+able\s+to|let\s+me|I(?:'|'|')ll)\s+"
+    r"(?:also\s+)?"
+    r"(?:"
+    r"(?:pull\s+up|show\s+you|check|retrieve|provide|get|fetch|look\s+up|access|download|send\s+you)"
+    r"\s+(?:(?:the|your|a|an)\s+)?(?:(?:full|detailed|latest|current|complete|available)\s+)?"
+    r")?"
+    r"(?:" + _BLOCKED_CAPABILITY_TERM + r")"
+    r"[^.!?\n]*[.!?]?",
+    re.IGNORECASE,
+)
+
+# A blocked item appearing in a comma/and list (e.g. "amenity breakdown, floor plans, and pricing").
+_LIST_BLOCKED_ITEM_RE = re.compile(
+    r"(?:,\s*(?:and\s+)?|,\s*|\s+and\s+)"
+    r"(?:" + _BLOCKED_CAPABILITY_TERM + r")"
+    r"(?=\s*(?:,|\s+and\s|\s+for\s|[.!?]|$))",
+    re.IGNORECASE,
+)
+
+
+def strip_capability_overstatements(answer):
+    """Remove or rewrite bot claims about unavailable capabilities.
+
+    Called as post-processing on LLM-generated answers before localization.
+    Returns the cleaned answer text.
+    """
+    if not answer:
+        return answer
+
+    cleaned = answer
+
+    # Phase 1: strip blocked items from comma/and-separated lists
+    cleaned = _LIST_BLOCKED_ITEM_RE.sub("", cleaned)
+
+    # Phase 2: remove full sentences that solely promise a blocked capability
+    cleaned = _BLOCKED_SENTENCE_RE.sub("", cleaned)
+
+    if cleaned == answer:
+        return answer
+
+    # Fix doubled commas: "X, , Y" → "X, Y"
+    cleaned = re.sub(r",\s*,", ",", cleaned)
+    # Fix "X, and Y" when the preceding item was removed → "X and Y"
+    cleaned = re.sub(r",\s+and\s+", " and ", cleaned)
+    # Fix orphaned "and" at end of a list: "X and ." → "X."
+    cleaned = re.sub(r"\s+and\s*([.!?])", r"\1", cleaned)
+    # Fix leading comma at sentence start
+    cleaned = re.sub(r"(?:^|(?<=\n))\s*,\s*", "", cleaned)
+    # Collapse whitespace
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+
+    return cleaned.strip()
+
+
+# -----------------------------------
 # ROUTES
 # -----------------------------------
 
@@ -1632,11 +1909,12 @@ def _cs_api_response(loader, question):
     try:
         items = loader()
         return {
-            "data_api_calls": get_current_data_api_logs(),
+            "data_api_calls": public_data_api_calls(get_current_data_api_logs()),
             "items": items,
         }
     except RuntimeError as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        logger.exception("CS API property flow failed")
+        raise HTTPException(status_code=503, detail=PUBLIC_DATA_API_ERROR) from error
     finally:
         end_data_api_trace(trace_token)
 

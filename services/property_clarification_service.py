@@ -285,6 +285,10 @@ def live_options(entity, issue, history):
 def apply_clarification_contract(payload, issue, history=None):
     if payload.get("route") in {"general", "call_booking", "human_contact"}:
         return payload
+    if payload.get("retrieval_mode") == "unsupported_capability":
+        # This deterministic limitation is complete. Its offer to share other
+        # supported details is not a request to select a property entity.
+        return payload
     if isinstance(payload.get("pending_project_lookup"), dict):
         return payload
     # The discovery budget question is free text with no options; its copy
@@ -380,6 +384,26 @@ def project_detail_followup(state, issue):
     state = {key: value for key, value in state.items() if key != "effective_issue"}
     state.update(original_issue=issue, purpose="project_details", scope={})
     return state
+
+
+_GENERIC_SHORTLIST_DETAILS_RE = re.compile(
+    r"^(?:(?:what|how) about (?:the |their )?(?:details?|information|them|those(?: projects?)?)"
+    r"|(?:tell|show|give|share)(?: me)? (?:the )?(?:more(?: details?| information)?|details?|information)"
+    r"|what (?:details?|information) (?:do you have|can you (?:give|share))"
+    r"|(?:can|could|would) you (?:please )?(?:give|show|tell|share)(?: me)? "
+    r"(?:some )?(?:more )?(?:information|details?))$"
+)
+
+
+def is_amenity_shortlist_detail_followup(state, issue):
+    """A generic request for more about an active reverse-amenity shortlist."""
+    if (not isinstance(state, dict) or state.get("kind") != "selection"
+            or state.get("entity") != "project" or state.get("purpose") != "amenity_search"
+            or not state.get("options")):
+        return False
+    text = " ".join(re.sub(r"[^\w\s]", " ", str(issue or "").lower()).split())
+    text = re.sub(r"^please\s+|\s+please$", "", text)
+    return bool(_GENERIC_SHORTLIST_DETAILS_RE.fullmatch(text))
 
 
 def build_project_detail_choice(state):
@@ -550,7 +574,7 @@ def resume_selection(state, reply):
     return effective
 
 
-def continues_selection(state, reply):
+def continues_selection(state, reply, *, starts_new_intent=False):
     """New questions/actions replace pending selection; short selectors keep it."""
     text = reply.strip().lower()
     if text in {"cancel", "never mind", "nevermind", "stop", "forget it"}:
@@ -565,6 +589,11 @@ def continues_selection(state, reply):
     if _NEW_REQUEST_RE.search(text):
         return False
     if not options:
+        # The catalogue was unavailable when this choice was created. A
+        # recognized new conversational intent must not become a guessed
+        # selector merely because its reply has three words or fewer.
+        if starts_new_intent:
+            return False
         return len(text.split()) <= 3
     # Free text naming none of the offered options is a new message: route it
     # normally rather than re-asking the same choice.

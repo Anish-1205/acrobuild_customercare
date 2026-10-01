@@ -110,9 +110,9 @@ def test_discovery_enabled_values(monkeypatch, value, expected):
     assert discovery.discovery_enabled() is expected
 
 
-def test_flag_defaults_off_and_is_read_at_call_time(monkeypatch, caplog):
+def test_flag_defaults_on_and_is_read_at_call_time(monkeypatch, caplog):
     monkeypatch.delenv("ACROBUILD_DISCOVERY_SLOTS", raising=False)
-    assert discovery.discovery_enabled() is False
+    assert discovery.discovery_enabled() is True
     monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", "on")
     assert discovery.discovery_enabled() is True
     monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", "off")

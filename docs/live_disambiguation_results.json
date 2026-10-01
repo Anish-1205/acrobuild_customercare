@@ -4649,7 +4649,8 @@
     }
   ],
   "discovery": {
-    "flag": "ACROBUILD_DISCOVERY_SLOTS=true (process env only)",
+    "flag": "default-on (flag unset)",
+    "started_at": "2026-10-01T07:04:36.057764+00:00",
     "preflight": {
       "cs_api_configured": true,
       "llm_configured": true,
@@ -4731,7 +4732,10 @@
           "evidence": [
             "PASS area step -> budget_question (tap=Pune)",
             "PASS budget -> results",
-            "PASS tap 'Vishwajeet Precious (Emerald)' -> Home types in Vishwajeet Precious (Emerald):\n- 3BHK: 11 unit(s) currently listed"
+            "PASS tap 'Vishwajeet Precious (Emerald)' -> Home types in Vishwajeet Precious (Emerald):\n- 3BHK: 11 unit(s) currently listed",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api"
           ],
           "turns": [
             {
@@ -4763,7 +4767,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1223.0,
+              "duration_ms": 1725.1,
               "leaks": []
             },
             {
@@ -4788,7 +4792,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1743.9,
+              "duration_ms": 1518.7,
               "leaks": []
             },
             {
@@ -4819,7 +4823,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1318.6,
+              "duration_ms": 1942.3,
               "leaks": []
             },
             {
@@ -4839,7 +4843,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 1300.5,
+              "duration_ms": 1763.8,
               "leaks": []
             }
           ]
@@ -4849,7 +4853,10 @@
           "evidence": [
             "PASS area step -> budget_question (tap=Pune)",
             "PASS budget -> results",
-            "PASS tap 'Vishwajeet Precious (Emerald)' -> Home types in Vishwajeet Precious (Emerald):\n- 3BHK: 11 unit(s) currently listed"
+            "PASS tap 'Vishwajeet Precious (Emerald)' -> Home types in Vishwajeet Precious (Emerald):\n- 3BHK: 11 unit(s) currently listed",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api"
           ],
           "turns": [
             {
@@ -4881,7 +4888,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1303.7,
+              "duration_ms": 1732.1,
               "leaks": []
             },
             {
@@ -4906,7 +4913,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1258.2,
+              "duration_ms": 1627.7,
               "leaks": []
             },
             {
@@ -4937,7 +4944,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1273.5,
+              "duration_ms": 1521.3,
               "leaks": []
             },
             {
@@ -4957,7 +4964,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 573.3,
+              "duration_ms": 2070.8,
               "leaks": []
             }
           ]
@@ -4968,7 +4975,8 @@
           "result": "PASS",
           "evidence": [
             "PASS one-shot -> results",
-            "PASS locality slot Pune"
+            "PASS locality slot Pune",
+            "PASS turn '3 BHK in Pune under 1.5 crore': discovery source=live_api"
           ],
           "turns": [
             {
@@ -4999,7 +5007,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1197.4,
+              "duration_ms": 1553.7,
               "leaks": []
             }
           ]
@@ -5008,7 +5016,8 @@
           "result": "PASS",
           "evidence": [
             "PASS one-shot -> results",
-            "PASS locality slot Pune"
+            "PASS locality slot Pune",
+            "PASS turn '3 BHK in Pune under 1.5 crore': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5039,7 +5048,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1294.9,
+              "duration_ms": 1507.1,
               "leaks": []
             }
           ]
@@ -5050,7 +5059,10 @@
           "result": "PASS",
           "evidence": [
             "PASS 'Any area' -> budget_question any",
-            "PASS 'any budget' -> results"
+            "PASS 'any budget' -> results",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Any area': discovery source=live_api",
+            "PASS turn 'any budget': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5082,7 +5094,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1377.2,
+              "duration_ms": 1697.6,
               "leaks": []
             },
             {
@@ -5107,7 +5119,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1181.6,
+              "duration_ms": 1623.5,
               "leaks": []
             },
             {
@@ -5141,7 +5153,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1250.1,
+              "duration_ms": 1586.4,
               "leaks": []
             }
           ]
@@ -5150,7 +5162,10 @@
           "result": "PASS",
           "evidence": [
             "PASS 'Any area' -> budget_question any",
-            "PASS 'any budget' -> results"
+            "PASS 'any budget' -> results",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Any area': discovery source=live_api",
+            "PASS turn 'any budget': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5182,7 +5197,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1235.1,
+              "duration_ms": 1529.3,
               "leaks": []
             },
             {
@@ -5207,7 +5222,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1562.0,
+              "duration_ms": 1658.5,
               "leaks": []
             },
             {
@@ -5241,7 +5256,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1323.7,
+              "duration_ms": 2218.5,
               "leaks": []
             }
           ]
@@ -5252,7 +5267,10 @@
           "result": "PASS",
           "evidence": [
             "PASS 'anywhere' -> budget_question",
-            "PASS '80 lakh' -> results budget=8000000"
+            "PASS '80 lakh' -> results budget=8000000",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'anywhere': discovery source=live_api",
+            "PASS turn '80 lakh': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5284,7 +5302,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1343.3,
+              "duration_ms": 2183.1,
               "leaks": []
             },
             {
@@ -5309,7 +5327,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1194.3,
+              "duration_ms": 1535.5,
               "leaks": []
             },
             {
@@ -5343,7 +5361,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1266.1,
+              "duration_ms": 1543.0,
               "leaks": []
             }
           ]
@@ -5352,7 +5370,10 @@
           "result": "PASS",
           "evidence": [
             "PASS 'anywhere' -> budget_question",
-            "PASS '80 lakh' -> results budget=8000000"
+            "PASS '80 lakh' -> results budget=8000000",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'anywhere': discovery source=live_api",
+            "PASS turn '80 lakh': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5384,7 +5405,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1250.9,
+              "duration_ms": 1506.1,
               "leaks": []
             },
             {
@@ -5409,7 +5430,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1198.3,
+              "duration_ms": 1854.0,
               "leaks": []
             },
             {
@@ -5443,7 +5464,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1220.5,
+              "duration_ms": 1700.4,
               "leaks": []
             }
           ]
@@ -5455,7 +5476,10 @@
           "evidence": [
             "PASS unknown place -> locality_not_found, buttons=['Pune', 'Thane', 'Any area']",
             "PASS unknown place not stored",
-            "PASS 'Any area' after not-found -> budget_question"
+            "PASS 'Any area' after not-found -> budget_question",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Kharadi': discovery source=live_api",
+            "PASS turn 'Any area': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5487,7 +5511,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1159.4,
+              "duration_ms": 1544.9,
               "leaks": []
             },
             {
@@ -5519,7 +5543,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1234.8,
+              "duration_ms": 1597.8,
               "leaks": []
             },
             {
@@ -5544,7 +5568,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1228.4,
+              "duration_ms": 1539.6,
               "leaks": []
             }
           ]
@@ -5554,7 +5578,10 @@
           "evidence": [
             "PASS unknown place -> locality_not_found, buttons=['Pune', 'Thane', 'Any area']",
             "PASS unknown place not stored",
-            "PASS 'Any area' after not-found -> budget_question"
+            "PASS 'Any area' after not-found -> budget_question",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Kharadi': discovery source=live_api",
+            "PASS turn 'Any area': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5586,7 +5613,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1142.0,
+              "duration_ms": 1854.9,
               "leaks": []
             },
             {
@@ -5618,7 +5645,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1307.1,
+              "duration_ms": 1538.8,
               "leaks": []
             },
             {
@@ -5643,7 +5670,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1147.0,
+              "duration_ms": 1649.3,
               "leaks": []
             }
           ]
@@ -5654,7 +5681,10 @@
           "result": "PASS",
           "evidence": [
             "PASS N/A typed-city case (city=, first=locality_question)",
-            "PASS place without 3BHK 'Ambernath' -> locality_not_found"
+            "PASS place without 3BHK 'Ambernath' -> locality_not_found",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Ambernath': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5686,7 +5716,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1203.6,
+              "duration_ms": 1646.4,
               "leaks": []
             },
             {
@@ -5718,7 +5748,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1186.3,
+              "duration_ms": 1449.3,
               "leaks": []
             },
             {
@@ -5750,7 +5780,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1268.0,
+              "duration_ms": 1751.7,
               "leaks": []
             }
           ]
@@ -5759,7 +5789,10 @@
           "result": "PASS",
           "evidence": [
             "PASS N/A typed-city case (city=, first=locality_question)",
-            "PASS place without 3BHK 'Ambernath' -> locality_not_found"
+            "PASS place without 3BHK 'Ambernath' -> locality_not_found",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Ambernath': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5791,7 +5824,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1396.5,
+              "duration_ms": 1740.3,
               "leaks": []
             },
             {
@@ -5823,7 +5856,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1191.3,
+              "duration_ms": 1796.7,
               "leaks": []
             },
             {
@@ -5855,7 +5888,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1245.1,
+              "duration_ms": 1571.6,
               "leaks": []
             }
           ]
@@ -5868,7 +5901,11 @@
             "PASS amenities digression -> The available project data does not currently list amenities for Vishwajeet Prec",
             "PASS '2 BHK?' -> current project Vishwajeet Precious (Emerald) slots=None",
             "NOTE '2 BHK?' answered for: current project",
-            "PASS '3 BHK in Thane' after a project turn -> results catalogue=True slots={'config': ['3'], 'budget_max_inr': 15000000, 'awaiting': None, 'locality': 'Thane', 'budget_label': '1.5 crore', 'origin_issue': '3BHK in Thane'} answer=3BHK projects in Thane within about INR 1.50 crore (estimated base amount):\n- Vi"
+            "PASS '3 BHK in Thane' after a project turn -> results catalogue=True slots={'config': ['3'], 'budget_max_inr': 15000000, 'awaiting': None, 'locality': 'Thane', 'budget_label': '1.5 crore', 'origin_issue': '3BHK in Thane'} answer=3BHK projects in Thane within about INR 1.50 crore (estimated base amount):\n- Vi",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api",
+            "PASS turn '3 BHK in Thane': discovery source=live_api"
           ],
           "turns": [
             {
@@ -5900,7 +5937,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1249.7,
+              "duration_ms": 1731.9,
               "leaks": []
             },
             {
@@ -5925,7 +5962,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1271.4,
+              "duration_ms": 1486.6,
               "leaks": []
             },
             {
@@ -5956,7 +5993,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1281.9,
+              "duration_ms": 1874.6,
               "leaks": []
             },
             {
@@ -5976,7 +6013,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 1264.2,
+              "duration_ms": 1976.9,
               "leaks": []
             },
             {
@@ -5996,7 +6033,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 1260.6,
+              "duration_ms": 1671.3,
               "leaks": []
             },
             {
@@ -6027,7 +6064,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1235.7,
+              "duration_ms": 2062.1,
               "leaks": []
             }
           ]
@@ -6038,7 +6075,11 @@
             "PASS amenities digression -> The available project data does not currently list amenities for Vishwajeet Prec",
             "PASS '2 BHK?' -> current project Vishwajeet Precious (Emerald) slots=None",
             "NOTE '2 BHK?' answered for: current project",
-            "PASS '3 BHK in Thane' after a project turn -> results catalogue=True slots={'config': ['3'], 'budget_max_inr': 15000000, 'awaiting': None, 'locality': 'Thane', 'budget_label': '1.5 crore', 'origin_issue': '3BHK in Thane'} answer=3BHK projects in Thane within about INR 1.50 crore (estimated base amount):\n- Vi"
+            "PASS '3 BHK in Thane' after a project turn -> results catalogue=True slots={'config': ['3'], 'budget_max_inr': 15000000, 'awaiting': None, 'locality': 'Thane', 'budget_label': '1.5 crore', 'origin_issue': '3BHK in Thane'} answer=3BHK projects in Thane within about INR 1.50 crore (estimated base amount):\n- Vi",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api",
+            "PASS turn '3 BHK in Thane': discovery source=live_api"
           ],
           "turns": [
             {
@@ -6070,7 +6111,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1214.2,
+              "duration_ms": 1865.3,
               "leaks": []
             },
             {
@@ -6095,7 +6136,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1651.9,
+              "duration_ms": 1584.5,
               "leaks": []
             },
             {
@@ -6126,7 +6167,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1231.1,
+              "duration_ms": 1580.0,
               "leaks": []
             },
             {
@@ -6146,7 +6187,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 1267.5,
+              "duration_ms": 1614.0,
               "leaks": []
             },
             {
@@ -6166,7 +6207,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 516.6,
+              "duration_ms": 1912.6,
               "leaks": []
             },
             {
@@ -6197,7 +6238,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1262.9,
+              "duration_ms": 1586.4,
               "leaks": []
             }
           ]
@@ -6209,7 +6250,11 @@
           "evidence": [
             "PASS bare 'start over' -> fixed reply: Done, I've cleared your search preferences. What would you like to look for now? You can tell me the home size, area or ",
             "PASS after 'start over', 'Show me 3 BHK' -> locality_question",
-            "PASS 'start over, show me 2 BHK' -> locality_question slots={'config': ['2'], 'awaiting': 'locality', 'origin_issue': 'start over, show me 2BHK'}"
+            "PASS 'start over, show me 2 BHK' -> locality_question slots={'config': ['2'], 'awaiting': 'locality', 'origin_issue': 'start over, show me 2BHK'}",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'start over, show me 2 BHK': discovery source=live_api"
           ],
           "turns": [
             {
@@ -6241,7 +6286,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1370.1,
+              "duration_ms": 1573.3,
               "leaks": []
             },
             {
@@ -6266,7 +6311,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1313.5,
+              "duration_ms": 1673.5,
               "leaks": []
             },
             {
@@ -6284,7 +6329,7 @@
               "route": "general",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 399.2,
+              "duration_ms": 399.3,
               "leaks": []
             },
             {
@@ -6316,7 +6361,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1379.9,
+              "duration_ms": 1722.2,
               "leaks": []
             },
             {
@@ -6357,7 +6402,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1367.0,
+              "duration_ms": 1822.4,
               "leaks": []
             }
           ]
@@ -6367,7 +6412,11 @@
           "evidence": [
             "PASS bare 'start over' -> fixed reply: Done, I've cleared your search preferences. What would you like to look for now? You can tell me the home size, area or ",
             "PASS after 'start over', 'Show me 3 BHK' -> locality_question",
-            "PASS 'start over, show me 2 BHK' -> locality_question slots={'config': ['2'], 'awaiting': 'locality', 'origin_issue': 'start over, show me 2BHK'}"
+            "PASS 'start over, show me 2 BHK' -> locality_question slots={'config': ['2'], 'awaiting': 'locality', 'origin_issue': 'start over, show me 2BHK'}",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'start over, show me 2 BHK': discovery source=live_api"
           ],
           "turns": [
             {
@@ -6399,7 +6448,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1309.3,
+              "duration_ms": 1664.1,
               "leaks": []
             },
             {
@@ -6424,7 +6473,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1452.9,
+              "duration_ms": 1570.2,
               "leaks": []
             },
             {
@@ -6442,7 +6491,7 @@
               "route": "general",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 449.3,
+              "duration_ms": 404.5,
               "leaks": []
             },
             {
@@ -6474,7 +6523,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1462.4,
+              "duration_ms": 1672.9,
               "leaks": []
             },
             {
@@ -6515,7 +6564,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1535.5,
+              "duration_ms": 1574.3,
               "leaks": []
             }
           ]
@@ -6526,7 +6575,9 @@
           "result": "PASS",
           "evidence": [
             "PASS 'good night' -> locality_not_found (Phase 2 item e)",
-            "PASS 'what is RERA?' -> property: RERA stands for Real Estate (Regulation and Development) Act. It’s a government "
+            "PASS 'what is RERA?' -> property: RERA stands for Real Estate Regulatory Authority. It’s a government body that pr",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'good night': discovery source=live_api"
           ],
           "turns": [
             {
@@ -6558,7 +6609,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1375.3,
+              "duration_ms": 1983.8,
               "leaks": []
             },
             {
@@ -6590,12 +6641,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1384.6,
+              "duration_ms": 1418.2,
               "leaks": []
             },
             {
               "user": "what is RERA?",
-              "answer": "RERA stands for Real Estate (Regulation and Development) Act. It’s a government framework that protects homebuyers by ensuring developers follow approved plans, disclose project details, and keep funds in separate escrow accounts.\n\nSince you were looking at our 3BHK projects earlier, would you like help checking the RERA number for any specific Vishwajeet project?",
+              "answer": "RERA stands for Real Estate Regulatory Authority. It’s a government body that protects home buyers by ensuring transparency, timely project completion, and proper disclosure of approvals and finances from developers.\n\nIf you’re looking at one of our projects, the RERA number is listed on the project page—feel free to share which one, and I can help you check it.",
               "quick_replies": [
                 "Browse all projects",
                 "Book a site visit",
@@ -6610,7 +6661,7 @@
               "route": "property",
               "used_llm": true,
               "catalogue_home_type_search": null,
-              "duration_ms": 1733.5,
+              "duration_ms": 2050.3,
               "leaks": []
             }
           ]
@@ -6619,7 +6670,9 @@
           "result": "PASS",
           "evidence": [
             "PASS 'good night' -> locality_not_found (Phase 2 item e)",
-            "PASS 'what is RERA?' -> property: RERA stands for Real Estate Regulatory Authority. It’s a government body that re"
+            "PASS 'what is RERA?' -> property: RERA stands for Real Estate (Regulation and Development) Act. It’s a government ",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'good night': discovery source=live_api"
           ],
           "turns": [
             {
@@ -6651,7 +6704,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1218.1,
+              "duration_ms": 1543.7,
               "leaks": []
             },
             {
@@ -6683,12 +6736,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1291.8,
+              "duration_ms": 1672.8,
               "leaks": []
             },
             {
               "user": "what is RERA?",
-              "answer": "RERA stands for Real Estate Regulatory Authority. It’s a government body that registers real estate projects and protects homebuyer interests by ensuring transparency and accountability from developers.\n\nIf you’re looking at one of our projects, you can verify its RERA number directly with the Maharashtra RERA authority. Would you like help checking the RERA details for a specific project?",
+              "answer": "RERA stands for Real Estate (Regulation and Development) Act. It’s a government law meant to protect homebuyers by ensuring transparency, accountability, and timely completion from developers.\n\nIf you’re looking at one of our projects, the RERA number is listed right on the project details—for example, Vishwajeet Heights carries P51700054685. Would you like help checking the RERA status for a specific project?",
               "quick_replies": [
                 "Browse all projects",
                 "Book a site visit",
@@ -6703,7 +6756,7 @@
               "route": "property",
               "used_llm": true,
               "catalogue_home_type_search": null,
-              "duration_ms": 1637.2,
+              "duration_ms": 2525.8,
               "leaks": []
             }
           ]
@@ -6714,7 +6767,10 @@
           "result": "PASS",
           "evidence": [
             "PASS localized area bullets verbatim: ['Pune', 'Thane']",
-            "PASS localized shortlist keeps names: ['Vishwajeet Precious (Emerald)']"
+            "PASS localized shortlist keeps names: ['Vishwajeet Precious (Emerald)']",
+            "PASS turn 'mujhe 3 BHK flat dikhao': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api"
           ],
           "turns": [
             {
@@ -6746,104 +6802,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1464.0,
-              "leaks": []
-            },
-            {
-              "user": "Pune",
-              "answer": "Pune mein 3BHK ke liye aapka approximate budget kya hai? Aap 'any budget' bhi keh sakte hain.",
-              "quick_replies": [
-                "Any budget"
-              ],
-              "clarification_entity": null,
-              "source_status": "live_api",
-              "discovery_kind": "budget_question",
-              "options": [],
-              "pending_options": null,
-              "discovery_slots": {
-                "config": [
-                  "3"
-                ],
-                "awaiting": "budget",
-                "locality": "Pune",
-                "origin_issue": "show me 3BHK flats"
-              },
-              "route": "property",
-              "used_llm": false,
-              "catalogue_home_type_search": true,
-              "duration_ms": 1336.1,
-              "leaks": []
-            },
-            {
-              "user": "1.5 crore",
-              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
-              "quick_replies": [
-                "Vishwajeet Precious (Emerald)"
-              ],
-              "clarification_entity": "project",
-              "source_status": "live_api",
-              "discovery_kind": "results",
-              "options": [
-                "Vishwajeet Precious (Emerald)"
-              ],
-              "pending_options": [
-                "Vishwajeet Precious (Emerald)"
-              ],
-              "discovery_slots": {
-                "config": [
-                  "3"
-                ],
-                "budget_max_inr": 15000000,
-                "awaiting": null,
-                "locality": "Pune",
-                "budget_label": "1.5 crore",
-                "origin_issue": "show me 3BHK flats"
-              },
-              "route": "property",
-              "used_llm": false,
-              "catalogue_home_type_search": true,
-              "duration_ms": 1230.2,
-              "leaks": []
-            }
-          ]
-        },
-        "stream": {
-          "result": "PASS",
-          "evidence": [
-            "PASS localized area bullets verbatim: ['Pune', 'Thane']",
-            "PASS localized shortlist keeps names: ['Vishwajeet Precious (Emerald)']"
-          ],
-          "turns": [
-            {
-              "user": "mujhe 3 BHK flat dikhao",
-              "answer": "Mujhe in areas mein 3BHK projects mile hain:\n- Pune\n- Thane\nAap kis area mein explore karna chahenge?",
-              "quick_replies": [
-                "Pune",
-                "Thane",
-                "Any area"
-              ],
-              "clarification_entity": "locality",
-              "source_status": "live_api",
-              "discovery_kind": "locality_question",
-              "options": [
-                "Pune",
-                "Thane"
-              ],
-              "pending_options": [
-                "Pune",
-                "Thane"
-              ],
-              "discovery_slots": {
-                "config": [
-                  "3"
-                ],
-                "awaiting": "locality",
-                "origin_issue": "show me 3BHK flat"
-              },
-              "route": "property",
-              "used_llm": false,
-              "catalogue_home_type_search": true,
-              "duration_ms": 1319.9,
+              "duration_ms": 2005.6,
               "leaks": []
             },
             {
@@ -6863,12 +6822,12 @@
                 ],
                 "awaiting": "budget",
                 "locality": "Pune",
-                "origin_issue": "show me 3BHK flat"
+                "origin_issue": "show me 3BHK flats"
               },
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1177.9,
+              "duration_ms": 1692.4,
               "leaks": []
             },
             {
@@ -6894,12 +6853,112 @@
                 "awaiting": null,
                 "locality": "Pune",
                 "budget_label": "1.5 crore",
-                "origin_issue": "show me 3BHK flat"
+                "origin_issue": "show me 3BHK flats"
               },
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1235.0,
+              "duration_ms": 1795.3,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS localized area bullets verbatim: ['Pune', 'Thane']",
+            "PASS localized shortlist keeps names: ['Vishwajeet Precious (Emerald)']",
+            "PASS turn 'mujhe 3 BHK flat dikhao': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "mujhe 3 BHK flat dikhao",
+              "answer": "Mujhe in areas mein 3BHK projects mile hain:\n- Pune\n- Thane\nAap kis area mein explore karna chahenge?",
+              "quick_replies": [
+                "Pune",
+                "Thane",
+                "Any area"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "show me 3BHK flats"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1817.3,
+              "leaks": []
+            },
+            {
+              "user": "Pune",
+              "answer": "What's your approximate budget for a 3BHK in Pune? You can say 'any budget'.",
+              "quick_replies": [
+                "Any budget"
+              ],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "Pune",
+                "origin_issue": "show me 3BHK flats"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1601.1,
+              "leaks": []
+            },
+            {
+              "user": "1.5 crore",
+              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Pune",
+                "budget_label": "1.5 crore",
+                "origin_issue": "show me 3BHK flats"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1749.5,
               "leaks": []
             }
           ]
@@ -6945,7 +7004,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 364.6,
+              "duration_ms": 410.9,
               "leaks": []
             }
           ]
@@ -6989,7 +7048,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 539.2,
+              "duration_ms": 409.0,
               "leaks": []
             }
           ]
@@ -7000,7 +7059,8 @@
           "result": "PASS",
           "evidence": [
             "PASS -> results",
-            "PASS N/A: every 3BHK project has a per-sq-ft rate"
+            "PASS N/A: every 3BHK project has a per-sq-ft rate",
+            "PASS turn '3 BHK in any area, any budget': discovery source=live_api"
           ],
           "turns": [
             {
@@ -7034,7 +7094,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1251.5,
+              "duration_ms": 1609.6,
               "leaks": []
             }
           ]
@@ -7043,7 +7103,8 @@
           "result": "PASS",
           "evidence": [
             "PASS -> results",
-            "PASS N/A: every 3BHK project has a per-sq-ft rate"
+            "PASS N/A: every 3BHK project has a per-sq-ft rate",
+            "PASS turn '3 BHK in any area, any budget': discovery source=live_api"
           ],
           "turns": [
             {
@@ -7077,7 +7138,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1297.6,
+              "duration_ms": 1663.8,
               "leaks": []
             }
           ]
@@ -7087,14 +7148,14 @@
     "latency": {
       "json": {
         "turns": 36,
-        "median_ms": 1265.2,
-        "max_ms": 1743.9,
+        "median_ms": 1672.4,
+        "max_ms": 2183.1,
         "over_8s": 0
       },
       "stream": {
         "turns": 36,
-        "median_ms": 1260.6,
-        "max_ms": 1651.9,
+        "median_ms": 1653.9,
+        "max_ms": 2525.8,
         "over_8s": 0
       }
     },
@@ -7147,6 +7208,79 @@
         "json": "PASS",
         "stream": "PASS"
       }
+    },
+    "completed_at": "2026-10-01T07:06:34.827642+00:00",
+    "passed": true
+  },
+  "phase1_activation": {
+    "pre_activation": {
+      "flag": "explicit true; code default still false",
+      "summary": {
+        "T1": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T2": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T3": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T4": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T5": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T6": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T7": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T8": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T9": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T10": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T11": {
+          "json": "PASS",
+          "stream": "PASS"
+        },
+        "T12": {
+          "json": "PASS",
+          "stream": "PASS"
+        }
+      },
+      "latency": {
+        "json": {
+          "turns": 36,
+          "median_ms": 1364.5,
+          "max_ms": 2268.5,
+          "over_8s": 0
+        },
+        "stream": {
+          "turns": 36,
+          "median_ms": 1417.4,
+          "max_ms": 2220.0,
+          "over_8s": 0
+        }
+      },
+      "all_discovery_turns_live_api": true,
+      "leak_checks_passed": true
     }
   }
 }

@@ -449,6 +449,16 @@ export function createSupportTicket(payload: {
   });
 }
 
+export type ConversationHistory = {
+  exists: boolean;
+  messages: SupportConversationMessage[];
+  quick_replies: { label: string; value: string; action?: "ticket" | "site_visit" | "call" | "browse_projects"; project_name?: string }[];
+};
+
+export function getConversationHistory(conversationId: string): Promise<ConversationHistory> {
+  return apiRequest<ConversationHistory>(`/api/support/conversations/${encodeURIComponent(conversationId)}/history`);
+}
+
 export async function getSupportAssist(payload: {
   article_hint_url?: string;
   business_hours_tag?: string;
