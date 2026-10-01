@@ -4736,7 +4736,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -4763,7 +4763,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1701.7,
+              "duration_ms": 1223.0,
               "leaks": []
             },
             {
@@ -4788,7 +4788,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1661.7,
+              "duration_ms": 1743.9,
               "leaks": []
             },
             {
@@ -4819,7 +4819,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1638.8,
+              "duration_ms": 1318.6,
               "leaks": []
             },
             {
@@ -4839,7 +4839,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 1726.8,
+              "duration_ms": 1300.5,
               "leaks": []
             }
           ]
@@ -4854,7 +4854,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -4881,7 +4881,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1535.0,
+              "duration_ms": 1303.7,
               "leaks": []
             },
             {
@@ -4906,7 +4906,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1511.3,
+              "duration_ms": 1258.2,
               "leaks": []
             },
             {
@@ -4937,7 +4937,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1335.4,
+              "duration_ms": 1273.5,
               "leaks": []
             },
             {
@@ -4957,7 +4957,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 816.3,
+              "duration_ms": 573.3,
               "leaks": []
             }
           ]
@@ -4999,7 +4999,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1429.3,
+              "duration_ms": 1197.4,
               "leaks": []
             }
           ]
@@ -5039,7 +5039,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1337.2,
+              "duration_ms": 1294.9,
               "leaks": []
             }
           ]
@@ -5055,7 +5055,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5082,7 +5082,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1608.7,
+              "duration_ms": 1377.2,
               "leaks": []
             },
             {
@@ -5107,7 +5107,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1437.7,
+              "duration_ms": 1181.6,
               "leaks": []
             },
             {
@@ -5141,7 +5141,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1295.5,
+              "duration_ms": 1250.1,
               "leaks": []
             }
           ]
@@ -5155,7 +5155,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5182,7 +5182,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1380.3,
+              "duration_ms": 1235.1,
               "leaks": []
             },
             {
@@ -5207,7 +5207,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1335.3,
+              "duration_ms": 1562.0,
               "leaks": []
             },
             {
@@ -5241,7 +5241,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1508.2,
+              "duration_ms": 1323.7,
               "leaks": []
             }
           ]
@@ -5257,7 +5257,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5284,7 +5284,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1330.4,
+              "duration_ms": 1343.3,
               "leaks": []
             },
             {
@@ -5309,7 +5309,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1217.1,
+              "duration_ms": 1194.3,
               "leaks": []
             },
             {
@@ -5343,7 +5343,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1353.3,
+              "duration_ms": 1266.1,
               "leaks": []
             }
           ]
@@ -5357,7 +5357,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5384,7 +5384,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1341.0,
+              "duration_ms": 1250.9,
               "leaks": []
             },
             {
@@ -5409,7 +5409,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1494.1,
+              "duration_ms": 1198.3,
               "leaks": []
             },
             {
@@ -5443,7 +5443,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1347.1,
+              "duration_ms": 1220.5,
               "leaks": []
             }
           ]
@@ -5460,7 +5460,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5487,12 +5487,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1685.6,
+              "duration_ms": 1159.4,
               "leaks": []
             },
             {
               "user": "Kharadi",
-              "answer": "I couldn't find any current 3BHK projects in 'Kharadi'. Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I couldn't find any current 3BHK projects in 'Kharadi'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5519,7 +5519,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1330.0,
+              "duration_ms": 1234.8,
               "leaks": []
             },
             {
@@ -5544,7 +5544,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1500.8,
+              "duration_ms": 1228.4,
               "leaks": []
             }
           ]
@@ -5559,7 +5559,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5586,12 +5586,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1521.8,
+              "duration_ms": 1142.0,
               "leaks": []
             },
             {
               "user": "Kharadi",
-              "answer": "I couldn't find any current 3BHK projects in 'Kharadi'. Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I couldn't find any current 3BHK projects in 'Kharadi'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5618,7 +5618,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1365.2,
+              "duration_ms": 1307.1,
               "leaks": []
             },
             {
@@ -5643,7 +5643,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1602.4,
+              "duration_ms": 1147.0,
               "leaks": []
             }
           ]
@@ -5659,7 +5659,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5686,12 +5686,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1424.7,
+              "duration_ms": 1203.6,
               "leaks": []
             },
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5718,12 +5718,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1512.8,
+              "duration_ms": 1186.3,
               "leaks": []
             },
             {
               "user": "Ambernath",
-              "answer": "I couldn't find any current 3BHK projects in 'Ambernath'. Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I couldn't find any current 3BHK projects in 'Ambernath'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5750,7 +5750,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1582.1,
+              "duration_ms": 1268.0,
               "leaks": []
             }
           ]
@@ -5764,7 +5764,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5791,12 +5791,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1199.3,
+              "duration_ms": 1396.5,
               "leaks": []
             },
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5823,12 +5823,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1540.4,
+              "duration_ms": 1191.3,
               "leaks": []
             },
             {
               "user": "Ambernath",
-              "answer": "I couldn't find any current 3BHK projects in 'Ambernath'. Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I couldn't find any current 3BHK projects in 'Ambernath'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5855,7 +5855,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1647.9,
+              "duration_ms": 1245.1,
               "leaks": []
             }
           ]
@@ -5873,7 +5873,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -5900,7 +5900,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1372.7,
+              "duration_ms": 1249.7,
               "leaks": []
             },
             {
@@ -5925,7 +5925,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1540.4,
+              "duration_ms": 1271.4,
               "leaks": []
             },
             {
@@ -5956,7 +5956,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1977.4,
+              "duration_ms": 1281.9,
               "leaks": []
             },
             {
@@ -5976,7 +5976,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 2193.4,
+              "duration_ms": 1264.2,
               "leaks": []
             },
             {
@@ -5996,7 +5996,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 2027.5,
+              "duration_ms": 1260.6,
               "leaks": []
             },
             {
@@ -6027,7 +6027,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 2006.6,
+              "duration_ms": 1235.7,
               "leaks": []
             }
           ]
@@ -6043,7 +6043,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6070,7 +6070,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 2004.6,
+              "duration_ms": 1214.2,
               "leaks": []
             },
             {
@@ -6095,7 +6095,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1331.3,
+              "duration_ms": 1651.9,
               "leaks": []
             },
             {
@@ -6126,7 +6126,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1712.6,
+              "duration_ms": 1231.1,
               "leaks": []
             },
             {
@@ -6146,7 +6146,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 1716.8,
+              "duration_ms": 1267.5,
               "leaks": []
             },
             {
@@ -6166,7 +6166,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 628.1,
+              "duration_ms": 516.6,
               "leaks": []
             },
             {
@@ -6197,7 +6197,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1352.1,
+              "duration_ms": 1262.9,
               "leaks": []
             }
           ]
@@ -6214,7 +6214,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6241,7 +6241,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1508.2,
+              "duration_ms": 1370.1,
               "leaks": []
             },
             {
@@ -6266,7 +6266,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1515.8,
+              "duration_ms": 1313.5,
               "leaks": []
             },
             {
@@ -6284,12 +6284,12 @@
               "route": "general",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 437.3,
+              "duration_ms": 399.2,
               "leaks": []
             },
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6316,12 +6316,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1423.7,
+              "duration_ms": 1379.9,
               "leaks": []
             },
             {
               "user": "start over, show me 2 BHK",
-              "answer": "Which area should I check for 2BHK homes?\n- Ambernath\n- Chikhloli\n- Pune\n- Thane\n- Varap",
+              "answer": "I found 2BHK projects in these areas:\n- Ambernath\n- Chikhloli\n- Pune\n- Thane\n- Varap\nWhich area would you like to explore?",
               "quick_replies": [
                 "Ambernath",
                 "Chikhloli",
@@ -6357,7 +6357,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1456.3,
+              "duration_ms": 1367.0,
               "leaks": []
             }
           ]
@@ -6372,7 +6372,7 @@
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6399,7 +6399,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1422.7,
+              "duration_ms": 1309.3,
               "leaks": []
             },
             {
@@ -6424,7 +6424,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1478.9,
+              "duration_ms": 1452.9,
               "leaks": []
             },
             {
@@ -6442,12 +6442,12 @@
               "route": "general",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 377.4,
+              "duration_ms": 449.3,
               "leaks": []
             },
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6474,12 +6474,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1305.8,
+              "duration_ms": 1462.4,
               "leaks": []
             },
             {
               "user": "start over, show me 2 BHK",
-              "answer": "Which area should I check for 2BHK homes?\n- Ambernath\n- Chikhloli\n- Pune\n- Thane\n- Varap",
+              "answer": "I found 2BHK projects in these areas:\n- Ambernath\n- Chikhloli\n- Pune\n- Thane\n- Varap\nWhich area would you like to explore?",
               "quick_replies": [
                 "Ambernath",
                 "Chikhloli",
@@ -6515,7 +6515,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1517.9,
+              "duration_ms": 1535.5,
               "leaks": []
             }
           ]
@@ -6526,12 +6526,12 @@
           "result": "PASS",
           "evidence": [
             "PASS 'good night' -> locality_not_found (Phase 2 item e)",
-            "PASS 'what is RERA?' -> property: RERA stands for Real Estate Regulatory Authority. It’s a government body set up "
+            "PASS 'what is RERA?' -> property: RERA stands for Real Estate (Regulation and Development) Act. It’s a government "
           ],
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6558,12 +6558,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1356.9,
+              "duration_ms": 1375.3,
               "leaks": []
             },
             {
               "user": "good night",
-              "answer": "I couldn't find any current 3BHK projects in 'good night'. Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I couldn't find any current 3BHK projects in 'good night'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6590,12 +6590,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1549.0,
+              "duration_ms": 1384.6,
               "leaks": []
             },
             {
               "user": "what is RERA?",
-              "answer": "RERA stands for Real Estate Regulatory Authority. It’s a government body set up to protect homebuyers by ensuring transparency, accountability, and timely delivery from developers.\n\nSince we list projects like Vishwajeet Heights and Vishwajeet Empire with their RERA numbers, would you like to see which of our projects are currently registered?",
+              "answer": "RERA stands for Real Estate (Regulation and Development) Act. It’s a government framework that protects homebuyers by ensuring developers follow approved plans, disclose project details, and keep funds in separate escrow accounts.\n\nSince you were looking at our 3BHK projects earlier, would you like help checking the RERA number for any specific Vishwajeet project?",
               "quick_replies": [
                 "Browse all projects",
                 "Book a site visit",
@@ -6610,7 +6610,7 @@
               "route": "property",
               "used_llm": true,
               "catalogue_home_type_search": null,
-              "duration_ms": 1905.5,
+              "duration_ms": 1733.5,
               "leaks": []
             }
           ]
@@ -6619,12 +6619,12 @@
           "result": "PASS",
           "evidence": [
             "PASS 'good night' -> locality_not_found (Phase 2 item e)",
-            "PASS 'what is RERA?' -> property: RERA stands for Real Estate Regulatory Authority. It’s a government body set up "
+            "PASS 'what is RERA?' -> property: RERA stands for Real Estate Regulatory Authority. It’s a government body that re"
           ],
           "turns": [
             {
               "user": "Show me 3 BHK",
-              "answer": "Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6651,12 +6651,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1514.9,
+              "duration_ms": 1218.1,
               "leaks": []
             },
             {
               "user": "good night",
-              "answer": "I couldn't find any current 3BHK projects in 'good night'. Which area should I check for 3BHK homes?\n- Pune\n- Thane",
+              "answer": "I couldn't find any current 3BHK projects in 'good night'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6683,12 +6683,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1542.9,
+              "duration_ms": 1291.8,
               "leaks": []
             },
             {
               "user": "what is RERA?",
-              "answer": "RERA stands for Real Estate Regulatory Authority. It’s a government body set up to protect home buyers by making sure developers follow the rules, keep project funds in a separate account, and share regular updates on construction progress.\n\nSince a few of our projects carry RERA numbers, are you looking to verify details for a specific development, or would you like help with something else?",
+              "answer": "RERA stands for Real Estate Regulatory Authority. It’s a government body that registers real estate projects and protects homebuyer interests by ensuring transparency and accountability from developers.\n\nIf you’re looking at one of our projects, you can verify its RERA number directly with the Maharashtra RERA authority. Would you like help checking the RERA details for a specific project?",
               "quick_replies": [
                 "Browse all projects",
                 "Book a site visit",
@@ -6703,7 +6703,7 @@
               "route": "property",
               "used_llm": true,
               "catalogue_home_type_search": null,
-              "duration_ms": 2007.6,
+              "duration_ms": 1637.2,
               "leaks": []
             }
           ]
@@ -6719,7 +6719,7 @@
           "turns": [
             {
               "user": "mujhe 3 BHK flat dikhao",
-              "answer": "3BHK homes ke liye mujhe kaunse area mein check karna chahiye?\n- Pune\n- Thane",
+              "answer": "Mujhe in areas mein 3BHK projects mile hain:\n- Pune\n- Thane\nAap kis area mein explore karna chahenge?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6746,12 +6746,12 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1542.5,
+              "duration_ms": 1464.0,
               "leaks": []
             },
             {
               "user": "Pune",
-              "answer": "What's your approximate budget for a 3BHK in Pune? You can say 'any budget'.",
+              "answer": "Pune mein 3BHK ke liye aapka approximate budget kya hai? Aap 'any budget' bhi keh sakte hain.",
               "quick_replies": [
                 "Any budget"
               ],
@@ -6771,7 +6771,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1457.0,
+              "duration_ms": 1336.1,
               "leaks": []
             },
             {
@@ -6802,7 +6802,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1501.2,
+              "duration_ms": 1230.2,
               "leaks": []
             }
           ]
@@ -6816,7 +6816,7 @@
           "turns": [
             {
               "user": "mujhe 3 BHK flat dikhao",
-              "answer": "3BHK homes ke liye mujhe kaunse area mein check karna chahiye?\n- Pune\n- Thane",
+              "answer": "Mujhe in areas mein 3BHK projects mile hain:\n- Pune\n- Thane\nAap kis area mein explore karna chahenge?",
               "quick_replies": [
                 "Pune",
                 "Thane",
@@ -6843,7 +6843,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1710.4,
+              "duration_ms": 1319.9,
               "leaks": []
             },
             {
@@ -6868,7 +6868,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1342.2,
+              "duration_ms": 1177.9,
               "leaks": []
             },
             {
@@ -6899,7 +6899,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1613.6,
+              "duration_ms": 1235.0,
               "leaks": []
             }
           ]
@@ -6945,7 +6945,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 412.4,
+              "duration_ms": 364.6,
               "leaks": []
             }
           ]
@@ -6989,7 +6989,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": null,
-              "duration_ms": 447.1,
+              "duration_ms": 539.2,
               "leaks": []
             }
           ]
@@ -7034,7 +7034,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1369.0,
+              "duration_ms": 1251.5,
               "leaks": []
             }
           ]
@@ -7077,7 +7077,7 @@
               "route": "property",
               "used_llm": false,
               "catalogue_home_type_search": true,
-              "duration_ms": 1431.3,
+              "duration_ms": 1297.6,
               "leaks": []
             }
           ]
@@ -7087,14 +7087,14 @@
     "latency": {
       "json": {
         "turns": 36,
-        "median_ms": 1504.7,
-        "max_ms": 2193.4,
+        "median_ms": 1265.2,
+        "max_ms": 1743.9,
         "over_8s": 0
       },
       "stream": {
         "turns": 36,
-        "median_ms": 1455.1,
-        "max_ms": 2007.6,
+        "median_ms": 1260.6,
+        "max_ms": 1651.9,
         "over_8s": 0
       }
     },

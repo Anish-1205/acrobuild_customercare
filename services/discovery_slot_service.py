@@ -488,9 +488,12 @@ def _locality_question(slots, search, items, origin, prefix=""):
     options = _display_localities(items)
     slots = {**slots, "awaiting": "locality"}
     slots.pop("locality", None)
-    lead = f"{prefix} " if prefix else ""
-    answer = "\n".join([f"{lead}Which area should I check for {_config_phrase(config)} homes?",
-                        *[f"- {option}" for option in options]]) + _skipped_note(search)
+    lines = ([prefix] if prefix else []) + [
+        f"I found {_config_phrase(config)} projects in these areas:",
+        *[f"- {option}" for option in options],
+        "Which area would you like to explore?",
+    ]
+    answer = "\n".join(lines) + _skipped_note(search)
     quick_replies = [{"label": option, "value": option} for option in options]
     quick_replies.append({"label": ANY_AREA_REPLY, "value": ANY_AREA_REPLY})
     return _draft("locality_question", answer, slots, search, search["evidence"],

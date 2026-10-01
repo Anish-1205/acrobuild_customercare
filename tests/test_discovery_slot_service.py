@@ -270,7 +270,11 @@ def test_locality_question_lists_every_live_option(cs):
     draft = build("Show me 3 BHK")
     assert draft["discovery_kind"] == "locality_question"
     assert draft["options"] == LIVE_3BHK_AREAS
-    assert all(f"- {area}" in draft["answer"] for area in LIVE_3BHK_AREAS)
+    assert draft["answer"] == "\n".join([
+        "I found 3BHK projects in these areas:",
+        *[f"- {area}" for area in LIVE_3BHK_AREAS],
+        "Which area would you like to explore?",
+    ])
     assert _labels(draft) == LIVE_3BHK_AREAS + ["Any area"]
     pending = draft["pending_project_lookup"]
     assert pending == {"kind": "selection", "entity": "locality", "options": LIVE_3BHK_AREAS, "scope": {},
@@ -398,7 +402,12 @@ def test_new_configuration_reuses_stored_locality_and_budget(cs):
 def test_unknown_locality_is_quoted_not_stored(cs):
     draft = build("Kharadi", AWAIT_LOCALITY)
     assert draft["discovery_kind"] == "locality_not_found"
-    assert draft["answer"].startswith("I couldn't find any current 3BHK projects in 'Kharadi'.")
+    assert draft["answer"] == "\n".join([
+        "I couldn't find any current 3BHK projects in 'Kharadi'.",
+        "I found 3BHK projects in these areas:",
+        *[f"- {area}" for area in LIVE_3BHK_AREAS],
+        "Which area would you like to explore?",
+    ])
     assert draft["options"] == LIVE_3BHK_AREAS
     assert _labels(draft)[-1] == "Any area"
     assert "Kharadi" not in str(draft["discovery_slots"])

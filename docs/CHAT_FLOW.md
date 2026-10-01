@@ -153,7 +153,7 @@ flowchart TD
   Ask["'Show me 3 BHK' (no project in scope)"] --> Areas{"Live areas with 3BHK?"}
   Areas -->|none| NoConfig["'None of the projects ... list 3BHK'"]
   Areas -->|one| Budget["Budget question (+ 'Any budget')"]
-  Areas -->|two or more| AreaQ["'Which area should I check?' (+ 'Any area')"]
+  Areas -->|two or more| AreaQ["List live areas with the requested BHK, then ask which to explore (+ 'Any area')"]
   AreaQ -->|live area, typed city or 'Any area'| Budget
   AreaQ -->|unknown place| NotFound["'I couldn't find ... in X' + live areas again"]
   NotFound --> AreaQ

@@ -206,7 +206,11 @@ def test_locality_question_lists_live_options_and_any_area(chat, endpoint):
     payload = c.ask("Show me 3 BHK")
     assert payload["discovery_kind"] == "locality_question"
     assert payload["clarification_entity"] == "locality"
-    assert all(f"- {area}" in payload["answer"] for area in AREAS_3BHK)
+    assert payload["answer"] == "\n".join([
+        "I found 3BHK projects in these areas:",
+        *[f"- {area}" for area in AREAS_3BHK],
+        "Which area would you like to explore?",
+    ])
     assert _labels(payload) == AREAS_3BHK + ["Any area"]
     pending = get_pending_project_lookup(c.last_bot)
     assert pending["options"] == AREAS_3BHK and "Any area" not in pending["options"]
@@ -214,6 +218,28 @@ def test_locality_question_lists_live_options_and_any_area(chat, endpoint):
     assert c.slots == {"config": ["3"], "awaiting": "locality", "origin_issue": "Show me 3BHK"}
     assert get_current_project_context(c.last_bot) == {"project": ""}
     _assert_live(payload)
+
+
+@pytest.mark.parametrize("endpoint", ENDPOINTS)
+def test_locality_question_reflects_current_eligible_projects(chat, env, endpoint):
+    env.projects = [copy.deepcopy(PROJECTS[index]) for index in (0, 1, 4)]
+    env.projects[0]["locality"] = "Baner"
+    env.projects[1]["city"] = "Panvel"
+    c = chat(endpoint)
+    payload = c.ask("Show me 3 BHK")
+    assert payload["answer"] == (
+        "I found 3BHK projects in these areas:\n"
+        "- Baner\n- Panvel\n"
+        "Which area would you like to explore?"
+    )
+    assert payload["options"] == ["Baner", "Panvel"]
+    assert _labels(payload) == ["Baner", "Panvel", "Any area"]
+    assert get_pending_project_lookup(c.last_bot)["options"] == ["Baner", "Panvel"]
+    _assert_live(payload)
+    budget = c.ask("Baner")
+    assert budget["discovery_kind"] == "budget_question"
+    assert budget["answer"].startswith("What's your approximate budget for a 3BHK in Baner?")
+    assert c.slots["locality"] == "Baner" and c.slots["awaiting"] == "budget"
 
 
 # -----------------------------------
@@ -300,6 +326,11 @@ def test_unknown_locality_is_honest_and_never_stored(chat, endpoint):
     payload = c.ask("Kharadi")
     assert payload["discovery_kind"] == "locality_not_found"
     assert payload["answer"].startswith("I couldn't find any current 3BHK projects in 'Kharadi'.")
+    assert payload["answer"].endswith("\n".join([
+        "I found 3BHK projects in these areas:",
+        *[f"- {area}" for area in AREAS_3BHK],
+        "Which area would you like to explore?",
+    ]))
     assert _labels(payload) == AREAS_3BHK + ["Any area"]
     assert get_pending_project_lookup(c.last_bot)["options"] == AREAS_3BHK
     stored = get_discovery_slots(c.last_bot)
