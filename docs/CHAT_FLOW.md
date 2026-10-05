@@ -1,210 +1,161 @@
-# Customer support chat flow
+# Chat and property flow
 
-See [AI_CONTEXT.md](AI_CONTEXT.md) for the current architecture and file map.
-`prefer_qwen_response` and `generate_qwen_chat_response` are retained names in
-the code; the only supported generative provider is Sarvam.
+This is the current behavioral guide for customer chat. The mandatory coding
+contract is in [AGENTS.md](../AGENTS.md); source remains authoritative.
 
-Primary path: widget → `/api/support/assist/stream` → orchestrator → (LLM | property/RAG/CS API).
+## Request path
 
-### Refresh and conversation scope
+Both assist endpoints use the same turn preparation, routing, completion, and
+state-persistence rules:
 
-The customer page keeps the active `conversation_id` in tab-scoped session storage.
-On `/home` reload it reads `GET /api/support/conversations/{conversation_id}/history`
-using the existing HttpOnly `support_conversation_session` cookie. The endpoint
-returns only completed, customer-visible turns and pending selection replies;
-server-only state markers remain in the SQLite rows used by the next assist turn.
-The page reconciles its short-lived display snapshot with those server turns so
-locally rendered chat bubbles keep their original wording and controls. A missing
-or expired server conversation is never reconstructed from a stale snapshot.
-`Browse all projects` as a new-conversation action generates a new ID and clears
-the old tab snapshot. Server turns remain limited to 60 messages with two-hour
-sliding expiry. This is anonymous, same-browser-session history, not account or
+- `POST /api/support/assist` returns JSON.
+- `POST /api/support/assist/stream` returns NDJSON progress and a final `done`
+  event with the same completed payload contract.
+
+```mermaid
+flowchart TD
+  Request[Customer turn + conversation ID] --> Restore[Restore server history and markers]
+  Restore --> Analyze[Analyze intent, language, and English rendering]
+  Analyze --> Resume{Pending selection or slot reply?}
+  Resume -->|yes| Context[Resume original request and selected scope]
+  Resume -->|no| Context
+  Context --> Shortcut{Grounded deterministic handler?}
+  Shortcut -->|yes| Draft[Property or support draft]
+  Shortcut -->|no| Route{General chat or support/property?}
+  Route -->|general| LLM[Sarvam]
+  Route -->|support/property| Engine[Property/RAG engine]
+  Draft --> Complete[Clarification contract → live-data guard → localization]
+  Engine --> Complete
+  LLM --> Complete
+  Complete --> Persist[Persist visible turn + server-only markers]
+  Persist --> Response[JSON or NDJSON done payload]
+```
+
+`graph/main_orchestrator.py::prepare_turn()` produces one analysis for the turn.
+Property handlers operate on its English rendering; localization happens after
+clarification and grounding checks so names, options, and numeric evidence are
+not rewritten before validation.
+
+Generative calls pass through the compatibility-named `qwen.py` facade and use
+Sarvam. The LLM and CS API are independent dependencies.
+
+## Grounding and completion order
+
+`routers/assist.py::_complete_payload()` applies the shared clarification
+contract, derives source status from the current turn's CS API trace, enforces
+property grounding, adds terminal quick replies where appropriate, localizes the
+answer, and attaches evaluation/trace fields.
+
+Property facts may come only from the live CS API or an explicitly disclosed
+allowed snapshot. A successful model response cannot compensate for a failed
+property read. Public `data_api_calls` are sanitized; raw upstream errors remain
+in server logs.
+
+For repeated calls to the same endpoint and parameters in one turn, the latest
+call determines source status. A later live success supersedes an earlier
+failure; a later failure remains authoritative unless a permitted snapshot
+covers that resource.
+
+## Property clarification contract
+
+Every project, locality, wing, floor, flat, or home-type clarification goes
+through `services/property_clarification_service.py` before relevance checking,
+localization, and persistence.
+
+New answer builders set `clarification_entity`. The contract:
+
+- obtains applicable option names from current property records;
+- lists all applicable real options instead of silently choosing among matches;
+- stores the original request, entity, options, selected scope, and retry query;
+- preserves state through repeated transient API failures;
+- lets an explicit new question or action replace stale selection state;
+- gives a complete suffixed project name precedence over a contained base name;
+- never derives intent by parsing translated assistant prose.
+
+`pending_project_lookup` owns an in-progress selection. Short replies resume the
+original intent, including reverse-amenity and catalogue home-type searches. A
+separate `current_project` marker owns the selected project after clarification,
+so a bare follow-up can stay scoped without depending on visible answer text.
+Catalogue searches explicitly clear older project scope.
+
+## Discovery memory
+
+Discovery is implemented in `services/discovery_slot_service.py` and defaults
+on. Set `ACROBUILD_DISCOVERY_SLOTS=false` to bypass all discovery code and
+restore the project-first clarification path.
+
+```mermaid
+flowchart LR
+  Config[Configuration] --> Areas[Eligible live areas]
+  Areas --> Budget[Budget or any budget]
+  Budget --> Projects[Matching project shortlist]
+  Projects --> Selection[Selected project details]
+```
+
+The server-only `discovery_slots` marker stores configuration, canonical live
+locality (or `any`), maximum budget/label, awaited field, and original request.
+The selected project is not duplicated there; `current_project` remains its
+single source of truth.
+
+Key rules:
+
+- Area choices come only from locality/city fields on projects that have the
+  requested configuration. The customer cannot introduce a plausible but
+  unverified locality into stored state.
+- `Any area` is a UI reply, not a live pending option. `Any budget` stores an
+  explicit no-limit choice.
+- Unknown areas are quoted back safely once and eligible live areas are offered
+  again. They are not searched or persisted as valid localities.
+- A budget shortlist uses estimated base amount = minimum listed per-square-foot
+  rate × saleable area and states that taxes, registration, floor rise, parking,
+  and rate changes are excluded. Unpriced matches stay visibly unpriced.
+- A shortlist is a catalogue search and never establishes `current_project`,
+  even if it contains one match. Selecting a project establishes scope and
+  resumes the original home-type request.
+- A live locality explicitly named with a configuration starts a catalogue
+  search even when an older project is in context. A project explicitly named
+  by the customer, `this project`, or a bare configuration follow-up retains the
+  project-scoped behavior.
+- `start over`, `reset`, `new search`, and supported clear-preference phrases
+  clear discovery slots. A bare reset returns a deterministic acknowledgement;
+  a reset plus a new request starts again from empty slots.
+- `Browse all projects` creates a new conversation ID in the frontend and does
+  not inherit project, selection, callback, or discovery state.
+
+`services/property_clarification_service.py` must not import the discovery
+module; discovery already depends on the property/home-type layer. Tests enforce
+this dependency direction.
+
+## Conversation refresh
+
+The customer page stores the active conversation ID in tab-scoped session
+storage. On refresh it calls
+`GET /api/support/conversations/{conversation_id}/history` with the HttpOnly
+conversation cookie. The endpoint returns completed visible turns and controls,
+not server markers. The browser reconciles that result with its short display
+snapshot without reconstructing missing server state.
+
+Conversation state is anonymous, browser-session scoped, limited to 60 messages,
+and expires after two hours of inactivity. It is not account-level or
 cross-device history.
 
-```mermaid
-flowchart TD
-  UI["CustomerHomePage / widget"] -->|"POST stream prefer_qwen=true"| AssistStream["/api/support/assist/stream"]
-  AssistStream --> Shortcuts{"Grounded amenity / location / site-visit?"}
-  Shortcuts -->|yes| DirectAPI["CS API / articles — no LLM"]
-  Shortcuts -->|no| Orch["stream_support_orchestration_events"]
-  Orch --> Resolve["resolve_contextual_support_issue"]
-  Resolve --> Branch{"prefer_qwen AND NOT property?"}
-  Branch -->|yes| GeneralLLM["_build_live_general_llm_response → generate_qwen_chat_response"]
-  Branch -->|property| PropertyPath["stream_ai_support_answer_events"]
-  Branch -->|else| Haystack["run_conversation_pipeline"]
-  PropertyPath --> RAG["Workspace RAG + Acrobuild CS API"]
-  RAG --> Det["Deterministic builders"]
-  Det --> MaybeLLM{"Need generative answer?"}
-  MaybeLLM -->|yes| SupportLLM["generate_support_chat_response → LLM"]
-  MaybeLLM -->|no| DetAnswer["API/RAG answer"]
-  Haystack --> Route{"support vs conversation"}
-  Route -->|conversation| ConvLLM["build_local_conversation_answer → LLM"]
-  Route -->|support| PropertyPath
-  GeneralLLM --> Post["localize + live-data enforce + RAG eval"]
-  DetAnswer --> Post
-  SupportLLM --> Post
-  DirectAPI --> Post
-  Post --> NDJSON["NDJSON delta + done"]
-```
+## Terminal actions and capability limits
 
-## LLM provider switch
+A terminal grounded property answer can offer **Browse all projects**, **Book a
+site visit**, and **Raise a support ticket** when no clarification or existing
+quick replies remain. Site visits, callbacks, and tickets are local request
+workflows. They must not claim an external booking, CRM update, or confirmed
+slot. Other unsupported capabilities are listed in
+[Product status](PRODUCT_STATUS.md).
 
-All generative calls go through the `qwen.py` facade, which dispatches to
-`sarvam_client.py`. It uses the configured OpenAI-compatible endpoint, either
-direct Sarvam or a RunPod-hosted deployment. The live CS API is a separate
-connection used for property data. RAG, tickets, and grounded shortcuts do not
-switch chat providers.
+## Required verification for routing changes
 
-
-### Property selection state
-
-Project, wing, floor, flat, and home-type questions use the shared contract in
-`services/property_clarification_service.py`. New builders declare
-`clarification_entity`; a compatibility detector handles existing English
-clarification prompts. Property generation stays in English until the contract
-and relevance check finish, then the response is localized. Option names must
-survive localization unchanged.
-
-The server-only `pending_project_lookup` marker also accepts a structured
-`selection` state: original question, current entity, live option names, selected
-scope, and effective retry query. Both assist endpoints restore this state before
-routing a short reply. Transient failures keep it without a one-retry cutoff;
-new questions/actions replace it. The stored marker is not truncated with long
-visible answers. Each resumed lookup re-reads live records.
-
-A separate server-only `current_project` marker survives after a selection has
-finished. It is updated by exact project-button selections and successful scoped
-answers, so a bare follow-up such as `2bhk?` does not depend on whether the last
-visible answer repeated the project name. A new catalogue search writes an
-explicit empty marker to clear older scope.
-
-See `docs/DISAMBIGUATION_AUDIT.md` for the audited generators and live evidence.
-
-Reverse amenity searches also store matching projects as a pending selection and
-return project quick replies. Detail follow-ups retain those offered options while
-updating the requested information; selecting a project then resumes that request.
-Explicit project names and new catalogue requests can replace the shortlist.
-
-Catalogue home-type searches use the same selection pattern: `which projects have
-3BHK?` filters live project typologies first, and selecting a result resumes the
-original home-type request for that project. Explicit BHK signals are routed before
-reverse amenity detection because both query shapes can say `what properties have`.
-
-General discovery recognizes romanized Telugu `vunnayi` and English renderings
-such as "What projects do you have with you?" before the generic property path.
-Older discovery markers without `purpose: explore_project` are upgraded when
-resumed, so selecting a project requests its overview instead of replaying the
-catalogue question. Live discovery and Phase-V amenity evidence is captured by
-`scripts/live_project_discovery_check.py` in `docs/live_project_discovery_results.json`.
-
-### Project-scope exclusion in clarification candidates
-
-`services/property_clarification_service.py`'s `_scope()` resolves the project
-a clarification (wing/floor/flat/home-type) is about by checking the current
-issue, then falling back through customer history. Explicit exclusionary
-language ("other projects", "another project", "across projects", "which/all/
-different projects") skips the history fallback entirely instead of handing
-back the very project the customer is trying to move away from, so "what
-about other projects?" offers the full catalogue rather than the one project
-already in scope.
-
-A numberless home-type question ("what bhks are available", "which home types
-do you have") names no specific type, so it does not match the numbered
-home-type builders. `services/project_home_type_service.py`'s
-`build_generic_home_type_answer()` routes it through the same clarification
-contract instead, so a project already unambiguous from context resolves
-straight to the missing wing/home-type choice rather than re-asking for the
-project.
-
-### Catalogue-wide field filtering ("which projects have X?")
-
-`services/acrobuild_company_service.py`'s `build_project_record_index()` /
-`filter_project_index()` are the shared mechanism behind every "which
-projects have X?" question (home type, amenity, and any future per-project
-field): fetch one field's live records per project, skip (never abort on) any
-single project whose live-and-snapshot fetch both fail, then filter by
-requested value with an honest per-value breakdown. `project_home_type_service
-.build_catalogue_home_type_answer()` and `amenity_search_service.live_amenity_
-index()` / `projects_with_amenities()` both go through it. A project added to
-the live catalogue after the on-disk snapshot was last regenerated (no
-fallback data yet) is named in an honest "N project(s) could not be checked"
-note instead of aborting the whole scan.
-
-`requested_home_types()` recognizes plural mentions ("3bhks", not just
-"3bhk"), and `is_catalogue_home_type_query()` recognizes demonstrative
-references to an already-shown project set ("which one of these", "any of
-these", "out of these") as well as the literal word "project(s)".
-
-### Next-step quick replies after a terminal answer
-
-`routers/assist.py`'s `_complete_payload()` offers **Browse all projects /
-Book a site visit / Raise a support ticket** after any terminal property
-answer (`source_status` in `live_api`/`snapshot`, no pending clarification, no
-quick replies already set) — one gate shared by every answer type (amenities,
-pricing, location, wing/floor/flat inventory, project overview), not a
-per-answer-type feature. "Browse all projects" starts a fresh conversation
-(new `conversation_id`, no carried-over scope) via the same reset mechanism
-the guided-flow menu uses.
-
-### Retry-aware live-data staleness
-
-`api_context._enforce_live_property_data()` classifies a turn's answer as
-`live_api`/`snapshot`/`failed` from that turn's `data_api_calls`. A single
-turn can retry the same resource more than once (e.g. the project list is
-re-fetched from several independent steps); only the **latest** call per
-`(endpoint, params)` is authoritative, so an earlier timeout that a later
-retry resolved live no longer makes the final answer falsely claim it used
-saved/stale data.
-
-### Discovery slot memory (flag `ACROBUILD_DISCOVERY_SLOTS`, default on)
-
-Inquiry to Sales §28: the customer should not repeat configuration, area or
-budget. `services/discovery_slot_service.py` builds the answers;
-`routers/assist.py` wires them in the same way on both assist endpoints. Phase 1
-live acceptance passed before activation. Set `ACROBUILD_DISCOVERY_SLOTS=false`
-to restore the earlier project-first behavior; with the flag off none of this runs.
-
-```mermaid
-flowchart TD
-  Ask["'Show me 3 BHK' (no project in scope)"] --> Areas{"Live areas with 3BHK?"}
-  Areas -->|none| NoConfig["'None of the projects ... list 3BHK'"]
-  Areas -->|one| Budget["Budget question (+ 'Any budget')"]
-  Areas -->|two or more| AreaQ["List live areas with the requested BHK, then ask which to explore (+ 'Any area')"]
-  AreaQ -->|live area, typed city or 'Any area'| Budget
-  AreaQ -->|unknown place| NotFound["'I couldn't find ... in X' + live areas again"]
-  NotFound --> AreaQ
-  Budget -->|'1.5 crore' / 'any budget'| Shortlist["Shortlist: estimated base amount + disclaimer"]
-  Shortlist -->|project tap| HomeTypes["build_project_home_type_answer: 'Home types in ...'"]
-```
-
-- Placement: `_grounded_property_shortcut()` calls the discovery builder right
-  after `build_grounded_site_visit_document_assist()` and before the existing
-  chain. It runs only when there is no pending selection or the pending
-  selection is discovery's own (`source` or `purpose` is `discovery`).
-- A project in scope wins: a named project, or `Requested project:` added
-  from `current_project`, bypasses discovery. After a project tap, "and 2
-  BHK?" is answered for that project.
-- Every discovery answer reads live data through
-  `property_tools_service.search_projects()` and carries `company_api`
-  evidence, so `_enforce_live_property_data()` sees a real source status.
-  Drafts pass through `apply_clarification_contract()` unchanged.
-- Discovery answers set `catalogue_home_type_search`, so they never set
-  `current_project`, even when only one project matches.
-- Forced property turn: `_prepare_lookup_turn()` forces `intent="property"`
-  (and `unsure=False`) only when the stored slots await `budget` or
-  `locality`, there is no pending selection, the intent is not
-  `call_booking`/`human_contact`, and `is_slot_reply()` is true for the
-  customer text or its English rendering.
-- The `discovery_slots` marker is written when the answer carries slots. If
-  a question was awaited and the turn did not answer it, the question lapses
-  (`awaiting` becomes null) and the slots stay.
-- Reset: a message that starts with "start over", "reset", "new search" or
-  "clear my preferences" (also "clear my filters"/"clear my search", optionally
-  after "please") clears the slots. "start over, show me 3 BHK" starts a new search from empty
-  slots and stores the new slots. "Browse all projects" also starts empty.
-- Budget results always say "estimated base amount" (minimum listed rate x
-  saleable area) with a disclaimer. Projects without a per-sq-ft rate are
-  listed under "Pricing not listed". Skipped projects are named only; raw CS
-  API error text stays in server logs. All public `data_api_calls` use a shared
-  sanitized copy, including discovery, other assist answers and property flow.
-- Step 7b corrections: a live locality or city in the customer's own words, with a BHK type and no named project ("3 BHK in Thane"), is a catalogue search even when `Requested project:` was added from `current_project` (`explicit_locality_search_text()`; "this project", a place that is not live and a bare "2 BHK?" keep the routing above), and a bare "start over" with stored slots gets the fixed `RESET_ANSWER` (route `general`, no LLM, no place or configuration taken from history).
+- Cover both assist endpoints.
+- Exercise named options, short selection replies, repeated property API
+  failures, intent preservation, localization, and state reset where relevant.
+- Verify explicit `ACROBUILD_DISCOVERY_SLOTS=false` behavior when touching
+  discovery wiring.
+- Run `scripts/live_disambiguation_check.py` for real property clarification;
+  use `--discovery` for the Phase 1 flow.
+- Never replace missing live prerequisites with invented projects, inventory,
+  pricing, locality, or availability.

@@ -21,7 +21,7 @@ def main():
     ]
     results = {"project": project["projectName"], "typologies": typologies,
                "three_bhk_projects": three_bhk_projects, "turns": []}
-    output = Path("docs/live_project_home_type_results.json")
+    output = Path("docs/evidence/live/project-home-types.json")
     with TestClient(api) as client:
         for endpoint in ("/api/support/assist", "/api/support/assist/stream"):
             for questions in (

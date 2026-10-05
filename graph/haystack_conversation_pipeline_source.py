@@ -3,7 +3,7 @@
 This is a hand-reconstruction of ``haystack_conversation_pipeline_runtime.pyc``
 (bytecode-only, no original source). It is loaded by
 ``graph/haystack_conversation_pipeline.py`` in preference to marshalling the
-``.pyc`` — see ``docs/RECONSTRUCTION_STATUS.md``.
+``.pyc`` — see ``docs/runtime/COMPILED_RUNTIME.md``.
 
 The loader ``exec``s this file into its own module globals (exactly as it did
 the bytecode), so the wrapper overrides in that loader

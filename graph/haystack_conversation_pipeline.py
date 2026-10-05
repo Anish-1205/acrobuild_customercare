@@ -7,7 +7,7 @@ import re as _re
 # `haystack_conversation_pipeline_source.py`, verified against the bytecode by
 # scripts/verify_pipeline_reconstruction.py — is exec'd in preference when
 # present. It is exec'd (not imported) so the wrapper overrides below still apply
-# to the pipeline it builds. See docs/RECONSTRUCTION_STATUS.md.
+# to the pipeline it builds. See docs/runtime/COMPILED_RUNTIME.md.
 _runtime_path = _Path(__file__).with_name("haystack_conversation_pipeline_runtime.pyc")
 _source_path = _Path(__file__).with_name("haystack_conversation_pipeline_source.py")
 if _source_path.exists():

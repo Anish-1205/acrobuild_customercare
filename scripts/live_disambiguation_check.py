@@ -5,7 +5,7 @@ Default run: the original disambiguation scenarios (stream endpoint).
 ``--discovery``: live acceptance of discovery slot memory (Inquiry to Sales
 §28, §32) on both assist endpoints. Uses the configured discovery flag (default
 on after Step 8); explicit false stops the run. Adds a "discovery" key to
-docs/live_disambiguation_results.json and leaves the other transcripts as they
+docs/evidence/live/disambiguation.json and leaves the other transcripts as they
 are. Never prints or stores keys, tokens, headers or .env contents.
 """
 import json
@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi.testclient import TestClient
 from app import api
 
-RESULTS_PATH = Path("docs/live_disambiguation_results.json")
+RESULTS_PATH = Path("docs/evidence/live/disambiguation.json")
 
 
 # -----------------------------------
@@ -573,7 +573,7 @@ with TestClient(api) as client:
             payload = next(event["response"] for event in events if event.get("type") == "done")
             turns.append({"user": question, "response": payload})
             print("ASSISTANT:", payload.get("answer"), flush=True)
-            Path("docs/live_disambiguation_results.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+            RESULTS_PATH.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
 
 for name, turns in results.items():
     assert all(t["response"].get("source_status") == "live_api" for t in turns), name

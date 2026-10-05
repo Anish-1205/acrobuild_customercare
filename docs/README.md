@@ -1,34 +1,38 @@
-# Documentation index
+# Documentation
 
 ![AcroBuild](assets/Acrobuild_logo.png)
 
-## Getting started
+The current documentation is intentionally small. Source code remains the final
+authority for implemented behavior.
 
-- [AI handoff and current file map](AI_CONTEXT.md)
-- [Coding agent instructions](../AGENTS.md)
-- [Onboarding](ONBOARDING.md)
-- [Setup and usage](SETUP_AND_USAGE.md)
-- [Startup instructions](STARTUP_INSTRUCTIONS.md)
+## Reading order
 
-## Architecture and integrations
+| Need | Read |
+| --- | --- |
+| Understand the system | [Architecture](ARCHITECTURE.md) |
+| Change customer chat or property behavior | [Chat and property flow](CHAT_FLOW.md), then [AGENTS.md](../AGENTS.md) |
+| Install, run, test, or troubleshoot | [Development guide](DEVELOPMENT.md) |
+| Check implemented scope or limitations | [Product status](PRODUCT_STATUS.md) |
+| Work with the property API | [CS API integration](integrations/CS_API.md) |
+| Understand the compiled compatibility layer | [Compiled runtime](runtime/COMPILED_RUNTIME.md) |
+| Review historical acceptance artifacts | [Evidence index](evidence/README.md) |
+| Review dependency exceptions | [Security advisories](../requirements/SECURITY_ADVISORIES.md) |
 
-- [Customer support chat flow](CHAT_FLOW.md)
-- [Customer Service API integration guide](cs-api.md)
-- [Historical LLM provider options](LLM_PROVIDER_OPTIONS.md)
-- [Compiled runtime map](DECOMPILED_MAP.md)
-- [Bytecode fallback usage](BYTECODE_FALLBACK_USAGE.md)
-- [Reconstruction status](RECONSTRUCTION_STATUS.md)
+The root [README](../README.md) is the shortest project entry point.
+[AGENTS.md](../AGENTS.md) contains coding-agent rules rather than general product
+documentation. [CHANGELOG.md](../CHANGELOG.md) is historical and may describe
+behavior that later changed.
 
-## Assessments and verification
+## Source material
 
-- [Project assessment](PROJECT_ASSESSMENT.md)
-- [Chatbot evaluation findings](EVAL_FINDINGS.md)
-- [Property disambiguation audit](DISAMBIGUATION_AUDIT.md)
-- [Quick response test guide](TEST_CHATBOT_RESPONSES.md)
-- [Upgrade status](UPGRADE_STATUS.md)
+`AcroBuild_AI_Simple_Feature_Matrix.xlsx` is a local, ignored product-requirement
+workbook. Preserve it when present, but do not treat it as proof of implemented
+behavior. Client PDFs are not currently present in this checkout; if supplied,
+keep them as source material and do not infer that every requested feature exists.
 
-Machine-readable live disambiguation results are stored alongside these documents in
-`live_disambiguation_results.json` and `live_disambiguation_timeout_observed.json`.
+## Evidence policy
 
-Use `AI_CONTEXT.md` and the current source files for a new AI handoff. Some
-longer guides record earlier architecture or integrations and may be stale.
+Human-facing guides stay at the top of `docs/`. Generated transcripts and large
+acceptance exports live under `docs/evidence/`. Live-result files are snapshots
+of a particular catalogue and date; rerun the owning script before using them as
+current operational evidence.

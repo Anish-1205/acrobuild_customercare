@@ -23,7 +23,7 @@ def main():
                "project": project, "amenities_endpoint": cs._company_scoped_path(path),
                "raw_amenities_response": amenities, "turns": []}
     baseline = "--baseline" in sys.argv
-    output = Path("logs/project_discovery_baseline.json" if baseline else "docs/live_project_discovery_results.json")
+    output = Path("logs/project_discovery_baseline.json" if baseline else "docs/evidence/live/project-discovery.json")
     with TestClient(api) as client:
         for endpoint in ("/api/support/assist", "/api/support/assist/stream"):
             conversation_id = "discovery-live-" + str(uuid.uuid4())

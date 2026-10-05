@@ -14,7 +14,7 @@ Date: 2026-10-01. Branch: `work/2026-09-09-chatbot-fixes-observability`. Commit:
 | BLOCKED_BY_ENVIRONMENT | 0 |
 | **Total** | **91** |
 
-The [final CSV](acrobuild_chatbot_manual_acceptance_final.csv) contains all 91 case IDs, statuses, actual responses/results, notes, and evidence references. The [evidence JSON](acrobuild_chatbot_manual_acceptance_final_evidence.json) contains the captured browser turns, JSON/streaming parity results, before/after server state, live inventory survey, and supplemental browser checks. Every case received a final semantic review; no `REVIEW_REQUIRED` labels remain.
+The [final CSV](acceptance-cases-2026-10-01.csv) contains all 91 case IDs, statuses, actual responses/results, notes, and evidence references. The [evidence JSON](acceptance-evidence-2026-10-01.json) contains the captured browser turns, JSON/streaming parity results, before/after server state, live inventory survey, and supplemental browser checks. Every case received a final semantic review; no `REVIEW_REQUIRED` labels remain.
 
 ## Previously failing cases
 

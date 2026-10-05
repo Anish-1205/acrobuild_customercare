@@ -483,8 +483,8 @@ def get_possession(project_id: int) -> ToolResult:
 def get_project_documents(project_id: int) -> ToolResult:
     """Typology ``imageUrl`` values only.
 
-    What these images contain is unverified: docs/cs-api.md describes the
-    field as "Floor plan / image", but no live record has been checked, so
+    What these images contain is unverified: docs/integrations/CS_API.md records
+    the field as generic image content, and no live record has been checked, so
     callers must not present them as floor plans. Brochures, master plans and
     RERA documents need an AcroBuild endpoint."""
     def build(project):

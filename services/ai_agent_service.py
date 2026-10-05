@@ -8,7 +8,7 @@ from services.reply_language import strip_reply_language_directive
 # The `.pyc` is bytecode-only (no source). A hand-patched copy —
 # `*_runtime.patched.pyc`, produced by scripts/patch_runtime_constants.py — is
 # loaded in preference to the pristine original when present. See
-# docs/RECONSTRUCTION_STATUS.md.
+# docs/runtime/COMPILED_RUNTIME.md.
 _runtime_path = _Path(__file__).with_name("ai_agent_service_runtime.pyc")
 _patched_runtime_path = _runtime_path.with_suffix(".patched.pyc")
 _active_runtime_path = _patched_runtime_path if _patched_runtime_path.exists() else _runtime_path
@@ -25,7 +25,7 @@ _legacy_build_company_api_direct_answer = build_company_api_direct_answer
 # Measures how often traffic actually reaches the un-reconstructed bytecode and
 # how often it lands on the raw-document-dump path, to decide whether a full
 # reconstruction of `ai_agent_service_runtime.pyc` is worth it. See
-# docs/RECONSTRUCTION_STATUS.md and docs/BYTECODE_FALLBACK_USAGE.md.
+# docs/runtime/COMPILED_RUNTIME.md.
 from services.observability import get_logger as _get_logger  # noqa: E402
 
 _fallback_logger = _get_logger("bytecode_fallback")
@@ -386,7 +386,7 @@ def _catalogue_place_matches(cleaned_issue, matched_chunks):
 def _is_location_availability_question(cleaned_issue, matched_chunks):
     """A plain "do you have anything in <city>" question, with no BHK/price/floor
     specifics. Handled deterministically because the legacy engine (LLM-backed, see
-    docs/RECONSTRUCTION_STATUS.md) has been observed to deny availability in a city
+    docs/runtime/COMPILED_RUNTIME.md) has been observed to deny availability in a city
     that the live catalogue actually lists projects in, when phrased with "property"
     instead of "project" or asked in a non-English/romanized language."""
     words = set(_re.findall(r"[a-z0-9]+", cleaned_issue))

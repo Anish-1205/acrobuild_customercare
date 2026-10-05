@@ -137,11 +137,11 @@ The `.pyc` file is unmodified.
 ## 2026-09-10 18:30 — Bytecode reconstruction: Phases 1–2
 
 **Context:** The original source for the two `*_runtime.pyc` modules is
-unrecoverable. Rebuilding in phases; see `docs/RECONSTRUCTION_STATUS.md`.
+unrecoverable. Rebuilding in phases; see `docs/runtime/COMPILED_RUNTIME.md`.
 
-**Phase 1 — documentation (read-only):** `DECOMPILED_MAP.md` — full function
-inventory of both modules (26 + ~150 functions), module constants, entry-point
-flow, and provenance (the big file was originally a food-catalogue bot). Baked-in
+**Phase 1 — documentation (read-only):** the original detailed runtime map was
+later consolidated into `docs/runtime/COMPILED_RUNTIME.md`. It recorded the
+function inventories, entry-point flow, and provenance. Baked-in
 constants located to the bytecode line.
 
 **Phase 2 — constant patch:** `scripts/patch_runtime_constants.py` rewrites two
@@ -173,8 +173,9 @@ machine.
 - `scripts/evaluate_chatbot_prompts.py` — `extract_cases()` now loads that JSON;
   dropped the `pypdf` dependency in this script. `API_URL`, worker count,
   timeout, and all paths are env-overridable (`EVAL_*`).
-- `docs/EVAL_FINDINGS.md` (new) — analysis of the 67 failures.
-- `SETUP_AND_USAGE.md` — "Running the prompt evaluation" section.
+- The evaluation findings were later consolidated into `docs/PRODUCT_STATUS.md`;
+  raw evaluation inputs remain under `resources/evaluation/`.
+- The current evaluation command is in `docs/DEVELOPMENT.md`.
 
 **Findings:** 41 of 67 failures were `ReadTimeout` (60 s) against the RunPod
 *serverless* Sarvam endpoint — an infra/latency problem, not answer quality.
@@ -400,7 +401,7 @@ in the working tree.
   debug chatbot" debugpy config (`justMyCode=false`, forces DEBUG logs),
   "Pytest: current file"; interpreter pinned to `.venv`.
 - **`.gitignore`** — added `logs/`.
-- **`SETUP_AND_USAGE.md`** — "Debugging the Chatbot" section.
+- **Development guide** — the current debugging workflow is in `docs/DEVELOPMENT.md`.
 
 **3b. Seven defects found in live traces, all fixed**
 
@@ -416,7 +417,7 @@ in the working tree.
 
 - **`.env`** — `SARVAM_DEADLINE_SECONDS=45`, `SARVAM_TIMEOUT_SECONDS=120`,
   `LLM_HISTORY_TURNS=10`.
-- **`SETUP_AND_USAGE.md`** — agent_mode enum table, new knobs, grep recipes.
+- **Development guide** — current logging knobs and trace recipes are in `docs/DEVELOPMENT.md`.
 
 ### Verification (whole session)
 

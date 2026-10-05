@@ -605,7 +605,7 @@ def search_company_knowledge(query, max_projects=20):
     # retrieval pool for property-shaped queries, where it used to win on its
     # fixed score and get pasted verbatim; only surface it when the query is
     # actually about the company / how to reach it. See
-    # docs/BYTECODE_FALLBACK_USAGE.md.
+    # docs/runtime/COMPILED_RUNTIME.md.
     wants_contact_info = bool(query_words.intersection(_COMPANY_CONTACT_TERMS))
     looks_like_property_query = bool(query_words.intersection(_PROPERTY_INTENT_TERMS))
     suppress_company_chunk = is_project_count_query or (

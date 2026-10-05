@@ -4,8 +4,8 @@
 
 This is an AcroBuild real estate customer support application: a FastAPI backend,
 React/Vite frontend, SQLite workspace, live property CS API, and Sarvam chat LLM.
-Read [AI_CONTEXT.md](docs/AI_CONTEXT.md) first for the current architecture and
-task-specific file map, then [CHAT_FLOW.md](docs/CHAT_FLOW.md) for chat routing.
+Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) first for the current architecture
+and task-specific file map, then [CHAT_FLOW.md](docs/CHAT_FLOW.md) for chat routing.
 The code is authoritative when older documents disagree.
 
 ## Quick start
@@ -70,7 +70,7 @@ The code is authoritative when older documents disagree.
   repeated API failures, and intent preservation. Cover both assist endpoints
   when changing routing. Run `scripts/live_disambiguation_check.py` for live
   acceptance (real LLM/API, no mocks); transcripts are written to
-  `docs/live_disambiguation_results.json`.
+  `docs/evidence/live/disambiguation.json`.
 
 ## Discovery slot memory (Inquiry to Sales §28)
 
