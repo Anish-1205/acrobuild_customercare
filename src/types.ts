@@ -442,7 +442,17 @@ export interface SupportAssistResponse {
   reply_script?: "latin" | "native";
   retrieval_mode?: "empty" | "lexical" | "semantic";
   source_label: string;
-  source_status: "live" | "fallback" | "workspace";
+  source_status:
+    | "live"
+    | "live_api"
+    | "snapshot"
+    | "failed"
+    | "unverified"
+    | "unavailable"
+    | "workspace"
+    | "fallback"
+    | "conversation"
+    | "clarification";
   support_base_url: string;
   sync_error?: string;
   used_llm?: boolean;
