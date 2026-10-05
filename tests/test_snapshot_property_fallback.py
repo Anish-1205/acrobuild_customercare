@@ -81,10 +81,21 @@ def test_missing_snapshot_endpoint_does_not_claim_missing_amenities():
 
 @_needs_snapshot_file
 def test_cs_api_failure_reads_september_snapshot(monkeypatch):
-    monkeypatch.setattr(company_service, "CS_API_COMPANY_ID", "16")
+    # The snapshot fallback only trusts a server whose base_url matches
+    # CS_API_BASE_URL (snapshots carry no origin metadata otherwise). A
+    # durable DB-stored CS API override (services/cs_api_settings_service.py)
+    # can win over that module constant for any other caller, so pin the
+    # resolved config directly rather than patching the constants it is
+    # merely a fallback default for.
+    monkeypatch.setattr(
+        company_service, "_cs_api_config",
+        lambda: {"base_url": company_service.CS_API_BASE_URL, "api_key": "test-key", "company_id": "16"},
+    )
     monkeypatch.setattr(company_service, "CS_API_LIVE_ONLY", False)
     monkeypatch.setattr(company_service, "CS_API_CACHE_TTL_SECONDS", 0)
     monkeypatch.setattr(company_service, "_request_json", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("offline")))
     projects = company_service.get_company_projects()
+    # The on-disk snapshot is a frozen historical dump (see module docstring);
+    # this asserts its own content, not the live catalogue's current size.
     assert len(projects) == 9
     assert any(project.get("projectName") == "Vishwajeet Paradise" for project in projects)

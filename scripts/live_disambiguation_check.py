@@ -552,9 +552,17 @@ if __name__ == "__main__" and "--discovery" in sys.argv[1:]:
     raise SystemExit(0 if _run_discovery_acceptance() else 1)
 
 scenarios = {
-    "precious": ["vishwajeet lo amenities em em vunnai?", "Vishwajeet Precious"],
-    "cost": ["What is the cost in Vishwajeet?", "Vishwajeet Precious"],
-    "location": ["Where is the project located?", "Vishwajeet Precious"],
+    # The live catalogue has split the former single "Vishwajeet Precious"
+    # project into two named variants, "Vishwajeet Precious(Pearl)" and
+    # "Vishwajeet Precious (Emerald)" (project ids 52 and 89). Per AGENTS.md's
+    # clarification contract, a full suffixed name takes precedence over its
+    # contained base name, so an answer of plain "Vishwajeet Precious" now
+    # correctly triggers a second clarification between the two variants
+    # instead of resolving straight through. These scenarios name the
+    # intended variant explicitly to exercise the direct-resolution path.
+    "precious": ["vishwajeet lo amenities em em vunnai?", "Vishwajeet Precious(Pearl)"],
+    "cost": ["What is the cost in Vishwajeet?", "Vishwajeet Precious(Pearl)"],
+    "location": ["Where is the project located?", "Vishwajeet Precious(Pearl)"],
     "wing": ["Show me wings in Vishwajeet Myspace", "Venus A", "1", "__first_flat__"],
 }
 results = {}
