@@ -24,6 +24,7 @@ import { requestSupportAssist } from "../lib/supportAssistTransport";
 import { loadWidgetConfig } from "../lib/widgetConfig";
 import { activeConversation, clearConversation, matchingPropertyFlow, matchingTranscript, replaceConversation, restoredTranscript, savePropertyFlow, saveTranscript } from "../lib/conversationSession";
 import { AcrobuildLogo } from "../components/AcrobuildLogo";
+import { Button, Card, Input } from "../components/ui";
 import type {
   CreateTicketResponse,
   PropertyInventoryUnit,
@@ -1173,6 +1174,7 @@ export function CustomerHomePage() {
   const [canSaveTranscript, setCanSaveTranscript] = useState(!initialConversationRef.current.restored);
   const chatEmailRef = useRef<HTMLInputElement | null>(null);
   const chatComposeRef = useRef<HTMLTextAreaElement | null>(null);
+  const siteVisitNameRef = useRef<HTMLInputElement | null>(null);
   const chatContactComposeRef = useRef<HTMLInputElement | null>(null);
   const chatCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const chatLauncherRef = useRef<HTMLButtonElement | null>(null);
@@ -2071,6 +2073,7 @@ export function CustomerHomePage() {
     }));
     setIsSiteVisitFormVisible(true);
     setIsFollowUpFormVisible(false);
+    window.setTimeout(() => siteVisitNameRef.current?.focus(), 0);
   }
 
   async function submitSiteVisitBooking() {
@@ -3565,7 +3568,7 @@ export function CustomerHomePage() {
                                       onClick={() => void openSiteVisitBooking()}
                                       type="button"
                                     >
-                                      <span className="store-chat-guided-label">Book a site visit</span>
+                                      <span className="store-chat-guided-label">Request a site visit</span>
                                       <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
                                     </button>
                                   </div>
@@ -3628,39 +3631,44 @@ export function CustomerHomePage() {
 
                     {isSiteVisitFormVisible ? (
                       <form
-                        className="store-chat-visit-card"
+                        className="store-chat-visit-card ab-card"
                         onSubmit={(event) => {
                           event.preventDefault();
                           void submitSiteVisitBooking();
                         }}
                       >
                         <div className="store-chat-visit-head">
-                          <span>Site visit</span>
-                          <strong>Book your preferred visit</strong>
+                          <span>Site visit request</span>
+                          <strong>Share your preferred visit details</strong>
+                          <p>We’ll create a request for the site team to review.</p>
                         </div>
-                        <label className="store-chat-visit-field">
+                        <label className="store-chat-visit-field" htmlFor="site-visit-name">
                           <span>Name *</span>
-                          <input
+                          <Input
                             autoComplete="name"
+                            id="site-visit-name"
                             onChange={(event) => setSiteVisitForm((current) => ({ ...current, customer_name: event.target.value }))}
                             required
+                            ref={siteVisitNameRef}
                             value={siteVisitForm.customer_name}
                           />
                         </label>
-                        <label className="store-chat-visit-field">
+                        <label className="store-chat-visit-field" htmlFor="site-visit-email">
                           <span>Email *</span>
-                          <input
+                          <Input
                             autoComplete="email"
+                            id="site-visit-email"
                             onChange={(event) => setSiteVisitForm((current) => ({ ...current, customer_email: event.target.value }))}
                             required
                             type="email"
                             value={siteVisitForm.customer_email}
                           />
                         </label>
-                        <label className="store-chat-visit-field">
+                        <label className="store-chat-visit-field" htmlFor="site-visit-phone">
                           <span>Phone *</span>
-                          <input
+                          <Input
                             autoComplete="tel"
+                            id="site-visit-phone"
                             inputMode="tel"
                             onChange={(event) => setSiteVisitForm((current) => ({ ...current, customer_phone: event.target.value }))}
                             required
@@ -3668,11 +3676,12 @@ export function CustomerHomePage() {
                             value={siteVisitForm.customer_phone}
                           />
                         </label>
-                        <label className="store-chat-visit-field">
+                        <label className="store-chat-visit-field" htmlFor="site-visit-project">
                           <span>Project *</span>
                           <select
                             onChange={(event) => setSiteVisitForm((current) => ({ ...current, project_name: event.target.value }))}
                             required
+                            id="site-visit-project"
                             value={siteVisitForm.project_name}
                           >
                             <option value="">Select a project</option>
@@ -3684,7 +3693,8 @@ export function CustomerHomePage() {
                         <div className="store-chat-visit-row">
                           <label>
                             <span>Preferred date *</span>
-                            <input
+                            <Input
+                              aria-label="Preferred date"
                               min={new Date().toISOString().slice(0, 10)}
                               onChange={(event) => setSiteVisitForm((current) => ({ ...current, preferred_date: event.target.value }))}
                               required
@@ -3694,7 +3704,8 @@ export function CustomerHomePage() {
                           </label>
                           <label>
                             <span>Preferred time *</span>
-                            <input
+                            <Input
+                              aria-label="Preferred time"
                               onChange={(event) => setSiteVisitForm((current) => ({ ...current, preferred_time: event.target.value }))}
                               required
                               type="time"
@@ -3702,26 +3713,28 @@ export function CustomerHomePage() {
                             />
                           </label>
                         </div>
-                        <label className="store-chat-visit-field">
+                        <label className="store-chat-visit-field" htmlFor="site-visit-notes">
                           <span>Notes</span>
                           <textarea
                             onChange={(event) => setSiteVisitForm((current) => ({ ...current, notes: event.target.value }))}
                             placeholder="Questions, accessibility needs, or preferred callback details"
+                            id="site-visit-notes"
                             rows={3}
                             value={siteVisitForm.notes}
                           />
                         </label>
-                        <button className="store-chat-visit-submit" disabled={isSubmittingSiteVisit} type="submit">
+                        <Button className="store-chat-visit-submit" disabled={isSubmittingSiteVisit} type="submit">
                           {isSubmittingSiteVisit ? "Submitting..." : "Request site visit"}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="secondary"
                           className="store-chat-help-button"
                           onClick={() => setIsSiteVisitFormVisible(false)}
                           type="button"
                         >
                           Cancel
-                        </button>
-                        <small>Required fields help the site team confirm the correct project and visit slot.</small>
+                        </Button>
+                        <small>Required fields help the site team review your request for the right project and preferred time.</small>
                       </form>
                     ) : null}
                     {isTypingReply ? (
@@ -3733,7 +3746,7 @@ export function CustomerHomePage() {
                     ) : null}
 
                     {isFollowUpFormVisible ? (
-                      <section className="store-chat-follow-up-card">
+                      <Card className="store-chat-follow-up-card">
                         <div className="store-chat-follow-up-head">
                           <strong>Tell us what still needs help</strong>
                           <span>
@@ -3742,9 +3755,10 @@ export function CustomerHomePage() {
                           </span>
                         </div>
 
-                        <label className="store-chat-email-row">
+                          <label className="store-chat-email-row" htmlFor="support-follow-up-email">
                           <span>Email for follow-up</span>
-                          <input
+                            <Input
+                            id="support-follow-up-email"
                             className="store-chat-email-input"
                             onChange={(event) => setChatEmail(event.target.value)}
                             placeholder="you@example.com"
@@ -3753,10 +3767,11 @@ export function CustomerHomePage() {
                           />
                         </label>
 
-                        <label className="store-chat-email-row">
+                          <label className="store-chat-email-row" htmlFor="support-follow-up-message">
                           <span>What do you still need help with?</span>
                           <textarea
                             className="store-chat-compose-input"
+                            id="support-follow-up-message"
                             onChange={(event) => setChatDraft(event.target.value)}
                             placeholder="Add the customer's remaining question here..."
                             ref={chatComposeRef}
@@ -3766,7 +3781,8 @@ export function CustomerHomePage() {
                         </label>
 
                         <div className="store-chat-follow-up-actions">
-                          <button
+                          <Button
+                            variant="secondary"
                             className="store-chat-help-button"
                             onClick={() => {
                               setIsFollowUpFormVisible(false);
@@ -3777,17 +3793,17 @@ export function CustomerHomePage() {
                             type="button"
                           >
                             Cancel
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             className="store-chat-help-button dark"
                             disabled={isCreatingTicket}
                             onClick={() => void createTicketForIssue(activeFollowUpIssue, chatDraft)}
                             type="button"
                           >
                             {isCreatingTicket ? "Creating..." : "Submit ticket"}
-                          </button>
+                          </Button>
                         </div>
-                      </section>
+                      </Card>
                     ) : null}
                   </div>
               )}
