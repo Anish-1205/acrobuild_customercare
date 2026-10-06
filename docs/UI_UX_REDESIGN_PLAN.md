@@ -127,7 +127,7 @@ unrelated phase. Full evidence is in audit sections 8, 13–15, and 20–24.
 
 ## Remaining roadmap
 
-### [ ] Phase 3 — Staff application shell
+### [x] Phase 3 — Staff application shell
 
 **Goal:** Establish the reusable authenticated layout before migrating staff
 surface content.

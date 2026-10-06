@@ -30,6 +30,37 @@ type RoleExperience = {
   workspacePath: string;
 };
 
+export type StaffNavigationItem = {
+  activePanels: WorkspacePanelId[];
+  label: string;
+  panel: WorkspacePanelId;
+  roles: RoleId[];
+  section: "workspace" | "manage" | "system";
+  shortLabel: string;
+};
+
+const staffNavigationItems: StaffNavigationItem[] = [
+  {
+    panel: "ai-agent",
+    activePanels: ["ai-agent", "chat-widget", "knowledge-base", "products", "rules", "shopping-assistant", "support-actions"],
+    label: "Teach AI",
+    shortLabel: "AI",
+    section: "workspace",
+    roles: ["admin", "owner"]
+  },
+  { panel: "inbox", activePanels: ["inbox"], label: "Inbox", shortLabel: "IN", section: "workspace", roles: ["admin", "owner", "agent"] },
+  { panel: "analytics", activePanels: ["analytics"], label: "Analytics", shortLabel: "AN", section: "workspace", roles: ["admin", "owner"] },
+  { panel: "ticket-dashboard", activePanels: ["ticket-dashboard"], label: "Dashboard", shortLabel: "DB", section: "workspace", roles: ["admin", "owner"] },
+  { panel: "articles", activePanels: ["articles"], label: "Articles", shortLabel: "AR", section: "manage", roles: ["admin", "owner"] },
+  { panel: "business-hours", activePanels: ["business-hours"], label: "Open Hours", shortLabel: "OH", section: "manage", roles: ["admin", "owner"] },
+  { panel: "macros", activePanels: ["macros"], label: "Saved Replies", shortLabel: "SR", section: "manage", roles: ["admin", "owner"] },
+  { panel: "manage-tags", activePanels: ["manage-tags"], label: "Manage Tags", shortLabel: "MT", section: "manage", roles: ["admin", "owner"] },
+  { panel: "users", activePanels: ["users"], label: "Users", shortLabel: "US", section: "manage", roles: ["admin", "owner"] },
+  { panel: "api-activity", activePanels: ["api-activity"], label: "API activity", shortLabel: "AP", section: "system", roles: ["admin"] },
+  { panel: "data-api-logs", activePanels: ["data-api-logs"], label: "Data APIs", shortLabel: "DA", section: "system", roles: ["admin"] },
+  { panel: "cs-api-settings", activePanels: ["cs-api-settings"], label: "CS API settings", shortLabel: "CS", section: "system", roles: ["admin"] }
+];
+
 const allWorkspacePanels = new Set<WorkspacePanelId>([
   "api-activity",
   "data-api-logs",
@@ -109,6 +140,10 @@ export function getRoleHomePath(role: RoleId) {
 
 export function canRoleAccessPanel(role: RoleId, panel: WorkspacePanelId) {
   return rolePanelAccessMap[role].has(panel);
+}
+
+export function getStaffNavigationItems(role: RoleId) {
+  return staffNavigationItems.filter((item) => item.roles.includes(role));
 }
 
 export function getRolePanelPath(role: RoleId, panel: WorkspacePanelId = "inbox") {
