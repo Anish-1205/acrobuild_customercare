@@ -375,17 +375,83 @@ export interface SupportConversationMessage {
   text: string;
 }
 
+export type SupportQuickReplyAction = "browse_projects" | "site_visit" | "ticket";
+
+export interface SupportQuickReply {
+  action?: SupportQuickReplyAction;
+  label: string;
+  project_name?: string;
+  value: string;
+}
+
 export interface SupportAssistChunkMatch {
-  category: string;
-  chunk_id: string;
-  excerpt: string;
-  record_id: number | string;
-  record_kind: "article" | "knowledge" | string;
-  score: number;
-  source_name: string;
-  source_type: string;
+  [key: string]: unknown;
+  amenities_matched?: string[];
+  body_text?: string;
+  category?: string;
+  chunk_id?: number | string;
+  excerpt?: string;
+  locality?: string;
+  project?: PropertyProject;
+  project_name?: string;
+  project_names?: string[];
+  projects?: PropertyProject[];
+  record_id?: number | string;
+  record_kind: "article" | "company_api" | "knowledge" | string;
+  score?: number;
+  source_key?: string;
+  source_name?: string;
+  source_type?: string;
   title: string;
-  url: string;
+  typologies?: Record<string, unknown>[];
+  url?: string;
+}
+
+export type SupportAgentMode =
+  | "conversation_haystack"
+  | "fallback"
+  | "grounded"
+  | "knowledge_retrieval"
+  | "live_data_error"
+  | "live_llm_error"
+  | "live_remote_llm"
+  | "local_llm"
+  | "relevance_clarification"
+  | "remote_llm"
+  | "retrieval";
+
+export type SupportRetrievalMode =
+  | "empty"
+  | "knowledge_base"
+  | "lexical"
+  | "live_api_error"
+  | "live_project_records"
+  | "none"
+  | "semantic"
+  | "unsupported_capability";
+
+export type SupportClarificationEntity = "flat" | "floor" | "home_type" | "locality" | "project" | "wing";
+
+export interface SupportPendingProjectLookup {
+  [key: string]: unknown;
+  entity?: SupportClarificationEntity;
+  kind: string;
+  options?: string[];
+  original_issue?: string;
+  purpose?: string;
+  retry_count?: number;
+  scope?: Record<string, string>;
+  selector?: string;
+  source?: string;
+}
+
+export interface SupportDiscoverySlots {
+  awaiting?: "budget" | "locality" | null;
+  budget_label?: string;
+  budget_max_inr?: number | null;
+  config?: string[];
+  locality?: string;
+  origin_issue?: string;
 }
 
 export interface DataApiCallTrace {
@@ -424,28 +490,41 @@ export interface RagEvaluation {
 
 export interface SupportAssistResponse {
   data_api_calls?: DataApiCallTrace[];
-  agent_mode?: "fallback" | "qwen" | "retrieval";
+  agent_mode?: SupportAgentMode;
+  amenity_search?: boolean;
   answer: string;
-  articles: SupportArticleMatch[];
+  articles?: SupportArticleMatch[];
   assist_error?: string;
+  catalogue_home_type_search?: boolean;
+  clarification_entity?: SupportClarificationEntity | null;
   confidence_label?: "high" | "low" | "medium";
+  discovery_kind?: string;
+  discovery_prompt?: "budget";
+  discovery_slots?: SupportDiscoverySlots;
   handoff_recommended?: boolean;
-  knowledge_documents: KnowledgeDocumentMatch[];
+  knowledge_documents?: KnowledgeDocumentMatch[];
   last_synced_at?: string | null;
   matched_chunks?: SupportAssistChunkMatch[];
   model?: string;
   offer_action_menu?: boolean;
+  options?: string[];
+  pending_call_booking?: boolean;
+  pending_human_contact?: boolean;
+  pending_project_lookup?: SupportPendingProjectLookup | string;
   phone_rejection_reason?: string;
-  quick_replies?: { label: string; value: string; action?: "ticket" | "site_visit" | "call"; project_name?: string }[];
+  quick_replies?: SupportQuickReply[];
   rag_evaluation?: RagEvaluation;
   reply_language?: string;
   reply_script?: "latin" | "native";
-  retrieval_mode?: "empty" | "lexical" | "semantic";
-  source_label: string;
-  source_status:
+  retrieval_mode?: SupportRetrievalMode;
+  route?: "call_booking" | "general" | "human_contact" | "property";
+  skipped?: unknown[];
+  source_label?: string;
+  source_status?:
     | "live"
     | "live_api"
     | "snapshot"
+    | "error"
     | "failed"
     | "unverified"
     | "unavailable"
@@ -453,7 +532,7 @@ export interface SupportAssistResponse {
     | "fallback"
     | "conversation"
     | "clarification";
-  support_base_url: string;
+  support_base_url?: string;
   sync_error?: string;
   used_llm?: boolean;
 }

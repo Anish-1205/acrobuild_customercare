@@ -1209,7 +1209,7 @@ export function KnowledgeBasePage({ embedded = false }: KnowledgeBasePageProps) 
                 </div>
 
                 <div className="knowledge-item-grid">
-                  {assistResponse.knowledge_documents.map((document) => (
+                  {(assistResponse.knowledge_documents ?? []).map((document) => (
                     <article className="knowledge-item-card" key={document.id}>
                       <div className="knowledge-item-head">
                         <div className="knowledge-item-title-block">
@@ -1223,7 +1223,7 @@ export function KnowledgeBasePage({ embedded = false }: KnowledgeBasePageProps) 
                     </article>
                   ))}
 
-                  {assistResponse.articles.map((article) => (
+                  {(assistResponse.articles ?? []).map((article) => (
                     <article className="knowledge-item-card" key={`${article.id}-${article.title}`}>
                       <div className="knowledge-item-head">
                         <div className="knowledge-item-title-block">
@@ -1237,7 +1237,7 @@ export function KnowledgeBasePage({ embedded = false }: KnowledgeBasePageProps) 
                     </article>
                   ))}
 
-                  {!assistResponse.knowledge_documents.length && !assistResponse.articles.length ? (
+                  {!assistResponse.knowledge_documents?.length && !assistResponse.articles?.length ? (
                     <div className="empty-card knowledge-empty-state">
                       <strong>No ready item matched this answer.</strong>
                       <span>Try adding a better team rule, customer answer, file, or link for this question.</span>
@@ -2092,7 +2092,7 @@ export function KnowledgeBasePage({ embedded = false }: KnowledgeBasePageProps) 
                 </div>
 
                 <div className="workspace-directory-grid">
-                  {assistResponse.knowledge_documents.map((document) => (
+                  {(assistResponse.knowledge_documents ?? []).map((document) => (
                     <article className="workspace-record-card article-record-card" key={document.id}>
                       <div className="workspace-record-icon">G</div>
                       <div className="workspace-record-main">
@@ -2106,7 +2106,7 @@ export function KnowledgeBasePage({ embedded = false }: KnowledgeBasePageProps) 
                     </article>
                   ))}
 
-                  {assistResponse.articles.map((article) => (
+                  {(assistResponse.articles ?? []).map((article) => (
                     <article className="workspace-record-card article-record-card" key={`${article.id}-${article.title}`}>
                       <div className="workspace-record-icon">A</div>
                       <div className="workspace-record-main">
@@ -2120,7 +2120,7 @@ export function KnowledgeBasePage({ embedded = false }: KnowledgeBasePageProps) 
                     </article>
                   ))}
 
-                  {!assistResponse.knowledge_documents.length && !assistResponse.articles.length ? (
+                  {!assistResponse.knowledge_documents?.length && !assistResponse.articles?.length ? (
                     <div className="empty-card">The AI answered, but it did not use any ready item.</div>
                   ) : null}
                 </div>

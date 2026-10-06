@@ -101,4 +101,41 @@ describe("active support conversation", () => {
     replaceConversation();
     expect(matchingPropertyFlow(id, [], visible)).toBeNull();
   });
+
+  it("preserves the fields required to restore the latest completed server turn", () => {
+    const { id } = activeConversation();
+    const visible = [
+      { id: 10, sender: "customer" as const, text: "Wakad", backendText: "Wakad", serverTurn: true },
+      {
+        contextIssue: "Show me 3 BHK",
+        id: 11,
+        isComplete: true,
+        offerActionMenu: true,
+        quickReplies: [{ action: "site_visit" as const, label: "Book", project_name: "Acro Iris", value: "Book a site visit" }],
+        sender: "bot" as const,
+        serverTurn: true,
+        text: "Acro Iris is available in Wakad."
+      }
+    ];
+    const history = [
+      { sender: "customer" as const, text: "Wakad" },
+      { sender: "bot" as const, text: "Acro Iris is available in Wakad." }
+    ];
+
+    saveTranscript(id, visible);
+    expect(restoredTranscript(id, history, [])).toEqual(visible.map((message) => ({
+      backendText: "backendText" in message ? message.backendText : undefined,
+      contextIssue: "contextIssue" in message ? message.contextIssue : undefined,
+      id: message.id,
+      isComplete: "isComplete" in message ? message.isComplete : undefined,
+      offerActionMenu: "offerActionMenu" in message ? message.offerActionMenu : undefined,
+      quickReplies: "quickReplies" in message ? message.quickReplies : undefined,
+      sender: message.sender,
+      serverTurn: message.serverTurn,
+      text: message.text
+    })));
+
+    replaceConversation();
+    expect(matchingTranscript(id, history)).toBeNull();
+  });
 });

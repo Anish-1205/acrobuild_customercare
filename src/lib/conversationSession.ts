@@ -1,4 +1,4 @@
-import type { SupportConversationMessage } from "../types";
+import type { SupportConversationMessage, SupportQuickReply } from "../types";
 
 const ACTIVE_ID_KEY = "acrobuild.support.activeConversationId.v1";
 const TRANSCRIPT_KEY = "acrobuild.support.transcript.v1";
@@ -11,7 +11,7 @@ export type RestorableMessage = {
   id: number;
   isComplete?: boolean;
   offerActionMenu?: boolean;
-  quickReplies?: { label: string; value: string; action?: "ticket" | "site_visit" | "call" | "browse_projects"; project_name?: string }[];
+  quickReplies?: SupportQuickReply[];
   sender: "bot" | "customer";
   serverTurn?: boolean;
   text: string;

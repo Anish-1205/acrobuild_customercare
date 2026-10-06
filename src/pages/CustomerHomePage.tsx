@@ -10,12 +10,16 @@ import {
   getPropertyProjects,
   getPropertyTypologies,
   getPropertyWings,
-  getConversationHistory,
-  getSupportAssist,
-  streamSupportAssist
+  getConversationHistory
 } from "../lib/api";
 import { knowledgeArticles, type KnowledgeArticle } from "../lib/articleAssist";
+import {
+  getQuickReplyDispatch,
+  resolveProjectSelection,
+  visibleMessageText
+} from "../lib/customerChatContract";
 import { getRoleHomePath } from "../lib/roleNavigation";
+import { requestSupportAssist } from "../lib/supportAssistTransport";
 import { loadWidgetConfig } from "../lib/widgetConfig";
 import { activeConversation, clearConversation, matchingPropertyFlow, matchingTranscript, replaceConversation, restoredTranscript, savePropertyFlow, saveTranscript } from "../lib/conversationSession";
 import { AcrobuildLogo } from "../components/AcrobuildLogo";
@@ -27,6 +31,7 @@ import type {
   PropertyWing,
   SupportAssistResponse,
   SupportConversationMessage,
+  SupportQuickReply,
   SupportArticleRecord,
   Ticket
 } from "../types";
@@ -95,7 +100,7 @@ type ChatMessage = {
   isAutomated?: boolean;
   isComplete?: boolean;
   offerActionMenu?: boolean;
-  quickReplies?: { label: string; value: string; action?: "ticket" | "site_visit" | "call" | "browse_projects"; project_name?: string }[];
+  quickReplies?: SupportQuickReply[];
   relatedArticles: KnowledgeArticle[];
   sender: "bot" | "customer";
   serverTurn?: boolean;
@@ -1071,38 +1076,6 @@ function prepareConversationalSpeech(value: string) {
     .join(" ")
     .trim();
 }
-function getNumberedProjectSelection(messages: ChatMessage[], value: string) {
-  const selectionMatch = value.trim().match(/^(?:project\s*)?(?:number\s*)?(\d{1,2})[).:-]?$/i);
-  if (!selectionMatch) return "";
-
-  const latestBotMessage = [...messages].reverse().find(
-    (message) => message.sender === "bot" && message.isComplete
-  );
-  if (!latestBotMessage) return "";
-
-  const numberedProjects = [...latestBotMessage.text.matchAll(/^\s*(\d+)[).]\s*([^\n]+)$/gm)];
-  const selectedNumber = Number(selectionMatch[1]);
-  return numberedProjects.find((match) => Number(match[1]) === selectedNumber)?.[2]?.trim() ?? "";
-}
-// The answer's bullet list is the plain-text fallback for API clients; when the
-// same options are shown as quick-reply buttons, show and speak only the prompt.
-function visibleMessageText(message: ChatMessage) {
-  return message.quickReplies?.length && message.quickReplies.every((option) => !option.action)
-    ? message.text.split(/\n\s*[-•*]\s/)[0].trim() : message.text;
-}
-function getNamedProjectSelection(messages: ChatMessage[], value: string) {
-  const normalizedValue = value.trim().toLowerCase();
-  if (!normalizedValue) return "";
-  const recentBotMessages = [...messages].reverse().filter(
-    (message) => message.sender === "bot" && message.isComplete
-  ).slice(0, 3);
-  for (const message of recentBotMessages) {
-    const numberedProjects = [...message.text.matchAll(/^\s*\d+[).]\s*([^\n]+)$/gm)];
-    const match = numberedProjects.find((project) => project[1].trim().toLowerCase() === normalizedValue);
-    if (match) return match[1].trim();
-  }
-  return "";
-}
 function isSiteVisitBookingRequest(value: string) {
   const normalizedValue = value.trim().toLowerCase();
   return normalizedValue.includes("visit") && ["book", "schedule", "arrange", "request"]
@@ -1642,7 +1615,6 @@ export function CustomerHomePage() {
     // language itself. Only an explicitly selected voice language is passed on.
     const assistIssue = trimmedIssue;
     const languageHint = isVoiceConversation && voiceLanguage !== "en-IN" ? VOICE_LANGUAGES[voiceLanguage] : "";
-    let streamedAnswer = "";
 
     try {
       if (!widgetConfig.aiResponsesEnabled) {
@@ -1670,7 +1642,7 @@ export function CustomerHomePage() {
         return;
       }
 
-      await streamSupportAssist({
+      await requestSupportAssist({
         article_hint_url: isVoiceConversation ? "" : (primaryArticle?.url ?? ""),
         conversation_id: conversationIdRef.current,
         conversation_messages: conversationMessages,
@@ -1683,7 +1655,6 @@ export function CustomerHomePage() {
         prefer_qwen_response: true
       }, {
         onDelta: (text) => {
-          streamedAnswer += text;
           setIsTypingReply(false);
           setChatMessages((current) =>
             appendBotMessageDelta(current, botMessageId, trimmedIssue, text)
@@ -1705,70 +1676,38 @@ export function CustomerHomePage() {
               text: assistResponse.answer
             })
           );
+        },
+        onPartial: (answer) => {
+          setIsTypingReply(false);
+          setChatMessages((current) =>
+            finalizeBotMessage(current, botMessageId, trimmedIssue, {
+              feedbackState: undefined,
+              isAutomated: true,
+              relatedArticles: [],
+              showHelpfulPrompt: false,
+              text: answer
+            })
+          );
         }
       });
     } catch {
-      if (streamedAnswer.trim()) {
-        setIsTypingReply(false);
-        setChatMessages((current) =>
-          finalizeBotMessage(current, botMessageId, trimmedIssue, {
-            feedbackState: undefined,
-            isAutomated: true,
-            relatedArticles: [],
-            showHelpfulPrompt: false,
-            text: streamedAnswer.trim()
-          })
-        );
-        return;
-      }
+      const demoResponse = buildDemoBotResponse(
+        trimmedIssue,
+        chatEmail,
+        primaryArticleId,
+        publishedSupportArticles
+      );
 
-      try {
-        const assistResponse = await getSupportAssist({
-          article_hint_url: isVoiceConversation ? "" : (primaryArticle?.url ?? ""),
-          conversation_id: conversationIdRef.current,
-          conversation_messages: conversationMessages,
-          customer_email: chatEmail.trim(),
-          issue: assistIssue,
-          issue_type: inferIssueType(trimmedCustomerMessage || trimmedIssue),
-          language_hint: languageHint,
-          limit: isVoiceConversation ? 6 : 2,
-          prefer_fast_response: !isVoiceConversation,
-          prefer_qwen_response: true
-        });
-
-        setIsTypingReply(false);
-        applyReplyLanguage(assistResponse);
-        setChatMessages((current) =>
-          finalizeBotMessage(current, botMessageId, trimmedIssue, {
-            feedbackState: undefined,
-            isAutomated: true,
-            offerActionMenu: assistResponse.offer_action_menu ?? false,
-            quickReplies: assistResponse.quick_replies ?? [],
-            relatedArticles: [],
-            serverTurn: true,
-            showHelpfulPrompt: false,
-            text: assistResponse.answer
-          })
-        );
-      } catch {
-        const demoResponse = buildDemoBotResponse(
-          trimmedIssue,
-          chatEmail,
-          primaryArticleId,
-          publishedSupportArticles
-        );
-
-        setIsTypingReply(false);
-        setChatMessages((current) =>
-          finalizeBotMessage(current, botMessageId, trimmedIssue, {
-            feedbackState: undefined,
-            isAutomated: true,
-            relatedArticles: [],
-            showHelpfulPrompt: false,
-            text: demoResponse.text
-          })
-        );
-      }
+      setIsTypingReply(false);
+      setChatMessages((current) =>
+        finalizeBotMessage(current, botMessageId, trimmedIssue, {
+          feedbackState: undefined,
+          isAutomated: true,
+          relatedArticles: [],
+          showHelpfulPrompt: false,
+          text: demoResponse.text
+        })
+      );
     } finally {
       setIsTypingReply(false);
     }
@@ -3461,17 +3400,18 @@ export function CustomerHomePage() {
                                         disabled={isTypingReply || isRestoringChat}
                                         key={option.value}
                                         onClick={() => {
-                                          if (option.action === "ticket") {
-                                            openFollowUpForm(message.contextIssue || message.text);
-                                          } else if (option.action === "site_visit") {
-                                            void openSiteVisitBooking(option.project_name ?? "");
-                                          } else if (option.action === "browse_projects") {
-                                            // Fresh catalogue browse: starts a new
-                                            // conversation so no stale project scope
-                                            // carries over, same as the guided-flow menu.
-                                            void queueBotResponse(option.value, undefined, true, option.label);
+                                          const dispatch = getQuickReplyDispatch(option, message);
+                                          if (dispatch.kind === "ticket") {
+                                            openFollowUpForm(dispatch.issue);
+                                          } else if (dispatch.kind === "site_visit") {
+                                            void openSiteVisitBooking(dispatch.projectName);
                                           } else {
-                                            void queueBotResponse(option.value, undefined, false);
+                                            void queueBotResponse(
+                                              dispatch.issue,
+                                              undefined,
+                                              dispatch.resetConversation,
+                                              dispatch.customerMessageText
+                                            );
                                           }
                                         }}
                                         type="button"
@@ -3866,20 +3806,11 @@ export function CustomerHomePage() {
                     return;
                   }
 
-                  const hasServerChoices = [...chatMessages].reverse().find((message) => message.sender === "bot")?.quickReplies?.length;
-                  const namedProject = hasServerChoices ? null : getNamedProjectSelection(chatMessages, chatDraft);
-                  if (namedProject) {
+                  const selectedProject = resolveProjectSelection(chatMessages, chatDraft);
+                  if (selectedProject) {
                     const customerSelection = chatDraft.trim();
                     setChatDraft("");
-                    void selectNumberedProject(namedProject, customerSelection);
-                    return;
-                  }
-
-                  const numberedProject = hasServerChoices ? null : getNumberedProjectSelection(chatMessages, chatDraft);
-                  if (numberedProject) {
-                    const customerSelection = chatDraft.trim();
-                    setChatDraft("");
-                    void selectNumberedProject(numberedProject, customerSelection);
+                    void selectNumberedProject(selectedProject, customerSelection);
                     return;
                   }
 

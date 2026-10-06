@@ -739,7 +739,7 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
                       <span>
                         <strong>Knowledge documents used</strong>
                         <small>
-                          {assistResponse.knowledge_documents.length
+                          {assistResponse.knowledge_documents?.length
                             ? assistResponse.knowledge_documents.map((document) => document.title).join(", ")
                             : "No published training documents were matched for this question."}
                         </small>
@@ -749,7 +749,7 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
                       <span>
                         <strong>Published articles linked</strong>
                         <small>
-                          {assistResponse.articles.length
+                          {assistResponse.articles?.length
                             ? assistResponse.articles.map((article) => article.title).join(", ")
                             : "No article links were suggested for this question."}
                         </small>

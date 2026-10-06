@@ -16,6 +16,7 @@ import type {
   SupportArticleRecord,
   SupportWorkspaceUser,
   SupportAssistResponse,
+  SupportQuickReply,
   Ticket,
   TicketDetailResponse,
   TicketTag,
@@ -452,14 +453,14 @@ export function createSupportTicket(payload: {
 export type ConversationHistory = {
   exists: boolean;
   messages: SupportConversationMessage[];
-  quick_replies: { label: string; value: string; action?: "ticket" | "site_visit" | "call" | "browse_projects"; project_name?: string }[];
+  quick_replies: SupportQuickReply[];
 };
 
 export function getConversationHistory(conversationId: string): Promise<ConversationHistory> {
   return apiRequest<ConversationHistory>(`/api/support/conversations/${encodeURIComponent(conversationId)}/history`);
 }
 
-export async function getSupportAssist(payload: {
+export type SupportAssistRequest = {
   article_hint_url?: string;
   business_hours_tag?: string;
   conversation_id?: string;
@@ -472,7 +473,9 @@ export async function getSupportAssist(payload: {
   limit?: number;
   prefer_fast_response?: boolean;
   prefer_qwen_response?: boolean;
-}) {
+};
+
+export async function getSupportAssist(payload: SupportAssistRequest) {
   const request = {
     article_hint_url: payload.article_hint_url ?? "",
     business_hours_tag: payload.business_hours_tag ?? "",
@@ -503,20 +506,7 @@ export async function getSupportAssist(payload: {
 }
 
 export async function streamSupportAssist(
-  payload: {
-    article_hint_url?: string;
-    business_hours_tag?: string;
-    conversation_id?: string;
-    conversation_messages?: SupportConversationMessage[];
-    customer_email?: string;
-    customer_name?: string;
-    issue: string;
-    issue_type?: string;
-    language_hint?: string;
-    limit?: number;
-    prefer_fast_response?: boolean;
-    prefer_qwen_response?: boolean;
-  },
+  payload: SupportAssistRequest,
   handlers: {
     onDelta?: (text: string) => void;
     onDone: (response: SupportAssistResponse) => void;
