@@ -122,6 +122,20 @@ export function ChevronLeftIcon() {
   );
 }
 
+export function CloseIcon() {
+  return (
+    <svg aria-hidden="true" className="store-chat-symbol-icon" viewBox="0 0 24 24">
+      <path
+        d="m6.75 6.75 10.5 10.5m0-10.5-10.5 10.5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
 export function ChevronRightIcon() {
   return (
     <svg aria-hidden="true" className="store-chat-symbol-icon" viewBox="0 0 24 24">

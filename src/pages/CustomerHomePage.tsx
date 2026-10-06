@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import "./CustomerChat.css";
 import { useRole } from "../contexts/RoleContext";
 import {
   createSiteVisit,
@@ -122,7 +123,7 @@ function createDefaultChatMessages(): ChatMessage[] {
   }];
 }
 
-import { MessageLauncherIcon, PaperPlaneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
+import { MessageLauncherIcon, PaperPlaneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, CloseIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
 import { type BrowserSpeechRecognition, type SpeechRecognitionConstructor, VOICE_LANGUAGES, type VoiceLanguageCode, detectSpeechLanguage } from "../lib/voiceLanguage";
 import { FLOW_TEXT, type ChatLanguage, chatLanguageFromReply, detectChatLanguage } from "../lib/chatLanguage";
 
@@ -1149,6 +1150,9 @@ export function CustomerHomePage() {
   const chatEmailRef = useRef<HTMLInputElement | null>(null);
   const chatComposeRef = useRef<HTMLTextAreaElement | null>(null);
   const chatContactComposeRef = useRef<HTMLInputElement | null>(null);
+  const chatCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const chatLauncherRef = useRef<HTMLButtonElement | null>(null);
+  const previousChatOpenRef = useRef(isChatOpen);
   const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const lastSpokenMessageIdRef = useRef<number | null>(null);
   const voiceSessionActiveRef = useRef(false);
@@ -1160,6 +1164,16 @@ export function CustomerHomePage() {
   const submittedVoiceTranscriptRef = useRef("");
   const voiceMutedRef = useRef(false);
   const voiceLanguageRef = useRef<VoiceLanguageCode>("en-IN");
+
+  useEffect(() => {
+    if (previousChatOpenRef.current === isChatOpen) return;
+    previousChatOpenRef.current = isChatOpen;
+    const frame = window.requestAnimationFrame(() => {
+      if (isChatOpen) chatCloseButtonRef.current?.focus();
+      else chatLauncherRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isChatOpen]);
 
   useEffect(() => {
     if (!initialConversationRef.current?.restored) return;
@@ -2426,6 +2440,12 @@ export function CustomerHomePage() {
     widgetConfig.introMessage.trim() ||
     "Welcome! Please enter your email and send us a message to connect with our team.";
   const widgetLogoUrl = widgetConfig.logoUrl.trim();
+  const chatAccentColor = widgetConfig.accentColor.trim().toLowerCase() === "#1f2937"
+    ? "#0055ff"
+    : widgetConfig.accentColor;
+  const chatFontFamily = widgetConfig.fontFamily.includes("Inter")
+    ? "var(--font-family-product)"
+    : widgetConfig.fontFamily;
   const conversationDateLabel = useMemo(
     () =>
       new Intl.DateTimeFormat("en-US", {
@@ -3264,20 +3284,25 @@ export function CustomerHomePage() {
       <div className="store-chat-layer" id="help">
         {isChatOpen ? (
           <section
+            aria-labelledby="store-chat-title"
             className="store-chat-panel"
+            id="store-chat-panel"
+            role="dialog"
             style={{
-              fontFamily: widgetConfig.fontFamily,
+              fontFamily: chatFontFamily,
               width: `min(${widgetConfig.widgetWidth}px, calc(100vw - 1rem))`
             }}
           >
             <header className="store-chat-header">
               <div className="store-chat-header-top">
-                <button aria-label="Close chat" className="store-chat-back-button" onClick={() => setIsChatOpen(false)} type="button">
-                  <ChevronLeftIcon />
+                <button aria-label="Close chat" className="store-chat-back-button" onClick={() => setIsChatOpen(false)} ref={chatCloseButtonRef} type="button">
+                  <CloseIcon />
                 </button>
-                <span className="store-chat-header-avatar">{assistantInitial}</span>
+                <span aria-hidden="true" className="store-chat-header-avatar">
+                  <img alt="" src="/Acrobuild_logo.png?v=20260730-2" />
+                </span>
                 <div className="store-chat-brand-lockup">
-                  <strong>Acrobuild Assistant</strong>
+                  <strong id="store-chat-title">Acrobuild Assistant</strong>
                   <span>Property support</span>
                 </div>
                 <span aria-label="Online" className="store-chat-online" title="Online"><i /></span>
@@ -3375,8 +3400,8 @@ export function CustomerHomePage() {
                               style={
                                 isCustomerMessage
                                   ? {
-                                      backgroundColor: widgetConfig.accentColor,
-                                      borderColor: widgetConfig.accentColor
+                                      backgroundColor: chatAccentColor,
+                                      borderColor: chatAccentColor
                                     }
                                   : undefined
                               }
@@ -3396,7 +3421,7 @@ export function CustomerHomePage() {
                                   <div className="store-chat-guided-grid project-grid store-chat-quick-replies">
                                     {message.quickReplies.map((option) => (
                                       <button
-                                        className="store-chat-guided-button"
+                                        className={`store-chat-guided-button${option.action ? ` store-chat-action-${option.action}` : ""}`}
                                         disabled={isTypingReply || isRestoringChat}
                                         key={option.value}
                                         onClick={() => {
@@ -3502,7 +3527,7 @@ export function CustomerHomePage() {
                                   <div className="store-chat-guided-grid greeting-action">
                                     {GREETING_ACTIONS.map((action) => (
                                       <button
-                                        className="store-chat-guided-button"
+                                        className="store-chat-guided-button store-chat-action-browse_projects"
                                         key={action.label}
                                         onClick={() => {
                                           void queueBotResponse(action.prompt, undefined, false, action.label);
@@ -3519,7 +3544,7 @@ export function CustomerHomePage() {
                                 ) : message.offerActionMenu ? (
                                   <div className="store-chat-guided-grid action-menu">
                                     <button
-                                      className="store-chat-guided-button"
+                                      className="store-chat-guided-button store-chat-action-ticket"
                                       onClick={() => openFollowUpForm(message.contextIssue ?? "")}
                                       type="button"
                                     >
@@ -3527,7 +3552,7 @@ export function CustomerHomePage() {
                                       <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
                                     </button>
                                     <button
-                                      className="store-chat-guided-button"
+                                      className="store-chat-guided-button store-chat-action-site_visit"
                                       onClick={() => void openSiteVisitBooking()}
                                       type="button"
                                     >
@@ -3691,10 +3716,10 @@ export function CustomerHomePage() {
                       </form>
                     ) : null}
                     {isTypingReply ? (
-                      <div className="store-chat-typing">
-                        <span />
-                        <span />
-                        <span />
+                      <div aria-label="Assistant is typing" className="store-chat-typing" role="status">
+                        <span aria-hidden="true" />
+                        <span aria-hidden="true" />
+                        <span aria-hidden="true" />
                       </div>
                     ) : null}
 
@@ -3769,6 +3794,7 @@ export function CustomerHomePage() {
               >
                 <div className="store-chat-compose-inline">
                   <input
+                    aria-label="Support question"
                     className="store-chat-message-input"
                     onChange={(event) => {
                       setChatDraft(event.target.value);
@@ -3833,6 +3859,7 @@ export function CustomerHomePage() {
               >
                 <div className="store-chat-compose-inline">
                   <input
+                    aria-label="Message Acrobuild Assistant"
                     className="store-chat-message-input"
                     onChange={(event) => setChatDraft(event.target.value)}
                     placeholder={hasActiveConversation ? "Reply to the assistant" : "Ask a support question"}
@@ -3866,11 +3893,14 @@ export function CustomerHomePage() {
         ) : null}
 
         <button
-          aria-label={widgetConfig.launcherLabel}
+          aria-controls="store-chat-panel"
+          aria-expanded={isChatOpen}
+          aria-label={isChatOpen ? "Minimize support chat" : widgetConfig.launcherLabel}
           className={`store-chat-launcher${isChatOpen ? " raised" : ""}${widgetLogoUrl && !isChatOpen ? " has-logo" : ""}`}
           onClick={() => setIsChatOpen((current) => !current)}
+          ref={chatLauncherRef}
           style={{
-            backgroundColor: widgetLogoUrl && !isChatOpen ? "#ffffff" : widgetConfig.accentColor,
+            backgroundColor: widgetLogoUrl && !isChatOpen ? "#ffffff" : chatAccentColor,
             height: `${widgetConfig.launcherWidth}px`,
             width: `${widgetConfig.launcherWidth}px`
           }}
