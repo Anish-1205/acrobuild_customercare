@@ -11,6 +11,7 @@ import "./styles.css";
 import "./customer-home-refresh.css";
 import "./customer-home-v2.css";
 import "./public-home.css";
+import "./public-help-center.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

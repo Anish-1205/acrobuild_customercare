@@ -31,6 +31,11 @@ import {
 import { loadWidgetConfig } from "../lib/widgetConfig";
 import { activeConversation, clearConversation, matchingPropertyFlow, matchingTranscript, replaceConversation, restoredTranscript, savePropertyFlow, saveTranscript } from "../lib/conversationSession";
 import { PublicFooter, PublicHeader } from "../components/PublicShell";
+import {
+  HelpCenterBreadcrumbs,
+  HelpCenterSearch,
+  HelpCenterViewToggle
+} from "../components/HelpCenterUi";
 import { Button, Card, Input } from "../components/ui";
 import type {
   CreateTicketResponse,
@@ -167,7 +172,7 @@ function createDefaultChatMessages(): ChatMessage[] {
   }];
 }
 
-import { MessageLauncherIcon, PaperPlaneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, CloseIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
+import { MessageLauncherIcon, PaperPlaneIcon, ThumbsUpIcon, ThumbsDownIcon, CloseIcon, ChevronRightIcon, ChevronDownIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
 import { type BrowserSpeechRecognition, type SpeechRecognitionConstructor, VOICE_LANGUAGES, type VoiceLanguageCode, detectSpeechLanguage } from "../lib/voiceLanguage";
 import { FLOW_TEXT, type ChatLanguage, chatLanguageFromReply, detectChatLanguage } from "../lib/chatLanguage";
 
@@ -2620,7 +2625,7 @@ export function CustomerHomePage() {
   ];
 
   return (
-    <div className={`help-center-page${isHomeDemoPage ? " help-center-marketing-home" : ""}`} id="top">
+    <div className={`help-center-page${isHomeDemoPage ? " help-center-marketing-home" : " help-center-content-page"}`} id="top">
       <PublicHeader workspaceLabel={workspaceLabel} workspaceLink={workspaceLink} />
 
       <main className="help-center-main">
@@ -2805,36 +2810,17 @@ export function CustomerHomePage() {
                     ))}
                   </div>
 
-                  <form
-                    className="help-center-search-shell"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      handleHelpCenterSearchSubmit();
-                    }}
-                  >
-                    <label className="help-center-searchbar">
-                      <SearchIcon />
-                      <input
-                        aria-label="Search help center"
-                        onChange={(event) => setHelpCenterQuery(event.target.value)}
-                        placeholder="Search support articles and categories"
-                        value={helpCenterQuery}
-                      />
-                      {helpCenterQuery.trim() ? (
-                        <button
-                          aria-label="Clear search"
-                          className="help-center-search-clear"
-                          onClick={() => setHelpCenterQuery("")}
-                          type="button"
-                        >
-                          x
-                        </button>
-                      ) : null}
-                    </label>
-                  </form>
+                  <HelpCenterSearch
+                    label="Search help center"
+                    onChange={setHelpCenterQuery}
+                    onSubmit={handleHelpCenterSearchSubmit}
+                    placeholder="Search support articles and categories"
+                    showClear
+                    value={helpCenterQuery}
+                  />
 
                   {normalizedHelpCenterQuery ? (
-                    <div className="help-center-search-meta">
+                    <div aria-live="polite" className="help-center-search-meta" role="status">
                       {searchMatchCount
                         ? `Showing ${searchMatchCount} matching support articles and categories for "${helpCenterQuery.trim()}".`
                         : `No exact article matches for "${helpCenterQuery.trim()}". You can still contact the team below.`}
@@ -2977,22 +2963,11 @@ export function CustomerHomePage() {
                   <p>Browse published Acrobuild categories for sales, construction, documentation, and handover support.</p>
                 </div>
 
-                <div className="help-center-view-toggle" role="group" aria-label="Category layout">
-                  <button
-                    className={`help-center-view-button${categoryView === "grid" ? " active" : ""}`}
-                    onClick={() => setCategoryView("grid")}
-                    type="button"
-                  >
-                    <GridViewIcon />
-                  </button>
-                  <button
-                    className={`help-center-view-button${categoryView === "list" ? " active" : ""}`}
-                    onClick={() => setCategoryView("list")}
-                    type="button"
-                  >
-                    <ListViewIcon />
-                  </button>
-                </div>
+                <HelpCenterViewToggle
+                  label="Category layout"
+                  onChange={setCategoryView}
+                  value={categoryView}
+                />
               </div>
 
               <div className={`help-center-category-grid ${categoryView === "list" ? "list" : ""}`}>
@@ -3016,6 +2991,13 @@ export function CustomerHomePage() {
                   </button>
                 ))}
               </div>
+
+              {!filteredHelpCenterCategories.length ? (
+                <div aria-live="polite" className="help-center-empty-state" role="status">
+                  <strong>No categories matched that search.</strong>
+                  <p>Try another keyword or browse the popular questions above.</p>
+                </div>
+              ) : null}
             </section>
 
             <section className="help-center-shell help-center-section" id="get-support">
@@ -3069,79 +3051,75 @@ export function CustomerHomePage() {
         {isCategoryPage ? (
           <section className="help-center-shell help-center-article-shell">
             <div className="help-center-subpage-topbar">
-              <div className="help-center-breadcrumbs">
-                <Link to={helpCenterHomePath}>Home</Link>
-                <span>/</span>
-                <Link to={helpCenterArticlesPath}>All articles</Link>
-                <span>/</span>
-                <strong>{selectedCategory ?? "Category"}</strong>
-              </div>
+              <HelpCenterBreadcrumbs
+                items={[
+                  { label: "Home", to: helpCenterHomePath },
+                  { label: "All articles", to: helpCenterArticlesPath },
+                  { label: selectedCategory ?? "Category" }
+                ]}
+              />
 
-              <form
-                className="help-center-subpage-search"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  handleHelpCenterSearchSubmit();
-                }}
-              >
-                <label className="help-center-searchbar compact">
-                  <SearchIcon />
-                  <input
-                    aria-label="Search support articles"
-                    onChange={(event) => setHelpCenterQuery(event.target.value)}
-                    placeholder="Search"
-                    value={helpCenterQuery}
+              <HelpCenterSearch
+                compact
+                label="Search support articles"
+                onChange={setHelpCenterQuery}
+                onSubmit={handleHelpCenterSearchSubmit}
+                placeholder="Search"
+                value={helpCenterQuery}
+              />
+            </div>
+
+            {selectedCategory ? (
+              <>
+                <div className="help-center-section-head help-center-article-head">
+                  <div>
+                    <div className="help-center-article-kicker">All articles</div>
+                    <h1>{selectedCategory}</h1>
+                    <p>{formatArticleCount(categoryArticles.length)} in this category.</p>
+                  </div>
+
+                  <HelpCenterViewToggle
+                    label="Article layout"
+                    onChange={setCategoryView}
+                    value={categoryView}
                   />
-                </label>
-              </form>
-            </div>
+                </div>
 
-            <div className="help-center-section-head help-center-article-head">
-              <div>
-                <div className="help-center-article-kicker">All articles</div>
-                <h2>{selectedCategory ?? "Article category"}</h2>
-              </div>
+                <div className={`help-center-article-grid ${categoryView === "list" ? "list" : ""}`}>
+                  {filteredCategoryArticles.map((article) => (
+                    <Link
+                      className="help-center-article-card"
+                      key={article.id}
+                      to={buildArticlePath(article)}
+                    >
+                      <span className="help-center-card-kicker">{article.category}</span>
+                      <strong>{article.title}</strong>
+                      <p>{getArticleExcerpt(article)}</p>
+                      <span className="help-center-card-link">Read article</span>
+                    </Link>
+                  ))}
+                </div>
 
-              <div className="help-center-view-toggle" role="group" aria-label="Article layout">
-                <button
-                  className={`help-center-view-button${categoryView === "grid" ? " active" : ""}`}
-                  onClick={() => setCategoryView("grid")}
-                  type="button"
-                >
-                  <GridViewIcon />
-                </button>
-                <button
-                  className={`help-center-view-button${categoryView === "list" ? " active" : ""}`}
-                  onClick={() => setCategoryView("list")}
-                  type="button"
-                >
-                  <ListViewIcon />
-                </button>
-              </div>
-            </div>
-
-            <div className={`help-center-article-grid ${categoryView === "list" ? "list" : ""}`}>
-              {filteredCategoryArticles.map((article) => (
-                <Link
-                  className="help-center-article-card"
-                  key={article.id}
-                  to={buildArticlePath(article)}
-                >
-                  <strong>{article.title}</strong>
-                  <p>{getArticleExcerpt(article)}</p>
-                </Link>
-              ))}
-            </div>
-
-            {!filteredCategoryArticles.length ? (
-              <div className="help-center-empty-state">
-                <strong>No articles matched that search in this category.</strong>
-                <p>Try another keyword or go back to all help-center categories.</p>
+                {!filteredCategoryArticles.length ? (
+                  <div aria-live="polite" className="help-center-empty-state" role="status">
+                    <strong>No articles matched that search in this category.</strong>
+                    <p>Try another keyword or go back to all help-center categories.</p>
+                    <Link className="help-center-inline-button help-center-inline-link" to={helpCenterArticlesPath}>
+                      Back to help center
+                    </Link>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <div className="help-center-empty-state help-center-not-found">
+                <span className="help-center-empty-icon" aria-hidden="true">?</span>
+                <h1>That category could not be found.</h1>
+                <p>Go back to the help center and open another published support category.</p>
                 <Link className="help-center-inline-button help-center-inline-link" to={helpCenterArticlesPath}>
                   Back to help center
                 </Link>
               </div>
-            ) : null}
+            )}
           </section>
         ) : null}
 
@@ -3150,35 +3128,26 @@ export function CustomerHomePage() {
             {selectedArticle ? (
               <>
                 <div className="help-center-subpage-topbar">
-                  <div className="help-center-breadcrumbs">
-                    <Link to={helpCenterHomePath}>Home</Link>
-                    <span>/</span>
-                    <Link to={helpCenterArticlesPath}>All articles</Link>
-                    <span>/</span>
-                    <Link to={buildCategoryPath(selectedArticle.category)}>
-                      {selectedArticle.category}
-                    </Link>
-                    <span>/</span>
-                    <strong>{selectedArticle.title}</strong>
-                  </div>
+                  <HelpCenterBreadcrumbs
+                    items={[
+                      { label: "Home", to: helpCenterHomePath },
+                      { label: "All articles", to: helpCenterArticlesPath },
+                      {
+                        label: selectedArticle.category,
+                        to: buildCategoryPath(selectedArticle.category)
+                      },
+                      { label: selectedArticle.title }
+                    ]}
+                  />
 
-                  <form
-                    className="help-center-subpage-search"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      handleHelpCenterSearchSubmit();
-                    }}
-                  >
-                    <label className="help-center-searchbar compact">
-                      <SearchIcon />
-                      <input
-                        aria-label="Search support articles"
-                        onChange={(event) => setHelpCenterQuery(event.target.value)}
-                        placeholder="Search"
-                        value={helpCenterQuery}
-                      />
-                    </label>
-                  </form>
+                  <HelpCenterSearch
+                    compact
+                    label="Search support articles"
+                    onChange={setHelpCenterQuery}
+                    onSubmit={handleHelpCenterSearchSubmit}
+                    placeholder="Search"
+                    value={helpCenterQuery}
+                  />
                 </div>
 
                 <div className="help-center-article-layout">
@@ -3197,7 +3166,7 @@ export function CustomerHomePage() {
 
                     <div className="help-center-article-actions">
                       <button
-                        className="help-center-inline-button"
+                        className="help-center-inline-button primary"
                         onClick={() =>
                           void queueBotResponse(
                             getArticlePrompt(selectedArticle),
@@ -3211,7 +3180,7 @@ export function CustomerHomePage() {
                         Open in chat
                       </button>
                       <button
-                        className="help-center-inline-button"
+                        className="help-center-inline-button secondary"
                         onClick={() => openContactMode(getArticlePrompt(selectedArticle))}
                         type="button"
                       >
@@ -3220,7 +3189,7 @@ export function CustomerHomePage() {
                     </div>
                   </article>
 
-                  <aside className="help-center-related-panel">
+                  <aside aria-label={`More from ${selectedArticle.category}`} className="help-center-related-panel">
                     <div className="help-center-related-head">
                       <strong>More from {selectedArticle.category}</strong>
                       <Link to={buildCategoryPath(selectedArticle.category)}>View all</Link>
@@ -3237,13 +3206,19 @@ export function CustomerHomePage() {
                           <span>{getArticleExcerpt(article)}</span>
                         </Link>
                       ))}
+                      {!relatedCategoryArticles.length ? (
+                        <p className="help-center-related-empty">
+                          No other published articles are available in this category.
+                        </p>
+                      ) : null}
                     </div>
                   </aside>
                 </div>
               </>
             ) : (
-              <div className="help-center-empty-state">
-                <strong>That article could not be found.</strong>
+              <div className="help-center-empty-state help-center-not-found">
+                <span className="help-center-empty-icon" aria-hidden="true">?</span>
+                <h1>That article could not be found.</h1>
                 <p>Go back to the help center home and open another published support article.</p>
                 <Link className="help-center-inline-button help-center-inline-link" to={helpCenterArticlesPath}>
                   Back to help center
