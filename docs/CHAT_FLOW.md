@@ -119,8 +119,10 @@ Key rules:
 - `start over`, `reset`, `new search`, and supported clear-preference phrases
   clear discovery slots. A bare reset returns a deterministic acknowledgement;
   a reset plus a new request starts again from empty slots.
-- `Browse all projects` creates a new conversation ID in the frontend and does
-  not inherit project, selection, callback, or discovery state.
+- A terminal answer's `Browse all projects` quick reply creates a new
+  conversation ID in the frontend and does not inherit project, selection,
+  callback, or discovery state. The initial welcome action instead sends its
+  prompt through the current conversation's server assist flow.
 
 `services/property_clarification_service.py` must not import the discovery
 module; discovery already depends on the property/home-type layer. Tests enforce

@@ -13,6 +13,7 @@ authority for implemented behavior.
 | Change customer chat or property behavior | [Chat and property flow](CHAT_FLOW.md), then [AGENTS.md](../AGENTS.md) |
 | Install, run, test, or troubleshoot | [Development guide](DEVELOPMENT.md) |
 | Check implemented scope or limitations | [Product status](PRODUCT_STATUS.md) |
+| Review the current frontend inventory and UX risks | [UI/UX frontend audit](UI_UX_FRONTEND_AUDIT.md) |
 | Work with the property API | [CS API integration](integrations/CS_API.md) |
 | Understand the compiled compatibility layer | [Compiled runtime](runtime/COMPILED_RUNTIME.md) |
 | Review historical acceptance artifacts | [Evidence index](evidence/README.md) |

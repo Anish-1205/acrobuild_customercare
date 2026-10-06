@@ -3565,10 +3565,6 @@ export function CustomerHomePage() {
                                         className="store-chat-guided-button"
                                         key={action.label}
                                         onClick={() => {
-                                          if (action.kind === "projects") {
-                                            void startProjectsFlow(FLOW_TEXT[chatLanguage].browseAll);
-                                            return;
-                                          }
                                           void queueBotResponse(action.prompt, undefined, false, action.label);
                                         }}
                                         type="button"

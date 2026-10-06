@@ -58,7 +58,10 @@ models/**/*.pth
 # Editors and operating-system files
 .vscode/
 .idea/
+.claude/settings.local.json
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
