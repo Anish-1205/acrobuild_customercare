@@ -4,6 +4,12 @@ Audit date: 2026-10-05. Branch: `work/2026-10-01-phase1-chatbot-stabilization`.
 Scope: inventory of the current frontend only. No product code was changed and
 nothing here is a redesign proposal.
 
+> **Phase 2A update (2026-10-06):** This document remains the pre-foundation
+> baseline. The approved tokens, self-hosted Plus Jakarta Sans font, and first
+> reusable primitives now live in code; see
+> [Frontend design-system foundation](DESIGN_SYSTEM.md). Existing pages have
+> not been migrated, so the page-level findings below still describe them.
+
 Evidence labels used throughout:
 
 - **VERIFIED** — traced in current source.

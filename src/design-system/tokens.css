@@ -1,0 +1,103 @@
+:root {
+  /* Figma collection: Primitives */
+  --color-blue-50: #eff4ff;
+  --color-blue-100: #dce8ff;
+  --color-blue-300: #7fa8ff;
+  --color-blue-500: #2d6dff;
+  --color-blue-600: #0055ff;
+  --color-blue-700: #0044cc;
+  --color-blue-900: #00287a;
+  --color-gray-0: #ffffff;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f1f3f6;
+  --color-gray-200: #e4e7ec;
+  --color-gray-300: #d0d5dd;
+  --color-gray-400: #98a2b3;
+  --color-gray-500: #667085;
+  --color-gray-600: #475467;
+  --color-gray-700: #344054;
+  --color-gray-800: #1d2939;
+  --color-gray-900: #111827;
+  --color-orange-500: #ff8000;
+  --color-green-500: #10b981;
+  --color-red-500: #d92d20;
+
+  /* Yellow is present in Figma but remains proposed, not client-approved. */
+  --color-proposed-yellow-500: #d9a420;
+
+  /* Figma collection: Color (Light mode) */
+  --color-bg-canvas: var(--color-gray-50);
+  --color-bg-surface: var(--color-gray-0);
+  --color-bg-subtle: var(--color-gray-100);
+  --color-bg-disabled: var(--color-gray-100);
+  --color-border-default: var(--color-gray-200);
+  --color-border-strong: var(--color-gray-300);
+  --color-text-primary: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
+  --color-text-placeholder: var(--color-gray-400);
+  --color-text-disabled: var(--color-gray-400);
+  --color-text-on-primary: var(--color-gray-0);
+  --color-action-primary: var(--color-blue-600);
+  --color-action-primary-hover: var(--color-blue-700);
+  --color-action-primary-subtle: var(--color-blue-50);
+  --color-accent-orange: var(--color-orange-500);
+  --color-accent-green: var(--color-green-500);
+  --color-feedback-success: var(--color-green-500);
+  --color-feedback-error: var(--color-red-500);
+  --color-feedback-info: var(--color-blue-500);
+  --color-accent-yellow-proposed: var(--color-proposed-yellow-500);
+  --color-feedback-warning-proposed: var(--color-proposed-yellow-500);
+
+  /* Figma collection: Spacing */
+  --spacing-2xs: 2px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+  --spacing-4xl: 64px;
+
+  /* Figma collection: Radius */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+
+  /* Figma text styles */
+  --font-family-product: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-size-display: 40px;
+  --font-size-h1: 32px;
+  --font-size-h2: 24px;
+  --font-size-h3: 20px;
+  --font-size-body-lg: 16px;
+  --font-size-body-md: 14px;
+  --font-size-body-sm: 13px;
+  --font-size-label: 13px;
+  --font-size-caption: 12px;
+  --line-height-display: 48px;
+  --line-height-h1: 40px;
+  --line-height-h2: 32px;
+  --line-height-h3: 28px;
+  --line-height-body-lg: 24px;
+  --line-height-body-md: 20px;
+  --line-height-body-sm: 18px;
+  --line-height-label: 18px;
+  --line-height-caption: 16px;
+  --letter-spacing-default: 0;
+
+  /* Figma border foundation */
+  --border-width-default: 1px;
+  --border-width-focus: 2px;
+
+  /* Figma effect styles */
+  --elevation-1: 0 1px 2px rgba(15, 20, 31, 0.08);
+  --elevation-2: 0 4px 8px rgba(15, 20, 31, 0.1);
+  --elevation-3: 0 8px 16px rgba(15, 20, 31, 0.12);
+}
