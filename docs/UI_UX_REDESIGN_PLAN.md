@@ -169,7 +169,21 @@ browser coverage, accessibility smoke, build, lint, full frontend tests, and
 **STOP boundary:** Stop after the shared shell and responsive navigation are
 verified. Do not migrate Inbox, Teach AI, or another staff surface.
 
-### [ ] Phase 4 — Customer AI assistant and chat UX — HIGH RISK
+### [x] Phase 4 — Customer AI assistant and chat UX — HIGH RISK
+
+**Status:** Complete.
+
+Completed sub-phases:
+
+- [x] Phase 4A — Chat contract/type stabilization.
+- [x] Phase 4B — Core chat visual migration.
+- [x] Phase 4C — Supported property discovery presentation.
+- [x] Phase 4D1 — Ticket/site-visit form visual migration.
+- [x] Phase 4D2 — Failure/retry/restore UX.
+
+**Known limitation:** Retry metadata remains in memory. After a page refresh,
+the failure state remains explicit and honest, but the retry control is not
+reconstructed. This limitation remains open and is not fixed by Phase 4.
 
 **Goal:** Apply the design system to the customer assistant while preserving its
 current routing, live-data, action, streaming, and continuity semantics.
