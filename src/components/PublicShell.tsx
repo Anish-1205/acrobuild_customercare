@@ -20,7 +20,7 @@ export function PublicHeader({ workspaceLabel, workspaceLink }: PublicHeaderProp
   return (
     <header className="help-center-header">
       <div className="help-center-shell help-center-header-inner">
-        <Link className="help-center-header-brand" to="/home">
+        <Link aria-label="Acrobuild home" className="help-center-header-brand" to="/home">
           <AcrobuildLogo subtitle="Project support desk" />
         </Link>
 

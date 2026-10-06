@@ -20,6 +20,7 @@ describe("PublicShell", () => {
     expect(menu).toHaveAttribute("aria-controls", "public-navigation");
     expect(menu).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/home");
+    expect(screen.getByRole("link", { name: "Acrobuild home" })).toHaveAttribute("href", "/home");
     expect(screen.getByRole("link", { name: "Popular questions" })).toHaveAttribute(
       "href",
       "/home#popular-questions"

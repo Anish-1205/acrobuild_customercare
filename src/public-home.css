@@ -418,7 +418,7 @@
 }
 
 .public-home-guide-number {
-  color: var(--color-accent-orange);
+  color: var(--color-action-primary);
   font-size: var(--font-size-caption);
   font-weight: 700;
   letter-spacing: 0.08em;

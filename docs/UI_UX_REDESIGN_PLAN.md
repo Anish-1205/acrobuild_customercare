@@ -232,7 +232,44 @@ acceptance when live-data semantics change; build, lint, full tests, and
 **STOP boundary:** Stop after chat-specific acceptance. Do not redesign the
 surrounding public site, staff Inbox, or unsupported property capabilities.
 
-### [ ] Phase 5 — Public customer experience
+### [x] Phase 5 — Public customer experience
+
+**Status:** Complete for the authorized scope.
+
+Completed sub-phases:
+
+- [x] Phase 5A — `/home` migration and shared `PublicShell` header/footer.
+- [x] Phase 5B — `/home/about`, category, article, and not-found/empty states.
+- [x] Phase 5C — Customer lookup (`/home/project-support`, `/home/order-lookup`).
+
+**Verification outcome:** Build, lint (no errors), and the full frontend suite
+pass. A desktop (1440px) and mobile (390px) browser matrix covered all eight
+public routes, shared navigation/footer, the mobile menu, chat mount boundaries,
+article-to-chat actions, and the lookup keyboard/focus flow; the lookup routes
+have no serious automated accessibility findings. The lookup OTP flow, chat
+restore, and assist responses were verified with **MOCKED** responses only. Live
+OTP delivery, live `/customer/verified` data, and live chat/LLM behavior are
+**BLOCKED/UNVERIFIED** because the backend was not running during verification.
+
+**Known limitations:**
+
+- The lookup result labels ("Buyer profile", "Project records", "Portfolio
+  value", "Plans and schedules", "Next review") and USD formatting are preserved
+  unchanged from the pre-migration page. They are not confirmed AcroBuild
+  terminology and remain subject to Open Product Decision 7.
+- The Phase 5 `/home` guide-number contrast regression is corrected with the
+  approved primary-action token. Automated scans still report the pre-existing
+  orange caption below AA contrast on `/home/about`, and two findings inside the
+  Phase 4 chat (`.store-chat-online` ARIA usage and the "Automated" note
+  contrast). Those pre-existing findings are left for Phase 7.
+- On mobile the chat opens full-screen on first load and covers the page until
+  closed; this is existing Phase 4 behavior.
+- Legacy `.customer-lookup-*` rules remain in `styles.css` unused, pending the
+  deliberate stylesheet consolidation.
+
+**Outside completed scope:** `/home/api-activity` and `/home/data-api-logs` were
+not changed and remain unresolved under Open Product Decision 3. Open Product
+Decisions 2, 4, 7, and 8 are also untouched.
 
 **Goal:** Create a coherent public AcroBuild experience around the existing,
 reachable public routes.

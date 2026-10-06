@@ -7,6 +7,9 @@
   --hc-surface: var(--color-bg-surface);
   --hc-subtle: var(--color-bg-subtle);
   --hc-border: var(--color-border-default);
+  --public-ink: var(--hc-ink);
+  --public-surface: var(--hc-surface);
+  --public-border: var(--hc-border);
   overflow-x: clip;
   background: var(--hc-canvas);
   color: var(--hc-ink);
