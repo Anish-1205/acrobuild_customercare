@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useRole } from "../contexts/RoleContext";
 import { getRoleHomePath } from "../lib/roleNavigation";
 import { AcrobuildLogo } from "../components/AcrobuildLogo";
+import { Button, Card, Input } from "../components/ui";
+import "./LoginPage.css";
 
 function getRememberedEmail() {
   if (typeof window === "undefined") {
@@ -61,112 +63,113 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-shell">
-        <aside className="login-visual-panel">
+    <main className="staff-login-page">
+      <div className="staff-login-shell">
+        <aside className="staff-login-story" aria-label="AcroBuild workspace overview">
           <img
             alt="Acrobuild support and project operations team collaborating at a workspace"
-            className="login-visual-image"
+            className="staff-login-story-image"
             src="/images/real-world/workspace-ops.png"
           />
-          <div className="login-visual-copy">
-            <span className="login-kicker">Acrobuild live workspace</span>
+          <div className="staff-login-story-copy">
+            <span className="staff-login-eyebrow">AcroBuild live workspace</span>
             <h2>One workspace for every project conversation.</h2>
             <p>
               Support, routing, and handover updates stay visible to the whole team,
               so nobody loses the thread.
             </p>
-            <div className="login-visual-pill-row">
-              <span>Buyer updates</span>
-              <span>Internal routing</span>
-              <span>Handover support</span>
-            </div>
-            <div className="login-visual-stat-grid">
-              <div className="login-visual-stat">
-                <strong>Shared context</strong>
-                <span>Every ticket keeps history, ownership, and next steps in view.</span>
-              </div>
-              <div className="login-visual-stat">
-                <strong>Faster routing</strong>
-                <span>Priority cues and role-based handoffs stay clear.</span>
-              </div>
-            </div>
+            <ul className="staff-login-benefits">
+              <li>Buyer updates</li>
+              <li>Internal routing</li>
+              <li>Handover support</li>
+            </ul>
           </div>
         </aside>
 
-        <div className="login-container">
-          <div className="login-header">
-            <AcrobuildLogo subtitle="Workspace access" />
-            <div className="login-intro">
-              <span className="login-kicker">Secure sign in</span>
+        <Card className="staff-login-card">
+          <div className="staff-login-card-inner">
+            <header className="staff-login-header">
+              <AcrobuildLogo className="staff-login-brand" subtitle="Workspace access" />
+              <span className="staff-login-eyebrow">Secure sign in</span>
               <h1>Welcome back</h1>
               <p>
                 Sign in to the support workspace to review conversations, route tickets,
                 and keep project follow-up moving.
               </p>
-            </div>
-          </div>
+            </header>
 
-          <form className="login-form" onSubmit={handleLogin}>
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                className="form-input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@acrobuild.com"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="login-password-field">
-                <input
-                  id="password"
-                  className="form-input"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+            <form className="staff-login-form" onSubmit={handleLogin}>
+              <div className="staff-login-field">
+                <label htmlFor="email">Email</label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@acrobuild.com"
+                  autoComplete="email"
+                  invalid={Boolean(error)}
                   required
                 />
-                <button
-                  type="button"
-                  className="login-password-toggle"
-                  onClick={() => setShowPassword((currentValue) => !currentValue)}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
               </div>
-            </div>
 
-            {error ? <div className="error-message">{error}</div> : null}
+              <div className="staff-login-field">
+                <label htmlFor="password">Password</label>
+                <div className="staff-login-password-field">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    invalid={Boolean(error)}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    className="staff-login-password-toggle"
+                    variant="ghost"
+                    aria-controls="password"
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((currentValue) => !currentValue)}
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </Button>
+                </div>
+              </div>
 
-            <div className="login-options">
-              <label className="remember-me">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                />
-                <span>Remember me</span>
-              </label>
-              <span className="login-support-copy">Need a reset? Contact your workspace owner.</span>
-            </div>
+              {error ? (
+                <div className="staff-login-error" role="alert">
+                  {error}
+                </div>
+              ) : null}
 
-            <button
-              type="submit"
-              className="sign-in-button"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Signing in..." : "Sign in to workspace"}
-            </button>
-          </form>
-        </div>
+              <div className="staff-login-options">
+                <label className="staff-login-remember">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <span>Remember me</span>
+                </label>
+                <span className="staff-login-support-copy">
+                  Need a reset? Contact your workspace owner.
+                </span>
+              </div>
+
+              <Button
+                type="submit"
+                className="staff-login-submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Signing in..." : "Sign in to workspace"}
+              </Button>
+            </form>
+          </div>
+        </Card>
       </div>
-    </div>
+    </main>
   );
 }
