@@ -67,6 +67,30 @@ type PropertyFlowState = {
   wings: PropertyWing[];
 };
 
+type PropertyChoiceButtonProps = {
+  index?: number;
+  leading?: string | number;
+  label: string;
+  details?: string[];
+  active?: boolean;
+  onClick: () => void;
+};
+
+function PropertyChoiceButton({ index, leading, label, details = [], active, onClick }: PropertyChoiceButtonProps) {
+  return (
+    <button className={`store-chat-guided-button${active ? " active" : ""}`} onClick={onClick} type="button">
+      {typeof index === "number" || leading !== undefined ? (
+        <span className="store-chat-project-index">{leading ?? String(index! + 1).padStart(2, "0")}</span>
+      ) : null}
+      <span className="store-chat-guided-copy">
+        <span className="store-chat-guided-label">{label}</span>
+        {details.length ? <span className="store-chat-guided-details">{details.join(" · ")}</span> : null}
+      </span>
+      <span aria-hidden="true" className="store-chat-guided-arrow"><ChevronRightIcon /></span>
+    </button>
+  );
+}
+
 type SiteVisitFormState = {
   customer_email: string;
   customer_name: string;
@@ -3450,30 +3474,24 @@ export function CustomerHomePage() {
                                   <div className="store-chat-guided-grid project-grid">
                                     {propertyFlow.level === "projects"
                                       ? propertyFlow.projects.map((project, index) => (
-                                          <button
-                                            className="store-chat-guided-button"
+                                          <PropertyChoiceButton
+                                            details={[project.locality || project.city, project.projectType].filter((value): value is string => Boolean(value?.trim()))}
+                                            index={index}
                                             key={project.id}
+                                            label={project.projectName}
                                             onClick={() => void selectPropertyProject(project)}
-                                            type="button"
-                                          >
-                                            <span className="store-chat-project-index">{String(index + 1).padStart(2, "0")}</span>
-                                            <span className="store-chat-guided-label">{project.projectName}</span>
-                                            <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
-                                          </button>
+                                          />
                                         ))
                                       : null}
                                     {propertyFlow.level === "wings"
                                       ? propertyFlow.wings.map((wing, index) => (
-                                          <button
-                                            className="store-chat-guided-button"
+                                          <PropertyChoiceButton
+                                            details={[wing.code, wing.constructionStatus, typeof wing.totalFloors === "number" ? `${wing.totalFloors} floors` : undefined].filter((value): value is string => Boolean(value?.trim()))}
+                                            index={index}
                                             key={wing.id}
+                                            label={wing.name}
                                             onClick={() => void selectPropertyWing(wing)}
-                                            type="button"
-                                          >
-                                            <span className="store-chat-project-index">{String(index + 1).padStart(2, "0")}</span>
-                                            <span className="store-chat-guided-label">{wing.name}</span>
-                                            <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
-                                          </button>
+                                          />
                                         ))
                                       : null}
                                     {propertyFlow.level === "floors"
@@ -3484,33 +3502,24 @@ export function CustomerHomePage() {
                                         )]
                                           .sort((left, right) => left - right)
                                           .map((floor) => (
-                                            <button
-                                              className="store-chat-guided-button"
+                                            <PropertyChoiceButton
                                               key={floor}
+                                              leading={floor}
+                                              label={FLOW_TEXT[chatLanguage].floor(floor)}
                                               onClick={() => selectPropertyFloor(floor)}
-                                              type="button"
-                                            >
-                                              <span className="store-chat-project-index">{floor}</span>
-                                              <span className="store-chat-guided-label">{FLOW_TEXT[chatLanguage].floor(floor)}</span>
-                                              <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
-                                            </button>
+                                            />
                                           ))
                                       : null}
                                     {propertyFlow.level === "flats"
                                       ? propertyFlow.inventory.map((unit) => (
-                                          <button
-                                            className={`store-chat-guided-button${propertyFlow.selectedUnit?.id === unit.id ? " active" : ""}`}
+                                          <PropertyChoiceButton
+                                            active={propertyFlow.selectedUnit?.id === unit.id}
+                                            details={[unit.typologyName, typeof unit.floorNumber === "number" ? FLOW_TEXT[chatLanguage].floor(unit.floorNumber) : undefined].filter((value): value is string => Boolean(value?.trim()))}
                                             key={unit.id}
+                                            leading={unit.unitNumber ?? "–"}
+                                            label={FLOW_TEXT[chatLanguage].flat(unit.unitNumber ?? unit.id)}
                                             onClick={() => void selectInventoryUnit(unit)}
-                                            type="button"
-                                          >
-                                            <span className="store-chat-project-index">{unit.unitNumber ?? "–"}</span>
-                                            <span className="store-chat-guided-label">
-                                              {FLOW_TEXT[chatLanguage].flat(unit.unitNumber ?? unit.id)}
-                                              {unit.typologyName ? ` · ${unit.typologyName}` : ""}
-                                            </span>
-                                            <span className="store-chat-guided-arrow"><ChevronRightIcon /></span>
-                                          </button>
+                                          />
                                         ))
                                       : null}
                                     {propertyFlow.level === "flat_details" ? (
