@@ -15,6 +15,7 @@ authority for implemented behavior.
 | Check implemented scope or limitations | [Product status](PRODUCT_STATUS.md) |
 | Review the current frontend inventory and UX risks | [UI/UX frontend audit](UI_UX_FRONTEND_AUDIT.md) |
 | Use the frontend foundations and primitives | [Design-system foundation](DESIGN_SYSTEM.md) |
+| Execute the remaining frontend redesign | [UI/UX redesign plan](UI_UX_REDESIGN_PLAN.md) |
 | Work with the property API | [CS API integration](integrations/CS_API.md) |
 | Understand the compiled compatibility layer | [Compiled runtime](runtime/COMPILED_RUNTIME.md) |
 | Review historical acceptance artifacts | [Evidence index](evidence/README.md) |

@@ -35,7 +35,7 @@ yellow as client-approved.
 
 ## Migration boundary
 
-No existing page uses these primitives yet, and the legacy `--font-body` /
-`--font-heading` variables remain unchanged. Plus Jakarta Sans is bundled and
-used by the new primitives, but applying it to existing screens belongs to a
-later page-migration phase.
+The Login page is the first page migrated to these foundations and primitives.
+The legacy `--font-body` / `--font-heading` variables remain unchanged, and all
+other pages remain on their legacy styling until their authorized migration
+phases. The page-by-page migration boundary still applies.
