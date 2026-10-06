@@ -510,6 +510,7 @@ export async function streamSupportAssist(
   handlers: {
     onDelta?: (text: string) => void;
     onDone: (response: SupportAssistResponse) => void;
+    onError?: (response: SupportAssistResponse) => void;
   }
 ) {
   const request = {
@@ -559,7 +560,11 @@ export async function streamSupportAssist(
         } else if ((event.type === "done" || event.type === "error") && (event as { response?: unknown }).response) {
           const finalResponse = (event as { response: SupportAssistResponse }).response;
           finishApiActivity(activityId, finalResponse);
-          handlers.onDone(finalResponse);
+          if (event.type === "error") {
+            if (!handlers.onError) throw new Error("The support stream reported an error.");
+            handlers.onError(finalResponse);
+          }
+          else handlers.onDone(finalResponse);
           return;
         }
         // Other event types (e.g. "progress") are informational — keep reading.
@@ -568,7 +573,13 @@ export async function streamSupportAssist(
 
     if (buffer.trim()) {
       const event = JSON.parse(buffer.trim()) as { response?: SupportAssistResponse; type: string };
-      if (event.response) {
+      if (event.response && event.type === "error") {
+        finishApiActivity(activityId, event.response);
+        if (!handlers.onError) throw new Error("The support stream reported an error.");
+        handlers.onError(event.response);
+        return;
+      }
+      if (event.response && event.type === "done") {
         finishApiActivity(activityId, event.response);
         handlers.onDone(event.response);
         return;

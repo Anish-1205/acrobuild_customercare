@@ -34,4 +34,20 @@ describe("support assist stream protocol", () => {
     expect(onDone).toHaveBeenCalledOnce();
     expect(onDone).toHaveBeenCalledWith(finalResponse);
   });
+
+  it("reports a server error event separately from a successful completion", async () => {
+    const errorResponse = {
+      answer: "Please try again.",
+      source_status: "fallback" as const
+    };
+    const body = `${JSON.stringify({ type: "error", response: errorResponse })}\n`;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(body, { status: 200 })));
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    await streamSupportAssist({ issue: "Show me 3 BHK" }, { onDone, onError });
+
+    expect(onError).toHaveBeenCalledWith(errorResponse);
+    expect(onDone).not.toHaveBeenCalled();
+  });
 });

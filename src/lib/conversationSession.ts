@@ -1,4 +1,5 @@
 import type { SupportConversationMessage, SupportQuickReply } from "../types";
+import type { ChatDeliveryState } from "./chatRecovery";
 
 const ACTIVE_ID_KEY = "acrobuild.support.activeConversationId.v1";
 const TRANSCRIPT_KEY = "acrobuild.support.transcript.v1";
@@ -8,6 +9,7 @@ const MAX_AGE_MS = 2 * 60 * 60 * 1000;
 export type RestorableMessage = {
   backendText?: string;
   contextIssue?: string;
+  deliveryState?: ChatDeliveryState;
   id: number;
   isComplete?: boolean;
   offerActionMenu?: boolean;
@@ -83,6 +85,7 @@ export function saveTranscript(id: string, messages: RestorableMessage[]): void 
   const complete = messages.filter((message) => message.sender === "customer" || message.isComplete).map((message) => ({
     backendText: message.backendText,
     contextIssue: message.contextIssue,
+    deliveryState: message.deliveryState,
     id: message.id,
     isComplete: message.isComplete,
     offerActionMenu: message.offerActionMenu,

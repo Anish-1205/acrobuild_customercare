@@ -16,14 +16,19 @@ export async function requestSupportAssist(
   handlers: SupportAssistTransportHandlers
 ): Promise<"json" | "partial" | "stream"> {
   let streamedAnswer = "";
+  let streamReportedError = false;
   try {
     await streamSupportAssist(payload, {
       onDelta: (text) => {
         streamedAnswer += text;
         handlers.onDelta?.(text);
       },
-      onDone: handlers.onDone
+      onDone: handlers.onDone,
+      onError: () => {
+        streamReportedError = true;
+      }
     });
+    if (streamReportedError) throw new Error("The support stream reported an error.");
     return "stream";
   } catch {
     if (streamedAnswer.trim()) {

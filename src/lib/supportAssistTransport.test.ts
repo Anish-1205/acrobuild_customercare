@@ -43,6 +43,41 @@ describe("support assist transport", () => {
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ answer: "JSON answer" }));
   });
 
+  it("falls back to JSON when the server closes the stream with an error event", async () => {
+    vi.mocked(streamSupportAssist).mockImplementation(async (_payload, handlers) => {
+      handlers.onError?.({ answer: "Stream failed", source_status: "fallback" });
+    });
+    vi.mocked(getSupportAssist).mockResolvedValue({ answer: "JSON answer", source_status: "workspace" });
+
+    await expect(requestSupportAssist({ issue: "Help" }, { onDelta, onDone, onPartial }))
+      .resolves.toBe("json");
+    expect(getSupportAssist).toHaveBeenCalledOnce();
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ answer: "JSON answer" }));
+  });
+
+  it("keeps streamed text visibly partial when an error event follows a delta", async () => {
+    vi.mocked(streamSupportAssist).mockImplementation(async (_payload, handlers) => {
+      handlers.onDelta?.("Partial answer");
+      handlers.onError?.({ answer: "Stream failed", source_status: "fallback" });
+    });
+
+    await expect(requestSupportAssist({ issue: "Help" }, { onDelta, onDone, onPartial }))
+      .resolves.toBe("partial");
+    expect(onPartial).toHaveBeenCalledWith("Partial answer");
+    expect(getSupportAssist).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it("rejects honestly when both stream and JSON transports fail", async () => {
+    vi.mocked(streamSupportAssist).mockRejectedValue(new Error("stream unavailable"));
+    vi.mocked(getSupportAssist).mockRejectedValue(new Error("JSON unavailable"));
+
+    await expect(requestSupportAssist({ issue: "Help" }, { onDelta, onDone, onPartial }))
+      .rejects.toThrow("JSON unavailable");
+    expect(onDone).not.toHaveBeenCalled();
+    expect(onPartial).not.toHaveBeenCalled();
+  });
+
   it("keeps a partial streamed answer instead of duplicating the request", async () => {
     vi.mocked(streamSupportAssist).mockImplementation(async (_payload, handlers) => {
       handlers.onDelta?.("Partial answer");

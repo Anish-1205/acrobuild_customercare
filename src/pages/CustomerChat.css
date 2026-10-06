@@ -59,6 +59,7 @@
 .store-chat-guided-button:focus-visible,
 .store-chat-feedback-button:focus-visible,
 .store-chat-help-button:focus-visible,
+.store-chat-retry-button:focus-visible,
 .store-chat-compose-submit:focus-visible,
 .store-chat-launcher:focus-visible {
   outline: var(--border-width-focus) solid var(--color-action-primary);
@@ -230,6 +231,90 @@
   font-weight: var(--font-weight-medium);
   letter-spacing: 0.01em;
   line-height: 14px;
+}
+
+.store-chat-delivery-state,
+.store-chat-restore-state {
+  display: grid;
+  gap: 6px;
+  padding: var(--spacing-md);
+  border: var(--border-width-default) solid rgba(255, 128, 0, 0.35);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 128, 0, 0.07);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body-sm);
+}
+
+.store-chat-delivery-state strong,
+.store-chat-restore-state strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.store-chat-delivery-state > span,
+.store-chat-restore-state > span {
+  color: var(--color-text-secondary);
+}
+
+.store-chat-delivery-state.is-failed,
+.store-chat-delivery-state.is-interrupted,
+.store-chat-delivery-state.is-offline,
+.store-chat-restore-state.is-failed {
+  border-color: rgba(211, 47, 47, 0.32);
+  background: rgba(211, 47, 47, 0.06);
+}
+
+.store-chat-delivery-state.is-snapshot,
+.store-chat-delivery-state.is-recovered {
+  border-color: var(--color-blue-300);
+  background: var(--color-action-primary-subtle);
+}
+
+.store-chat-retry-button {
+  width: fit-content;
+  min-height: 2.5rem;
+  margin-top: 2px;
+  padding: 8px 12px;
+  border: var(--border-width-default) solid var(--color-action-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  color: var(--color-action-primary);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+}
+
+.store-chat-retry-button:hover:not(:disabled) {
+  background: var(--color-action-primary-subtle);
+}
+
+.store-chat-retry-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.store-chat-retry-error {
+  font-weight: var(--font-weight-medium);
+}
+
+.store-chat-restore-state {
+  align-content: center;
+  justify-items: start;
+  min-height: 10rem;
+  margin: auto 0;
+}
+
+.store-chat-restore-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: var(--spacing-sm);
+  border: 2px solid var(--color-blue-100);
+  border-top-color: var(--color-action-primary);
+  border-radius: var(--radius-full);
+  animation: store-chat-restore-spin 800ms linear infinite;
+}
+
+@keyframes store-chat-restore-spin {
+  to { transform: rotate(360deg); }
 }
 
 .store-chat-guided-grid,
@@ -529,6 +614,10 @@
   .store-chat-compose-submit,
   .store-chat-launcher {
     transition: none;
+  }
+
+  .store-chat-restore-spinner {
+    animation: none;
   }
 
   .store-chat-typing span {

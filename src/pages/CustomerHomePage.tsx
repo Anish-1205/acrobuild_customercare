@@ -11,7 +11,8 @@ import {
   getPropertyProjects,
   getPropertyTypologies,
   getPropertyWings,
-  getConversationHistory
+  getConversationHistory,
+  type SupportAssistRequest
 } from "../lib/api";
 import { knowledgeArticles, type KnowledgeArticle } from "../lib/articleAssist";
 import {
@@ -21,6 +22,12 @@ import {
 } from "../lib/customerChatContract";
 import { getRoleHomePath } from "../lib/roleNavigation";
 import { requestSupportAssist } from "../lib/supportAssistTransport";
+import {
+  CHAT_RECOVERY_COPY,
+  deliveryStateForResponse,
+  inspectRetryHistory,
+  type ChatDeliveryState
+} from "../lib/chatRecovery";
 import { loadWidgetConfig } from "../lib/widgetConfig";
 import { activeConversation, clearConversation, matchingPropertyFlow, matchingTranscript, replaceConversation, restoredTranscript, savePropertyFlow, saveTranscript } from "../lib/conversationSession";
 import { AcrobuildLogo } from "../components/AcrobuildLogo";
@@ -120,7 +127,9 @@ type HelpCenterCategory = {
 
 type ChatMessage = {
   backendText?: string;
+  canRetry?: boolean;
   contextIssue?: string;
+  deliveryState?: ChatDeliveryState;
   feedbackState?: "negative" | "positive";
   id: number;
   isAutomated?: boolean;
@@ -128,11 +137,21 @@ type ChatMessage = {
   offerActionMenu?: boolean;
   quickReplies?: SupportQuickReply[];
   relatedArticles: KnowledgeArticle[];
+  retryError?: boolean;
+  retrying?: boolean;
   sender: "bot" | "customer";
   serverTurn?: boolean;
   showHelpfulPrompt?: boolean;
   text: string;
   ticketResult?: CreateTicketResponse | null;
+};
+
+type RetryableAssistTurn = {
+  botMessageId: number;
+  customerMessageId: number;
+  primaryArticleId?: number;
+  request: SupportAssistRequest;
+  serverHistoryBefore: SupportConversationMessage[];
 };
 
 function createDefaultChatMessages(): ChatMessage[] {
@@ -997,6 +1016,23 @@ function buildAssistConversationMessages(
   return history;
 }
 
+function buildServerConversationHistory(messages: ChatMessage[]): SupportConversationMessage[] {
+  return messages
+    .filter((message) => message.serverTurn)
+    .map((message) => ({
+      sender: message.sender,
+      text: message.backendText ?? message.text
+    }));
+}
+
+function markCustomerTurnStored(messages: ChatMessage[], customerMessageId: number) {
+  return messages.map((message) =>
+    message.id === customerMessageId
+      ? { ...message, serverTurn: true }
+      : message
+  );
+}
+
 function appendBotMessageDelta(
   messages: ChatMessage[],
   messageId: number,
@@ -1142,6 +1178,7 @@ export function CustomerHomePage() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
   const [isTypingReply, setIsTypingReply] = useState(false);
+  const [isAssistPending, setIsAssistPending] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isVoiceConversation, setIsVoiceConversation] = useState(false);
@@ -1171,9 +1208,18 @@ export function CustomerHomePage() {
   if (!initialConversationRef.current) initialConversationRef.current = activeConversation();
   const conversationIdRef = useRef<string>(initialConversationRef.current.id);
   const [isRestoringChat, setIsRestoringChat] = useState(initialConversationRef.current.restored);
+  const [restoreState, setRestoreState] = useState<"failed" | "loading" | "ready">(
+    initialConversationRef.current.restored ? "loading" : "ready"
+  );
   const [canSaveTranscript, setCanSaveTranscript] = useState(!initialConversationRef.current.restored);
   const chatEmailRef = useRef<HTMLInputElement | null>(null);
   const chatComposeRef = useRef<HTMLTextAreaElement | null>(null);
+  const chatMessageInputRef = useRef<HTMLInputElement | null>(null);
+  const retryButtonRef = useRef<HTMLButtonElement | null>(null);
+  const restoreRetryButtonRef = useRef<HTMLButtonElement | null>(null);
+  const restoreAttemptRef = useRef(0);
+  const activeAssistRef = useRef(false);
+  const retryTurnsRef = useRef(new Map<number, RetryableAssistTurn>());
   const siteVisitNameRef = useRef<HTMLInputElement | null>(null);
   const chatContactComposeRef = useRef<HTMLInputElement | null>(null);
   const chatCloseButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -1202,11 +1248,19 @@ export function CustomerHomePage() {
   }, [isChatOpen]);
 
   useEffect(() => {
-    if (!initialConversationRef.current?.restored) return;
-    const id = initialConversationRef.current.id;
-    let cancelled = false;
-    void getConversationHistory(id).then((history) => {
-      if (cancelled || conversationIdRef.current !== id) return;
+    if (restoreState !== "failed") return;
+    const frame = window.requestAnimationFrame(() => restoreRetryButtonRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [restoreState]);
+
+  async function restoreConversationHistory(id: string) {
+    const attempt = ++restoreAttemptRef.current;
+    setRestoreState("loading");
+    setIsRestoringChat(true);
+    setCanSaveTranscript(false);
+    try {
+      const history = await getConversationHistory(id);
+      if (attempt !== restoreAttemptRef.current || conversationIdRef.current !== id) return;
       const snapshot = matchingTranscript(id, history.messages);
       if (snapshot && (history.exists || !history.messages.length)) {
         setChatMessages(snapshot.map((message) => ({ ...message, relatedArticles: [], isAutomated: message.sender === "bot" })));
@@ -1220,14 +1274,20 @@ export function CustomerHomePage() {
         conversationIdRef.current = activeConversation().id;
         setChatMessages(createDefaultChatMessages());
       }
+      setRestoreState("ready");
       setIsRestoringChat(false);
       setCanSaveTranscript(true);
-    }).catch(() => {
-      if (cancelled || conversationIdRef.current !== id) return;
+    } catch {
+      if (attempt !== restoreAttemptRef.current || conversationIdRef.current !== id) return;
+      setRestoreState("failed");
       setIsRestoringChat(false);
-      setStorefrontError("Your earlier chat could not be loaded. Refresh to try again.");
-    });
-    return () => { cancelled = true; };
+    }
+  }
+
+  useEffect(() => {
+    if (!initialConversationRef.current?.restored) return;
+    void restoreConversationHistory(initialConversationRef.current.id);
+    return () => { restoreAttemptRef.current += 1; };
   }, []);
 
   useEffect(() => {
@@ -1600,15 +1660,190 @@ export function CustomerHomePage() {
     setChatDraft("Customer requested a support ticket during the voice conversation.");
     setStorefrontError("Enter your email to create the ticket and receive follow-up updates.");
   }
+  function focusRetryControl() {
+    window.requestAnimationFrame(() => retryButtonRef.current?.focus());
+  }
+
+  function finishRetryableAssistFailure(
+    turn: RetryableAssistTurn,
+    deliveryState: "interrupted" | "offline",
+    text: string
+  ) {
+    retryTurnsRef.current.set(turn.botMessageId, turn);
+    setChatMessages((current) =>
+      finalizeBotMessage(current, turn.botMessageId, turn.request.issue, {
+        canRetry: true,
+        deliveryState,
+        feedbackState: undefined,
+        isAutomated: true,
+        relatedArticles: [],
+        retryError: false,
+        retrying: false,
+        showHelpfulPrompt: false,
+        text
+      })
+    );
+    focusRetryControl();
+  }
+
+  async function performAssistTurn(turn: RetryableAssistTurn) {
+    try {
+      await requestSupportAssist(turn.request, {
+        onDelta: (text) => {
+          setIsTypingReply(false);
+          setChatMessages((current) =>
+            appendBotMessageDelta(current, turn.botMessageId, turn.request.issue, text)
+          );
+        },
+        onDone: (assistResponse) => {
+          retryTurnsRef.current.delete(turn.botMessageId);
+          setIsTypingReply(false);
+          applyReplyLanguage(assistResponse);
+          setChatMessages((current) =>
+            finalizeBotMessage(
+              markCustomerTurnStored(current, turn.customerMessageId),
+              turn.botMessageId,
+              turn.request.issue,
+              {
+                canRetry: false,
+                deliveryState: deliveryStateForResponse(assistResponse),
+                feedbackState: undefined,
+                isAutomated: true,
+                offerActionMenu: assistResponse.offer_action_menu ?? false,
+                quickReplies: assistResponse.quick_replies ?? [],
+                relatedArticles: [],
+                retryError: false,
+                retrying: false,
+                serverTurn: true,
+                showHelpfulPrompt: false,
+                text: assistResponse.answer
+              }
+            )
+          );
+        },
+        onPartial: (answer) => {
+          setIsTypingReply(false);
+          finishRetryableAssistFailure(turn, "interrupted", answer);
+        }
+      });
+    } catch {
+      const demoResponse = buildDemoBotResponse(
+        turn.request.issue,
+        chatEmail,
+        turn.primaryArticleId,
+        publishedSupportArticles
+      );
+      setIsTypingReply(false);
+      finishRetryableAssistFailure(turn, "offline", demoResponse.text);
+    } finally {
+      activeAssistRef.current = false;
+      setIsAssistPending(false);
+      setIsTypingReply(false);
+    }
+  }
+
+  async function retryAssistTurn(botMessageId: number) {
+    const turn = retryTurnsRef.current.get(botMessageId);
+    if (!turn || activeAssistRef.current || restoreState !== "ready") return;
+    if (turn.request.conversation_id !== conversationIdRef.current) return;
+
+    activeAssistRef.current = true;
+    setIsAssistPending(true);
+    setIsTypingReply(true);
+    setChatMessages((current) => current.map((message) =>
+      message.id === botMessageId
+        ? { ...message, retryError: false, retrying: true }
+        : message
+    ));
+
+    let handedOff = false;
+    try {
+      const history = await getConversationHistory(conversationIdRef.current);
+      const result = inspectRetryHistory(
+        history.messages,
+        turn.serverHistoryBefore,
+        turn.request.issue
+      );
+
+      if (result.kind === "completed") {
+        retryTurnsRef.current.delete(botMessageId);
+        setChatMessages((current) =>
+          finalizeBotMessage(
+            markCustomerTurnStored(current, turn.customerMessageId),
+            botMessageId,
+            turn.request.issue,
+            {
+              canRetry: false,
+              deliveryState: "recovered",
+              feedbackState: undefined,
+              isAutomated: true,
+              quickReplies: history.quick_replies,
+              relatedArticles: [],
+              retryError: false,
+              retrying: false,
+              serverTurn: true,
+              showHelpfulPrompt: false,
+              text: result.answer
+            }
+          )
+        );
+        window.requestAnimationFrame(() => chatMessageInputRef.current?.focus());
+        return;
+      }
+
+      if (result.kind === "diverged") {
+        setChatMessages((current) => current.map((message) =>
+          message.id === botMessageId
+            ? { ...message, retryError: true, retrying: false }
+            : message
+        ));
+        focusRetryControl();
+        return;
+      }
+
+      setChatMessages((current) => current.map((message) =>
+        message.id === botMessageId
+          ? {
+              ...message,
+              canRetry: false,
+              deliveryState: undefined,
+              retryError: false,
+              retrying: false,
+              text: ""
+            }
+          : message
+      ));
+      handedOff = true;
+      await performAssistTurn(turn);
+    } catch {
+      setChatMessages((current) => current.map((message) =>
+        message.id === botMessageId
+          ? { ...message, retryError: true, retrying: false }
+          : message
+      ));
+      focusRetryControl();
+    } finally {
+      if (!handedOff) {
+        activeAssistRef.current = false;
+        setIsAssistPending(false);
+        setIsTypingReply(false);
+      }
+    }
+  }
+
   async function queueBotResponse(
     issue: string,
     primaryArticleId: number | undefined,
     shouldResetConversation: boolean,
     customerMessageText = issue
   ) {
-    if (isRestoringChat) return;
+    if (activeAssistRef.current || restoreState !== "ready") return;
     const trimmedIssue = issue.trim();
     const trimmedCustomerMessage = customerMessageText.trim();
+    if (!trimmedIssue) return;
+
+    activeAssistRef.current = true;
+    setIsAssistPending(true);
     const customerMessageId = Date.now();
     const botMessageId = customerMessageId + 1;
     const conversationMessages = buildAssistConversationMessages(
@@ -1616,15 +1851,33 @@ export function CustomerHomePage() {
       trimmedCustomerMessage || trimmedIssue,
       shouldResetConversation
     );
-
-    if (!trimmedIssue) {
-      return;
-    }
+    const serverHistoryBefore = shouldResetConversation
+      ? []
+      : buildServerConversationHistory(chatMessages);
 
     if (shouldResetConversation) conversationIdRef.current = replaceConversation();
 
     const primaryArticle =
       publishedSupportArticles.find((article) => article.id === primaryArticleId) ?? undefined;
+    const languageHint = isVoiceConversation && voiceLanguage !== "en-IN" ? VOICE_LANGUAGES[voiceLanguage] : "";
+    const turn: RetryableAssistTurn = {
+      botMessageId,
+      customerMessageId,
+      primaryArticleId,
+      request: {
+        article_hint_url: isVoiceConversation ? "" : (primaryArticle?.url ?? ""),
+        conversation_id: conversationIdRef.current,
+        conversation_messages: conversationMessages,
+        customer_email: chatEmail.trim(),
+        issue: trimmedIssue,
+        issue_type: inferIssueType(trimmedCustomerMessage || trimmedIssue),
+        language_hint: languageHint,
+        limit: isVoiceConversation ? 6 : 2,
+        prefer_fast_response: !isVoiceConversation,
+        prefer_qwen_response: true
+      },
+      serverHistoryBefore
+    };
 
     setStorefrontError("");
     setIsTypingReply(true);
@@ -1640,117 +1893,42 @@ export function CustomerHomePage() {
         id: customerMessageId,
         relatedArticles: [],
         sender: "customer",
-        serverTurn: widgetConfig.aiResponsesEnabled,
+        serverTurn: false,
         text: trimmedCustomerMessage || trimmedIssue
       };
-
-      if (shouldResetConversation) {
-        return [nextCustomerMessage];
-      }
-
-      return [...current, nextCustomerMessage];
+      return shouldResetConversation ? [nextCustomerMessage] : [...current, nextCustomerMessage];
     });
 
-    // The customer's words go to the backend untouched; it detects the reply
-    // language itself. Only an explicitly selected voice language is passed on.
-    const assistIssue = trimmedIssue;
-    const languageHint = isVoiceConversation && voiceLanguage !== "en-IN" ? VOICE_LANGUAGES[voiceLanguage] : "";
-
-    try {
-      if (!widgetConfig.aiResponsesEnabled) {
-        const demoResponse = buildDemoBotResponse(
-          trimmedIssue,
-          chatEmail,
-          primaryArticleId,
-          publishedSupportArticles
-        );
-
-        setChatMessages((current) => [
-          ...current,
-          {
-            contextIssue: trimmedIssue,
-            feedbackState: undefined,
-            id: botMessageId,
-            isAutomated: true,
-            isComplete: true,
-            relatedArticles: [],
-            sender: "bot",
-            showHelpfulPrompt: false,
-            text: demoResponse.text
-          }
-        ]);
-        return;
-      }
-
-      await requestSupportAssist({
-        article_hint_url: isVoiceConversation ? "" : (primaryArticle?.url ?? ""),
-        conversation_id: conversationIdRef.current,
-        conversation_messages: conversationMessages,
-        customer_email: chatEmail.trim(),
-        issue: assistIssue,
-        issue_type: inferIssueType(trimmedCustomerMessage || trimmedIssue),
-        language_hint: languageHint,
-        limit: isVoiceConversation ? 6 : 2,
-        prefer_fast_response: !isVoiceConversation,
-        prefer_qwen_response: true
-      }, {
-        onDelta: (text) => {
-          setIsTypingReply(false);
-          setChatMessages((current) =>
-            appendBotMessageDelta(current, botMessageId, trimmedIssue, text)
-          );
-        },
-        onDone: (assistResponse) => {
-          setIsTypingReply(false);
-          applyReplyLanguage(assistResponse);
-
-          setChatMessages((current) =>
-            finalizeBotMessage(current, botMessageId, trimmedIssue, {
-              feedbackState: undefined,
-              isAutomated: true,
-              offerActionMenu: assistResponse.offer_action_menu ?? false,
-              quickReplies: assistResponse.quick_replies ?? [],
-              relatedArticles: [],
-              serverTurn: true,
-              showHelpfulPrompt: false,
-              text: assistResponse.answer
-            })
-          );
-        },
-        onPartial: (answer) => {
-          setIsTypingReply(false);
-          setChatMessages((current) =>
-            finalizeBotMessage(current, botMessageId, trimmedIssue, {
-              feedbackState: undefined,
-              isAutomated: true,
-              relatedArticles: [],
-              showHelpfulPrompt: false,
-              text: answer
-            })
-          );
-        }
-      });
-    } catch {
+    if (!widgetConfig.aiResponsesEnabled) {
       const demoResponse = buildDemoBotResponse(
         trimmedIssue,
         chatEmail,
         primaryArticleId,
         publishedSupportArticles
       );
-
-      setIsTypingReply(false);
-      setChatMessages((current) =>
-        finalizeBotMessage(current, botMessageId, trimmedIssue, {
+      setChatMessages((current) => [
+        ...current,
+        {
+          canRetry: false,
+          contextIssue: trimmedIssue,
+          deliveryState: "degraded",
           feedbackState: undefined,
+          id: botMessageId,
           isAutomated: true,
+          isComplete: true,
           relatedArticles: [],
+          sender: "bot",
           showHelpfulPrompt: false,
           text: demoResponse.text
-        })
-      );
-    } finally {
+        }
+      ]);
+      activeAssistRef.current = false;
+      setIsAssistPending(false);
       setIsTypingReply(false);
+      return;
     }
+
+    await performAssistTurn(turn);
   }
 
   function beginPropertyFlowStep(label: string, contextIssue: string) {
@@ -3339,7 +3517,33 @@ export function CustomerHomePage() {
               className={`store-chat-body${isMenuMode ? " menu-mode" : ""}`}
               ref={chatBodyRef}
             >
-              {!hasActiveConversation ? (
+              {restoreState !== "ready" ? (
+                <div
+                  aria-live={restoreState === "loading" ? "polite" : "assertive"}
+                  className={`store-chat-restore-state is-${restoreState}`}
+                  role={restoreState === "loading" ? "status" : "alert"}
+                >
+                  <strong>{restoreState === "loading" ? "Restoring your conversation" : "Conversation could not be restored"}</strong>
+                  <span>
+                    {restoreState === "loading"
+                      ? "Loading your earlier messages and conversation context."
+                      : "Your earlier messages and context could not be verified. Retry before continuing so context is not lost."}
+                  </span>
+                  {restoreState === "failed" ? (
+                    <button
+                      className="store-chat-retry-button"
+                      disabled={isRestoringChat}
+                      onClick={() => void restoreConversationHistory(conversationIdRef.current)}
+                      ref={restoreRetryButtonRef}
+                      type="button"
+                    >
+                      Retry restore
+                    </button>
+                  ) : (
+                    <span aria-hidden="true" className="store-chat-restore-spinner" />
+                  )}
+                </div>
+              ) : !hasActiveConversation ? (
                 isContactMode ? (
                   <div className="store-chat-home contact-mode">
                     <div className="store-chat-intake-thread">
@@ -3443,13 +3647,40 @@ export function CustomerHomePage() {
                                 </div>
                               ) : null}
 
+                              {!isCustomerMessage && message.deliveryState ? (
+                                <div
+                                  aria-live={["failed", "interrupted", "offline"].includes(message.deliveryState) ? "assertive" : "polite"}
+                                  className={`store-chat-delivery-state is-${message.deliveryState}`}
+                                  role={["failed", "interrupted", "offline"].includes(message.deliveryState) ? "alert" : "status"}
+                                >
+                                  <strong>{CHAT_RECOVERY_COPY[message.deliveryState].title}</strong>
+                                  <span>{CHAT_RECOVERY_COPY[message.deliveryState].detail}</span>
+                                  {message.retryError ? (
+                                    <span className="store-chat-retry-error">
+                                      Retry paused because the conversation could not be safely reconciled. Try again after the connection recovers.
+                                    </span>
+                                  ) : null}
+                                  {message.canRetry && message.id === latestCompletedBotMessageId ? (
+                                    <button
+                                      className="store-chat-retry-button"
+                                      disabled={isAssistPending || isRestoringChat}
+                                      onClick={() => void retryAssistTurn(message.id)}
+                                      ref={retryButtonRef}
+                                      type="button"
+                                    >
+                                      {message.retrying ? "Retrying..." : "Retry answer"}
+                                    </button>
+                                  ) : null}
+                                </div>
+                              ) : null}
+
                               {!isCustomerMessage && message.id === latestCompletedBotMessageId && !isSiteVisitFormVisible ? (
                                 message.quickReplies?.length ? (
                                   <div className="store-chat-guided-grid project-grid store-chat-quick-replies">
                                     {message.quickReplies.map((option) => (
                                       <button
                                         className={`store-chat-guided-button${option.action ? ` store-chat-action-${option.action}` : ""}`}
-                                        disabled={isTypingReply || isRestoringChat}
+                                        disabled={isAssistPending || isRestoringChat}
                                         key={option.value}
                                         onClick={() => {
                                           const dispatch = getQuickReplyDispatch(option, message);
@@ -3535,7 +3766,7 @@ export function CustomerHomePage() {
                                       </button>
                                     ) : null}
                                   </div>
-                                ) : !isTypingReply && message.contextIssue === "Initial welcome" ? (
+                                ) : !isAssistPending && message.contextIssue === "Initial welcome" ? (
                                   <div className="store-chat-guided-grid greeting-action">
                                     {GREETING_ACTIONS.map((action) => (
                                       <button
@@ -3557,6 +3788,7 @@ export function CustomerHomePage() {
                                   <div className="store-chat-guided-grid action-menu">
                                     <button
                                       className="store-chat-guided-button store-chat-action-ticket"
+                                      disabled={isAssistPending || isRestoringChat}
                                       onClick={() => openFollowUpForm(message.contextIssue ?? "")}
                                       type="button"
                                     >
@@ -3565,6 +3797,7 @@ export function CustomerHomePage() {
                                     </button>
                                     <button
                                       className="store-chat-guided-button store-chat-action-site_visit"
+                                      disabled={isAssistPending || isRestoringChat}
                                       onClick={() => void openSiteVisitBooking()}
                                       type="button"
                                     >
@@ -3847,7 +4080,7 @@ export function CustomerHomePage() {
                 onSubmit={(event) => {
                   event.preventDefault();
 
-                  if (!chatDraft.trim() || isTypingReply || isRestoringChat) {
+                  if (!chatDraft.trim() || isAssistPending || restoreState !== "ready") {
                     return;
                   }
 
@@ -3886,14 +4119,18 @@ export function CustomerHomePage() {
                   <input
                     aria-label="Message Acrobuild Assistant"
                     className="store-chat-message-input"
+                    disabled={isAssistPending || restoreState !== "ready"}
                     onChange={(event) => setChatDraft(event.target.value)}
-                    placeholder={hasActiveConversation ? "Reply to the assistant" : "Ask a support question"}
+                    placeholder={restoreState === "failed"
+                      ? "Restore the conversation to continue"
+                      : hasActiveConversation ? "Reply to the assistant" : "Ask a support question"}
+                    ref={chatMessageInputRef}
                     value={chatDraft}
                   />
                   <button
                     aria-label="Send message"
                     className="store-chat-compose-submit"
-                    disabled={isTypingReply || isRestoringChat || !chatDraft.trim()}
+                    disabled={isAssistPending || restoreState !== "ready" || !chatDraft.trim()}
                     type="submit"
                   >
                     <PaperPlaneIcon />
@@ -3911,7 +4148,7 @@ export function CustomerHomePage() {
 
             {storefrontError ? (
               <div className="store-chat-inline-error-shell">
-                <div className="store-chat-error">{storefrontError}</div>
+                <div className="store-chat-error" role="alert">{storefrontError}</div>
               </div>
             ) : null}
           </section>

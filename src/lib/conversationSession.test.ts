@@ -52,6 +52,7 @@ describe("active support conversation", () => {
     expect(restoredTranscript(id, history, [])).toEqual(visible.map((message) => ({
       backendText: "backendText" in message ? message.backendText : undefined,
       contextIssue: undefined,
+      deliveryState: undefined,
       id: message.id,
       isComplete: message.isComplete,
       offerActionMenu: undefined,
@@ -126,6 +127,7 @@ describe("active support conversation", () => {
     expect(restoredTranscript(id, history, [])).toEqual(visible.map((message) => ({
       backendText: "backendText" in message ? message.backendText : undefined,
       contextIssue: "contextIssue" in message ? message.contextIssue : undefined,
+      deliveryState: undefined,
       id: message.id,
       isComplete: "isComplete" in message ? message.isComplete : undefined,
       offerActionMenu: "offerActionMenu" in message ? message.offerActionMenu : undefined,
@@ -137,5 +139,28 @@ describe("active support conversation", () => {
 
     replaceConversation();
     expect(matchingTranscript(id, history)).toBeNull();
+  });
+
+  it("preserves an honest failure marker in a matching local snapshot", () => {
+    const { id } = activeConversation();
+    const visible = [
+      { id: 1, sender: "customer" as const, text: "Show prices", serverTurn: false },
+      { id: 2, sender: "bot" as const, text: "Local article", isComplete: true,
+        deliveryState: "degraded" as const }
+    ];
+
+    saveTranscript(id, visible);
+    expect(restoredTranscript(id, [], [])).toEqual(visible.map((message) => ({
+      backendText: undefined,
+      contextIssue: undefined,
+      deliveryState: "deliveryState" in message ? message.deliveryState : undefined,
+      id: message.id,
+      isComplete: "isComplete" in message ? message.isComplete : undefined,
+      offerActionMenu: undefined,
+      quickReplies: undefined,
+      sender: message.sender,
+      serverTurn: message.serverTurn,
+      text: message.text
+    })));
   });
 });
