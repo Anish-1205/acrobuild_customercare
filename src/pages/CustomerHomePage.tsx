@@ -30,7 +30,7 @@ import {
 } from "../lib/chatRecovery";
 import { loadWidgetConfig } from "../lib/widgetConfig";
 import { activeConversation, clearConversation, matchingPropertyFlow, matchingTranscript, replaceConversation, restoredTranscript, savePropertyFlow, saveTranscript } from "../lib/conversationSession";
-import { AcrobuildLogo } from "../components/AcrobuildLogo";
+import { PublicFooter, PublicHeader } from "../components/PublicShell";
 import { Button, Card, Input } from "../components/ui";
 import type {
   CreateTicketResponse,
@@ -199,55 +199,6 @@ const helpCenterActions: HelpCenterAction[] = [
   }
 ];
 
-const helpCenterNav = [
-  { isHome: true, to: helpCenterHomePath, label: "Home" },
-  { to: `${helpCenterArticlesPath}#popular-questions`, label: "Popular questions" },
-  { to: `${helpCenterArticlesPath}#more-information`, label: "All articles" },
-  { to: `${helpCenterArticlesPath}#get-support`, label: "Get support" }
-];
-
-const homeDemoHeroImage =
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1600&q=80";
-const homeDemoCommandImage =
-  "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1400&q=80";
-const homeDemoSceneCards = [
-  {
-    alt: "Construction professionals reviewing live site progress.",
-    copy: "Field teams, buyers, and support all stay aligned on the same update path.",
-    image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=80",
-    title: "Live site coordination"
-  },
-  {
-    alt: "Modern residential tower ready for buyer handover.",
-    copy: "Confident possession, snagging, and aftercare communication from day one.",
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80",
-    title: "Buyer-ready handover"
-  }
-];
-const homeDemoLifecycleCards = [
-  {
-    alt: "Architectural planning and preconstruction coordination.",
-    copy: "Support buyers with pricing questions, brochure access, availability checks, and early-stage guidance before the project moves into execution.",
-    eyebrow: "01 Preconstruction clarity",
-    image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80",
-    title: "Sales, quotation, and document answers that feel project-ready."
-  },
-  {
-    alt: "Active construction site with cranes and structural work underway.",
-    copy: "Turn construction updates, site visit requests, milestone explanations, and project follow-ups into a single clean support journey.",
-    eyebrow: "02 Delivery visibility",
-    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80",
-    title: "Live delivery support built around real construction milestones."
-  },
-  {
-    alt: "Completed interior space prepared for possession and maintenance support.",
-    copy: "Keep possession timelines, defect reports, maintenance triage, and documentation requests structured after project delivery.",
-    eyebrow: "03 Handover discipline",
-    image: "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80",
-    title: "Aftercare and possession workflows that stay polished under pressure."
-  }
-];
-
 function matchesSearchQuery(query: string, ...values: string[]) {
   if (!query) {
     return true;
@@ -271,52 +222,6 @@ function normalizeSupportArticle(article: SupportArticleRecord): KnowledgeArticl
 
 function normalizeText(value: string) {
   return value.trim().toLowerCase();
-}
-
-function getHomeDemoCategoryImage(title: string, index: number) {
-  const normalizedTitle = normalizeText(title);
-
-  if (
-    normalizedTitle.includes("price") ||
-    normalizedTitle.includes("quote") ||
-    normalizedTitle.includes("sales") ||
-    normalizedTitle.includes("availability")
-  ) {
-    return "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1200&q=80";
-  }
-
-  if (
-    normalizedTitle.includes("construction") ||
-    normalizedTitle.includes("visit") ||
-    normalizedTitle.includes("project")
-  ) {
-    return "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=80";
-  }
-
-  if (
-    normalizedTitle.includes("handover") ||
-    normalizedTitle.includes("maintenance") ||
-    normalizedTitle.includes("defect") ||
-    normalizedTitle.includes("possession")
-  ) {
-    return "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80";
-  }
-
-  if (
-    normalizedTitle.includes("document") ||
-    normalizedTitle.includes("payment") ||
-    normalizedTitle.includes("receipt")
-  ) {
-    return "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1200&q=80";
-  }
-
-  const fallbackImages = [
-    "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80"
-  ];
-
-  return fallbackImages[index % fallbackImages.length];
 }
 
 function getArticlePrompt(article: KnowledgeArticle) {
@@ -2676,228 +2581,203 @@ export function CustomerHomePage() {
     featuredHelpCenterCategories.length ? featuredHelpCenterCategories : helpCenterCategories
   ).slice(0, 3);
   const selectedArticleParagraphs = selectedArticle ? getArticleParagraphs(selectedArticle) : [];
-  const homeDemoMetrics = [
+  const publicHomeServices = [
     {
-      detail:
-        "Buyer-facing answers, pricing logic, documentation help, and handover support kept in one published system.",
-      label: "Published guides",
-      value: String(totalPublishedArticles).padStart(2, "0")
+      alt: "Residential buildings set around landscaped shared spaces.",
+      copy: "Ask the assistant for current project options and the home types available in the connected catalogue.",
+      image: "/images/real-world/projects-available-homes-card.png",
+      label: "Project discovery",
+      title: "Explore projects and home types"
     },
     {
-      detail:
-        "Clear support lanes for sales, construction updates, possession, maintenance, and document requests.",
-      label: "Support sectors",
-      value: String(totalPublishedCategories).padStart(2, "0")
+      alt: "A home plan and material samples being reviewed at a table.",
+      copy: "Ask a specific question about pricing, availability, project details, or documents and review the answer provided.",
+      image: "/images/real-world/pricing-home-details-card.png",
+      label: "Property questions",
+      title: "Understand the details"
     },
     {
-      detail:
-        "Fast entry points for quote requests, site visits, payment clarification, and defect follow-up.",
-      label: "Quick response tracks",
-      value: String(supportFlows.length).padStart(2, "0")
+      alt: "A couple viewing a home with a property advisor.",
+      copy: "Send a site-visit request or ask for support when you are ready for a team follow-up.",
+      image: "/images/real-world/site-visit-buyer-support-card.png",
+      label: "Next steps",
+      title: "Request a follow-up"
     }
   ];
-  const homeDemoSectorShowcase = featuredHelpCenterCategories.map((category, index) => ({
-    ...category,
-    image: getHomeDemoCategoryImage(category.title, index)
-  }));
-  const homeDemoCommandPoints = [
+  const publicHomeSteps = [
     {
-      copy:
-        "Buyers can move from first-interest pricing questions to documented next steps without losing context.",
-      label: "Sales confidence"
+      copy: "Share what you want to know in the Acrobuild assistant.",
+      title: "Start with your question"
     },
     {
-      copy:
-        "Construction updates, visit coordination, and delivery explanations stay aligned with the latest published guidance.",
-      label: "Site visibility"
+      copy: "When a property choice needs clarification, select from the options the assistant provides.",
+      title: "Narrow the request"
     },
     {
-      copy:
-        "Post-handover defects, snagging, and document follow-up route into the right service path quickly.",
-      label: "Aftercare discipline"
+      copy: "Continue in chat or send a supported request when you need the team to follow up.",
+      title: "Choose the next step"
     }
   ];
 
   return (
     <div className={`help-center-page${isHomeDemoPage ? " help-center-marketing-home" : ""}`} id="top">
-      <header className="help-center-header">
-        <div className="help-center-shell help-center-header-inner">
-          <Link className="help-center-header-brand" to={helpCenterHomePath}>
-            <AcrobuildLogo subtitle="Project support desk" />
-          </Link>
-
-          <nav className="help-center-header-nav" aria-label="Help center sections">
-            {helpCenterNav.map((item) => (
-              <Link
-                className={item.isHome ? "help-center-header-home" : undefined}
-                key={item.to}
-                to={item.to}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <Link className="help-center-header-link" to={workspaceLink}>
-            {workspaceLabel}
-          </Link>
-        </div>
-      </header>
+      <PublicHeader workspaceLabel={workspaceLabel} workspaceLink={workspaceLink} />
 
       <main className="help-center-main">
         {isHomeDemoPage ? (
           <>
-            <section className="help-center-demo-hero">
-              <div className="help-center-shell help-center-demo-hero-inner">
-                <div className="help-center-demo-copy">
-                  <div className="help-center-article-kicker">Your property journey, made clearer</div>
-                  <h1><span>Find the right home.</span> Move forward with confidence.</h1>
+            <section className="public-home-hero">
+              <div className="help-center-shell public-home-hero-inner">
+                <div className="public-home-hero-copy">
+                  <p className="public-home-eyebrow">Acrobuild property support</p>
+                  <h1>
+                    Clear answers for your <span>property journey.</span>
+                  </h1>
                   <p>
-                    Explore Acrobuild projects, compare available homes, understand pricing, and get
-                    clear support from your first question through possession.
+                    Explore Acrobuild projects, ask about homes and pricing, browse support guides,
+                    or request the next step through one connected support experience.
                   </p>
 
-                  <div className="help-center-demo-actions">
-                    <button className="help-center-inline-button help-center-inline-button-solid" onClick={() => openContactMode("")} type="button">
-                      Explore with us
+                  <div className="public-home-actions">
+                    <button
+                      className="public-home-action"
+                      onClick={() => setIsChatOpen(true)}
+                      type="button"
+                    >
+                      Ask the assistant
                     </button>
-                    <Link className="help-center-inline-button help-center-inline-button-ghost help-center-inline-link" to={helpCenterArticlesPath}>
+                    <Link className="public-home-action secondary" to={helpCenterArticlesPath}>
                       Browse support guides
                     </Link>
                   </div>
 
-                  <div className="help-center-demo-metric-grid">
-                    {homeDemoMetrics.map((metric) => (
-                      <article className="help-center-demo-metric-card" key={metric.label}>
-                        <small>{metric.label}</small><strong>{metric.value}</strong><p>{metric.detail}</p>
-                      </article>
-                    ))}
+                  <div className="public-home-hero-note">
+                    Property-specific answers follow the information available from Acrobuild's
+                    connected services.
                   </div>
                 </div>
 
-                <div className="help-center-demo-visual-stage">
-                  <figure className="help-center-demo-hero-image-shell">
-                    <img alt="A couple touring a modern Acrobuild residential community with a property advisor" className="help-center-demo-hero-image" src="/images/real-world/property-support-hero-v2.png" />
-                    <figcaption className="help-center-demo-hero-badge">
-                      <strong>Homes worth exploring</strong>
-                      <span>Discover projects, compare available configurations, and plan your next visit with clear guidance.</span>
+                <div className="public-home-visual">
+                  <figure className="public-home-visual-frame">
+                    <img
+                      alt="A couple walking through a residential community with a property advisor."
+                      src="/images/real-world/property-support-hero-v2.png"
+                    />
+                    <figcaption className="public-home-visual-caption">
+                      <strong>Start with what matters to you</strong>
+                      <span>
+                        Ask a question, review the options provided, and continue at your own pace.
+                      </span>
                     </figcaption>
                   </figure>
                 </div>
               </div>
             </section>
-            <section className="help-center-shell help-center-section help-center-demo-section">
-              <div className="help-center-section-head">
-                <div>
-                  <h2>Built around the real project lifecycle</h2>
+
+            <section className="public-home-section">
+              <div className="help-center-shell">
+                <div className="public-home-section-head">
+                  <p className="public-home-eyebrow">How we can help</p>
+                  <h2>Support for questions before and after you choose a home.</h2>
                   <p>
-                    The landing page now mirrors how premium construction brands present trust,
-                    momentum, and delivery clarity across every stage.
+                    Use the assistant for property questions, or move into the existing support
+                    paths when you need a follow-up.
                   </p>
                 </div>
-              </div>
 
-              <div className="help-center-demo-lifecycle-grid">
-                {homeDemoLifecycleCards.map((card) => (
-                  <article className="help-center-demo-lifecycle-card" key={card.eyebrow}>
-                    <img
-                      alt={card.alt}
-                      className="help-center-demo-lifecycle-image"
-                      loading="lazy"
-                      src={card.image}
-                    />
-                    <div className="help-center-demo-lifecycle-body">
-                      <small>{card.eyebrow}</small>
-                      <strong>{card.title}</strong>
-                      <p>{card.copy}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section className="help-center-shell help-center-section help-center-demo-section">
-              <div className="help-center-section-head">
-                <div>
-                  <h2>Featured support sectors</h2>
-                  <p>
-                    These sections still come from your live published help-center categories. The
-                    visual upgrade just presents them with more polish.
-                  </p>
-                </div>
-              </div>
-
-              <div className="help-center-demo-sector-grid">
-                {homeDemoSectorShowcase.map((category) => (
-                  <Link
-                    className="help-center-demo-sector-card"
-                    key={category.id}
-                    to={buildCategoryPath(category.title)}
-                  >
-                    <img
-                      alt={category.title}
-                      className="help-center-demo-sector-image"
-                      loading="lazy"
-                      src={category.image}
-                    />
-                    <div className="help-center-demo-sector-body">
-                      <small>{formatArticleCount(category.articleCount)}</small>
-                      <strong>{category.title}</strong>
-                      <span>
-                        {category.description ||
-                          "Support routes tailored for this stage of the buyer and homeowner journey."}
+                <div className="public-home-card-grid">
+                  {publicHomeServices.map((service) => (
+                    <button
+                      className="public-home-card"
+                      key={service.title}
+                      onClick={() => setIsChatOpen(true)}
+                      type="button"
+                    >
+                      <img alt={service.alt} loading="lazy" src={service.image} />
+                      <span className="public-home-card-body">
+                        <span className="public-home-card-label">{service.label}</span>
+                        <strong>{service.title}</strong>
+                        <span>{service.copy}</span>
+                        <span className="public-home-card-link">Open assistant</span>
                       </span>
-                    </div>
-                  </Link>
-                ))}
+                    </button>
+                  ))}
+                </div>
               </div>
             </section>
 
-            <section className="help-center-shell help-center-section help-center-demo-section">
-              <div className="help-center-demo-command-grid">
-                <div className="help-center-demo-command-panel">
-                  <div className="help-center-article-kicker">Support operations</div>
-                  <h2>A cleaner command layer behind the buyer-facing experience.</h2>
-                  <p>
-                    The public help center looks stronger, while your team still works from the
-                    same published articles, support categories, and conversation flows.
-                  </p>
+            {featuredHelpCenterCategories.length ? (
+              <section className="public-home-section is-subtle">
+                <div className="help-center-shell">
+                  <div className="public-home-section-head">
+                    <p className="public-home-eyebrow">Support guides</p>
+                    <h2>Browse help by topic.</h2>
+                    <p>
+                      Open the same published support categories already available in the Acrobuild
+                      help centre.
+                    </p>
+                  </div>
 
-                  <div className="help-center-demo-command-list">
-                    {homeDemoCommandPoints.map((point, index) => (
-                      <div className="help-center-demo-command-point" key={point.label}>
-                        <span className="help-center-demo-command-index">{`0${index + 1}`}</span>
-                        <div>
-                          <strong>{point.label}</strong>
-                          <p>{point.copy}</p>
-                        </div>
-                      </div>
+                  <div className="public-home-guide-grid">
+                    {featuredHelpCenterCategories.map((category, index) => (
+                      <Link
+                        className="public-home-guide-card"
+                        key={category.id}
+                        to={buildCategoryPath(category.title)}
+                      >
+                        <span className="public-home-guide-number">{String(index + 1).padStart(2, "0")}</span>
+                        <strong>{category.title}</strong>
+                        <span>{formatArticleCount(category.articleCount)}</span>
+                      </Link>
                     ))}
                   </div>
-
-                  <Link
-                    className="help-center-inline-button help-center-inline-button-solid help-center-inline-link"
-                    to={helpCenterArticlesPath}
-                  >
-                    Open full help center
-                  </Link>
                 </div>
+              </section>
+            ) : null}
 
-                <div className="help-center-demo-command-visual">
-                  <img
-                    alt="Acrobuild support team coordinating project communication"
-                    className="help-center-demo-command-image"
-                    loading="lazy"
-                    src={homeDemoCommandImage}
-                  />
-                  <div className="help-center-demo-command-note">
-                    <strong>Construction-ready answers</strong>
-                    <span>
-                      Published guidance, chat replies, and support routing continue to reinforce
-                      the same buyer journey.
-                    </span>
+            <section className="public-home-section">
+              <div className="help-center-shell public-home-support-grid">
+                <div className="public-home-support-copy">
+                  <p className="public-home-eyebrow">A simple support path</p>
+                  <h2>Begin with a question. Continue with the context intact.</h2>
+                  <p>
+                    The Acrobuild assistant helps you move through supported property and service
+                    questions without changing the existing chat journey.
+                  </p>
+
+                  <ol className="public-home-steps">
+                    {publicHomeSteps.map((step, index) => (
+                      <li className="public-home-step" key={step.title}>
+                        <span className="public-home-step-number">{index + 1}</span>
+                        <div>
+                          <strong>{step.title}</strong>
+                          <p>{step.copy}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+
+                  <div className="public-home-actions">
+                    <button
+                      className="public-home-action"
+                      onClick={() => setIsChatOpen(true)}
+                      type="button"
+                    >
+                      Open support chat
+                    </button>
+                    <Link className="public-home-action secondary" to={helpCenterArticlesPath}>
+                      Visit the help centre
+                    </Link>
                   </div>
                 </div>
+
+                <figure className="public-home-support-image">
+                  <img
+                    alt="A property advisor reviewing information with customers."
+                    loading="lazy"
+                    src="/images/real-world/help-center-support.png"
+                  />
+                </figure>
               </div>
             </section>
           </>
@@ -3374,19 +3254,7 @@ export function CustomerHomePage() {
         ) : null}
       </main>
 
-      <footer className="help-center-footer">
-        <div className="help-center-shell help-center-footer-inner">
-          <Link className="help-center-footer-brand" to={helpCenterHomePath}>
-            <AcrobuildLogo className="acrobuild-logo-compact" subtitle="Buyer & homeowner support" />
-          </Link>
-          <div className="help-center-footer-links">
-            <Link to={helpCenterArticlesPath}>All articles</Link>
-            <Link to={`${helpCenterArticlesPath}#popular-questions`}>Popular questions</Link>
-            <a href={`${helpCenterArticlesPath}#get-support`}>Contact</a>
-          </div>
-          <span>English (US)</span>
-        </div>
-      </footer>
+      <PublicFooter />
 
       {isVoiceConversation ? (
         <section
