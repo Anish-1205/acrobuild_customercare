@@ -23,6 +23,7 @@ import {
   sortTicketsByRecent
 } from "../lib/ticketPresentation";
 import type { Ticket } from "../types";
+import { StaffPageHeader } from "../components/StaffPageHeader";
 
 type DashboardFilters = {
   agent: string;
@@ -153,15 +154,13 @@ export function TicketDashboardPage({ embedded = false }: TicketDashboardPagePro
 
   return (
     <div className="stack-page">
-      {!embedded ? (
-        <section className="hero-card compact">
-          <div className="hero-kicker">Operations Workspace</div>
-          <h2>Ticket Dashboard</h2>
-          <p>Keep the dashboard light and focused on the key queue signals instead of showing extra filter sections.</p>
-        </section>
-      ) : null}
+      <StaffPageHeader
+        description="Review dashboard counts and trends calculated from the currently loaded ticket list."
+        eyebrow={embedded ? "Ticket reporting" : "Operations workspace"}
+        title="Dashboard"
+      />
 
-      {error ? <div className="banner-error">{error}</div> : null}
+      {error ? <div className="banner-error" role="alert">{error}</div> : null}
 
       {isLoading ? (
         <WorkspaceStatePanel

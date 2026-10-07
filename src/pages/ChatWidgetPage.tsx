@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { StaffPageHeader } from "../components/StaffPageHeader";
 import {
   buildInstallSnippet,
   loadWidgetConfig,
@@ -80,18 +81,17 @@ export function ChatWidgetPage({ embedded = false }: ChatWidgetPageProps) {
 
   return (
     <div className="stack-page">
-      {!embedded ? (
-        <section className="hero-card compact">
-          <div className="hero-kicker">Chat Experience</div>
-          <h2>Chat Widget</h2>
-          <p>
-            Configure the public support widget, tune the chat width, and install the
-            launcher snippet on storefront pages.
-          </p>
-        </section>
-      ) : null}
+      <StaffPageHeader
+        description="Preview browser-local widget preferences and copy the existing installation snippet. These settings are saved only in this browser."
+        eyebrow={embedded ? "Local configuration" : "Chat experience"}
+        title="Chat Box"
+      />
 
-      {copyState ? <div className="banner-success">{copyState}</div> : null}
+      <div className="phase6-local-notice" role="note">
+        Changes on this page are local to this browser. This repository does not deploy the widget or manage the external script host.
+      </div>
+
+      {copyState ? <div className="banner-success" role="status">{copyState}</div> : null}
 
       <div className="widget-layout">
         <div className="widget-main">
@@ -201,7 +201,7 @@ export function ChatWidgetPage({ embedded = false }: ChatWidgetPageProps) {
           </section>
 
           <section className="plain-card">
-            <div className="section-title">Reply Behavior</div>
+            <div className="section-title">Reply behavior</div>
             <div className="section-copy">
               The widget uses Acrobuild support knowledge behind the scenes, then asks for quick feedback before handing the conversation to the team when needed.
             </div>
@@ -244,9 +244,9 @@ export function ChatWidgetPage({ embedded = false }: ChatWidgetPageProps) {
           <section className="plain-card">
             <div className="toolbar-row spread wrap">
               <div>
-                <div className="section-title">Manual Installation</div>
+                <div className="section-title">Manual installation</div>
                 <div className="section-copy">
-                  Install the support widget on any website by placing one script before the closing body tag.
+                  Copy the currently generated snippet for review. Validate its external host and deployment process outside this browser-local editor.
                 </div>
               </div>
 

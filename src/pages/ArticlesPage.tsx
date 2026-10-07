@@ -9,6 +9,7 @@ import {
   updateAdminArticle,
   updateAdminKnowledgeDocument
 } from "../lib/api";
+import { StaffPageHeader } from "../components/StaffPageHeader";
 import type {
   KnowledgeDocumentRecord,
   SupportArticleRecord,
@@ -143,6 +144,7 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
     emptyKnowledgeDocumentDraft()
   );
   const [isWorking, setIsWorking] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAssistWorking, setIsAssistWorking] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -180,6 +182,10 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : "Unable to load the knowledge workspace.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
         }
       }
     }
@@ -449,19 +455,17 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
 
   return (
     <div className="stack-page">
-      {!embedded ? (
-        <section className="hero-card compact">
-          <div className="hero-kicker">Knowledge Base</div>
-          <h2>AI Training Workspace</h2>
-          <p>
-            Train the support agent with published articles, uploaded training notes, and a live AI
-            preview before customers see the answer.
-          </p>
-        </section>
-      ) : null}
+      <StaffPageHeader
+        description="Manage published articles and training documents as separate content libraries, then test the current assistant response."
+        eyebrow={embedded ? "Knowledge workspace" : "Staff knowledge"}
+        title="Articles and training"
+      />
 
-      {error ? <div className="banner-error">{error}</div> : null}
-      {notice ? <div className="banner-success">{notice}</div> : null}
+      <div aria-live="polite" aria-atomic="true">
+        {isLoading ? <div className="phase6-status" role="status">Loading articles and training documents...</div> : null}
+        {error ? <div className="banner-error" role="alert">{error}</div> : null}
+        {notice ? <div className="banner-success" role="status">{notice}</div> : null}
+      </div>
 
       {surface === "list" ? (
         <>
@@ -486,6 +490,7 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
 
             <div className="filter-grid articles-filter-grid">
               <input
+                aria-label="Search articles"
                 className="rail-search"
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search articles by title, summary, or keyword"
@@ -493,6 +498,7 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
               />
 
               <select
+                aria-label="Filter articles by category"
                 className="field-input"
                 onChange={(event) => setCategoryFilter(event.target.value)}
                 value={categoryFilter}
@@ -505,6 +511,7 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
               </select>
 
               <select
+                aria-label="Filter articles by status"
                 className="field-input"
                 onChange={(event) =>
                   setStatusFilter(event.target.value as "All" | SupportArticleRecord["status"])
@@ -593,6 +600,7 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
 
             <div className="filter-grid articles-filter-grid">
               <input
+                aria-label="Search training documents"
                 className="rail-search"
                 onChange={(event) => setKnowledgeSearch(event.target.value)}
                 placeholder="Search uploaded notes, SOPs, FAQs, or policies"
@@ -600,6 +608,7 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
               />
 
               <select
+                aria-label="Filter training documents by category"
                 className="field-input"
                 onChange={(event) => setKnowledgeCategoryFilter(event.target.value)}
                 value={knowledgeCategoryFilter}
@@ -612,6 +621,7 @@ export function ArticlesPage({ embedded = false }: ArticlesPageProps) {
               </select>
 
               <select
+                aria-label="Filter training documents by status"
                 className="field-input"
                 onChange={(event) =>
                   setKnowledgeStatusFilter(

@@ -1,0 +1,390 @@
+/* Phase 6A: shared presentation for the two existing staff inbox workflows. */
+.staff-inbox {
+  min-width: 0;
+  color: var(--color-text-primary);
+  background: var(--color-bg-canvas);
+}
+
+.staff-inbox::before,
+.staff-inbox::after {
+  display: none;
+}
+
+.staff-inbox .support-console-grid {
+  display: grid;
+  grid-template-columns: minmax(250px, 280px) minmax(420px, 1fr) minmax(300px, 350px);
+  grid-template-areas: "sidebar main details";
+  gap: var(--spacing-lg);
+  min-height: 0;
+  padding: var(--spacing-lg);
+  background: var(--color-bg-canvas);
+}
+
+.staff-inbox .support-console-sidebar,
+.staff-inbox .support-console-main,
+.staff-inbox .support-console-details {
+  min-width: 0;
+  overflow: hidden;
+  border: var(--border-width-default) solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--elevation-1);
+  backdrop-filter: none;
+}
+
+.staff-inbox .support-console-sidebar {
+  grid-area: sidebar;
+}
+
+.staff-inbox .support-console-main {
+  grid-area: main;
+}
+
+.staff-inbox .support-console-details {
+  grid-area: details;
+}
+
+.staff-inbox .support-sidebar-panel,
+.staff-inbox .support-thread-shell,
+.staff-inbox .support-details-scroll {
+  background: var(--color-bg-surface);
+}
+
+.staff-inbox .support-sidebar-top,
+.staff-inbox .support-main-header,
+.staff-inbox .support-details-header,
+.staff-inbox .support-reply-head,
+.staff-inbox .support-reply-footer {
+  border-color: var(--color-border-default);
+  background: var(--color-bg-surface);
+}
+
+.staff-inbox .support-sidebar-home,
+.staff-inbox .support-primary-button {
+  color: var(--color-text-on-primary);
+  background: var(--color-action-primary);
+  background-image: none;
+  box-shadow: none;
+}
+
+.staff-inbox .support-primary-button:hover:not(:disabled),
+.staff-inbox .support-sidebar-home:hover {
+  background: var(--color-action-primary-hover);
+}
+
+.staff-inbox .support-view-row,
+.staff-inbox .support-ticket-item,
+.staff-inbox .support-secondary-button,
+.staff-inbox .support-toolbar-button,
+.staff-inbox .support-status-action,
+.staff-inbox .support-suggested-macro {
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  background-image: none;
+}
+
+.staff-inbox .support-view-row.active,
+.staff-inbox .support-view-row[aria-pressed="true"] {
+  color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-subtle);
+  box-shadow: inset 3px 0 0 var(--color-action-primary);
+}
+
+.staff-inbox .support-ticket-item.simple {
+  margin: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-width-default) solid transparent;
+  background: var(--color-bg-surface);
+}
+
+.staff-inbox .support-ticket-item.simple:hover {
+  border-color: var(--color-border-default);
+  background: var(--color-bg-subtle);
+}
+
+.staff-inbox .support-ticket-item.simple.active,
+.staff-inbox .support-ticket-item.simple[aria-current="true"] {
+  border-color: var(--color-blue-300);
+  border-left: 3px solid var(--color-action-primary);
+  background: var(--color-action-primary-subtle);
+  box-shadow: none;
+}
+
+.staff-inbox .support-ticket-item.unread .support-ticket-subject,
+.staff-inbox .support-ticket-item.unread .support-ticket-id {
+  font-weight: var(--font-weight-semibold);
+}
+
+.staff-inbox .support-ticket-counter,
+.staff-inbox .support-sidebar-title-count {
+  color: var(--color-text-on-primary);
+  background: var(--color-action-primary);
+}
+
+.staff-inbox .support-main-title,
+.staff-inbox .support-details-title,
+.staff-inbox .support-card-title,
+.staff-inbox .support-sidebar-title {
+  color: var(--color-text-primary);
+}
+
+.staff-inbox .support-main-breadcrumb,
+.staff-inbox .support-sidebar-copy,
+.staff-inbox .support-sidebar-section-label,
+.staff-inbox .support-card-copy,
+.staff-inbox .support-details-kicker,
+.staff-inbox .support-details-subtitle,
+.staff-inbox .support-thread-summary-copy,
+.staff-inbox .support-reply-copy,
+.staff-inbox .support-reply-shortcut,
+.staff-inbox .support-detail-list dt {
+  color: var(--color-text-secondary);
+}
+
+.staff-inbox .support-toolbar-pill,
+.staff-inbox .support-toolbar-chip,
+.staff-inbox .support-tag-chip,
+.staff-inbox .support-upload-pill {
+  border: var(--border-width-default) solid var(--color-border-default);
+  color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
+  box-shadow: none;
+}
+
+.staff-inbox .support-upload-pill small {
+  color: var(--color-text-secondary);
+}
+
+.staff-inbox .support-thread-scroll {
+  background: var(--color-bg-canvas);
+}
+
+.staff-inbox .support-thread-summary,
+.staff-inbox .support-reply-shell,
+.staff-inbox .support-details-card {
+  border-color: var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  background-image: none;
+  box-shadow: none;
+}
+
+.staff-inbox .support-thread-message.customer .support-thread-bubble {
+  border: var(--border-width-default) solid var(--color-border-default);
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  background-image: none;
+  box-shadow: none;
+}
+
+.staff-inbox .support-thread-message.agent .support-thread-bubble {
+  border: var(--border-width-default) solid var(--color-blue-100);
+  color: var(--color-text-primary);
+  background: var(--color-action-primary-subtle);
+  background-image: none;
+  box-shadow: none;
+}
+
+.staff-inbox .support-reply-textarea,
+.staff-inbox .support-note-textarea,
+.staff-inbox .support-console-input {
+  border-color: var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  box-shadow: none;
+}
+
+.staff-inbox :is(button, a, input, select, textarea):focus-visible {
+  outline: var(--border-width-focus) solid var(--color-action-primary);
+  outline-offset: 2px;
+}
+
+.staff-inbox button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.staff-inbox .support-status-action.amber,
+.staff-inbox .support-status-action.green,
+.staff-inbox .support-status-action.blue {
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+}
+
+.staff-inbox .support-status-action:hover:not(:disabled) {
+  border-color: var(--color-action-primary);
+  color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-subtle);
+}
+
+.staff-inbox .support-console-toast-stack {
+  z-index: 40;
+}
+
+.staff-inbox .support-console-banner {
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-2);
+}
+
+.staff-inbox .support-empty-panel,
+.staff-inbox .support-empty-state.sidebar {
+  border-color: var(--color-border-default);
+  background: var(--color-bg-surface);
+  background-image: none;
+  box-shadow: none;
+}
+
+/* The manager page carries higher-specificity legacy selectors. Keep these
+   neutralizers scoped to its inbox marker so no other workspace panel moves. */
+.support-console-page.staff-inbox.legacy-inbox {
+  background: var(--color-bg-canvas);
+  background-image: none;
+}
+
+.support-console-page.staff-inbox.legacy-inbox .support-console-sidebar,
+.support-console-page.staff-inbox.legacy-inbox .support-console-main,
+.support-console-page.staff-inbox.legacy-inbox .support-console-details {
+  border-color: var(--color-border-default);
+  background: var(--color-bg-surface);
+  box-shadow: var(--elevation-1);
+  backdrop-filter: none;
+}
+
+.support-console-page.staff-inbox.legacy-inbox .support-main-header,
+.support-console-page.staff-inbox.legacy-inbox .support-sidebar-top,
+.support-console-page.staff-inbox.legacy-inbox .support-details-header,
+.support-console-page.staff-inbox.legacy-inbox .support-reply-head,
+.support-console-page.staff-inbox.legacy-inbox .support-reply-footer {
+  border-color: var(--color-border-default);
+  background: var(--color-bg-surface);
+  background-image: none;
+}
+
+.support-console-page.staff-inbox.legacy-inbox .support-thread-message.customer .support-thread-bubble,
+.support-console-page.staff-inbox.legacy-inbox .support-thread-message.agent .support-thread-bubble,
+.support-console-page.staff-inbox.legacy-inbox .support-details-card,
+.support-console-page.staff-inbox.legacy-inbox .support-reply-shell,
+.support-console-page.staff-inbox.legacy-inbox .support-thread-summary {
+  box-shadow: none;
+  background-image: none;
+}
+
+.support-console-page.staff-inbox.legacy-inbox .support-thread-message.customer .support-thread-bubble {
+  background-color: var(--color-bg-surface);
+}
+
+.support-console-page.staff-inbox.legacy-inbox .support-thread-message.agent .support-thread-bubble {
+  background-color: var(--color-action-primary-subtle);
+}
+
+@media (max-width: 1279px) {
+  .support-console-page.staff-inbox .support-console-grid,
+  .support-console-page.staff-inbox.legacy-inbox .support-console-grid.inbox-sidebar-compact {
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+    grid-template-areas:
+      "sidebar main"
+      "sidebar details";
+    align-items: stretch;
+  }
+
+  .staff-inbox .support-console-details {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 899px) {
+  .staff-inbox,
+  .support-console-shell-agent .staff-inbox {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .support-console-page.staff-inbox .support-console-grid,
+  .support-console-page.staff-inbox.legacy-inbox .support-console-grid.inbox-sidebar-compact {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "sidebar"
+      "main"
+      "details";
+    gap: var(--spacing-md);
+    height: auto;
+    padding: var(--spacing-md);
+    overflow: visible;
+  }
+
+  .staff-inbox .support-console-sidebar,
+  .staff-inbox .support-console-main,
+  .staff-inbox .support-console-details {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .staff-inbox .support-sidebar-panel,
+  .staff-inbox .support-thread-scroll,
+  .staff-inbox .support-details-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .staff-inbox .support-main-header,
+  .staff-inbox .support-thread-summary,
+  .staff-inbox .support-reply-footer,
+  .staff-inbox .support-details-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .staff-inbox .support-main-header-actions,
+  .staff-inbox .support-reply-actions,
+  .staff-inbox .support-status-actions,
+  .staff-inbox .support-assignment-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 599px) {
+  .support-console-page.staff-inbox .support-console-grid,
+  .support-console-page.staff-inbox.legacy-inbox .support-console-grid.inbox-sidebar-compact {
+    padding: var(--spacing-sm);
+  }
+
+  .staff-inbox .support-main-header,
+  .staff-inbox .support-thread-scroll,
+  .staff-inbox .support-details-scroll,
+  .staff-inbox .support-reply-shell {
+    padding-right: var(--spacing-md);
+    padding-left: var(--spacing-md);
+  }
+
+  .staff-inbox .support-thread-message {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-inbox .support-thread-message .support-avatar {
+    display: none;
+  }
+
+  .staff-inbox .support-reply-toolbar,
+  .staff-inbox .support-profile-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-inbox .support-primary-button,
+  .staff-inbox .support-secondary-button,
+  .staff-inbox .support-toolbar-button {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staff-inbox *,
+  .staff-inbox *::before,
+  .staff-inbox *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

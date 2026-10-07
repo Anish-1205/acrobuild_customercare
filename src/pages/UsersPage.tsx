@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createAdminUser, getAdminUsers, updateAdminUser } from "../lib/api";
 import type { SupportWorkspaceUser } from "../types";
+import { StaffPageHeader } from "../components/StaffPageHeader";
 
 type UsersPageProps = {
   embedded?: boolean;
@@ -19,12 +20,12 @@ const roleDefinitions: RoleDefinition[] = [
   {
     id: "owner",
     title: "Owner",
-    description: "Full account ownership, billing oversight, and role management control.",
+    description: "Workspace owner access with the current staff-management permissions.",
     permissions: [
-      "Manage billing and storefront settings",
-      "Create and remove admins",
-      "Manage chat widget installation",
-      "Upload and publish AI knowledge documents"
+      "View and manage the shared staff inbox",
+      "Manage workspace users and roles",
+      "Manage support configuration libraries",
+      "Upload and publish AI knowledge"
     ]
   },
   {
@@ -33,8 +34,8 @@ const roleDefinitions: RoleDefinition[] = [
     description: "Operational admin with inbox, automation, analytics, and workspace configuration access.",
     permissions: [
       "Manage macros, tags, and schedules",
-      "Configure article-first chat settings",
-      "Invite and edit agents",
+      "Configure browser-local chat settings",
+      "Create and edit workspace users",
       "Review analytics and queue performance",
       "Train the AI with internal knowledge uploads"
     ]
@@ -47,7 +48,7 @@ const roleDefinitions: RoleDefinition[] = [
       "Reply to tickets and chats",
       "Use macros and support articles",
       "Apply macros and tags",
-      "View assigned analytics dashboards"
+      "Work within the agent inbox boundary"
     ]
   }
 ];
@@ -84,6 +85,7 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
   const [manageMessage, setManageMessage] = useState("");
   const [error, setError] = useState("");
   const [isWorking, setIsWorking] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [surface, setSurface] = useState<"list" | "invite" | "manage">("list");
   const [inviteDraft, setInviteDraft] = useState({
     email: "",
@@ -107,6 +109,10 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : "Unable to load users.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
         }
       }
     }
@@ -164,6 +170,7 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
 
   async function handleInviteUser() {
     if (!inviteDraft.name.trim() || !inviteDraft.email.trim()) {
+      setError("Enter a name and email before creating the user record.");
       return;
     }
 
@@ -179,7 +186,7 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
 
       setUsers((current) => [response.user, ...current]);
       setSelectedUserId(response.user.id);
-      setManageMessage(`Invite prepared for ${response.user.name}.`);
+      setManageMessage(`${response.user.name}'s user record was created. No invitation email was sent by this action.`);
       setSurface("manage");
       setInviteDraft({
         email: "",
@@ -210,16 +217,16 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
       updateLocalUser(selectedUser.id, { status: nextStatus });
       setManageMessage(
         nextStatus === "Suspended"
-          ? `${selectedUser.name} has been suspended.`
-          : `${selectedUser.name} is now ${nextStatus.toLowerCase()}.`
+          ? `Suspension staged for ${selectedUser.name}. Choose Save changes to persist it.`
+          : `${nextStatus} status staged for ${selectedUser.name}. Choose Save changes to persist it.`
       );
       return;
     }
 
     setManageMessage(
       action === "resend"
-        ? `Invitation resent to ${selectedUser.email}.`
-        : `Password reset link sent to ${selectedUser.email}.`
+        ? `Invitation email is not implemented. No message was sent to ${selectedUser.email}.`
+        : `Password reset email is not implemented. No message was sent to ${selectedUser.email}.`
     );
   }
 
@@ -251,15 +258,14 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
 
   return (
     <div className="stack-page">
-      {!embedded ? (
-        <section className="hero-card compact">
-          <div className="hero-kicker">Team Access</div>
-          <h2>Users</h2>
-          <p>Keep teammate access easier to scan with a simple list view and focused manage panels.</p>
-        </section>
-      ) : null}
+      <StaffPageHeader
+        description="Create and update persisted workspace user records. Email invitations and password resets are not provided by this interface."
+        eyebrow={embedded ? "Access management" : "Team access"}
+        title="Users"
+      />
 
-      {error ? <div className="banner-error">{error}</div> : null}
+      {isLoading ? <div className="phase6-status" role="status">Loading users...</div> : null}
+      {error ? <div className="banner-error" role="alert">{error}</div> : null}
 
       {surface === "list" ? (
         <section className="plain-card workspace-directory-shell">
@@ -271,18 +277,20 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
 
             <button className="primary-button management-plus-button" onClick={openInviteSurface} type="button">
               <span>+</span>
-              Invite user
+              Create user
             </button>
           </div>
 
           <div className="toolbar-row wrap">
             <input
+              aria-label="Search users"
               className="rail-search wide"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by name, email, or team"
               value={search}
             />
             <select
+              aria-label="Filter users by role"
               className="field-input"
               onChange={(event) => setRoleFilter(event.target.value as "all" | RoleId)}
               value={roleFilter}
@@ -335,8 +343,8 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
           <div className="workspace-detail-topbar">
             <div>
               <div className="workspace-detail-kicker">User workspace</div>
-              <div className="section-title">Invite teammate</div>
-              <div className="section-copy">Create a new support login and pre-assign the right role before they enter the workspace.</div>
+              <div className="section-title">Create user</div>
+              <div className="section-copy">Create a persisted workspace user record with the selected role. This does not send an email.</div>
             </div>
 
             <div className="workspace-detail-actions">
@@ -344,7 +352,7 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
                 Back to users
               </button>
               <button className="primary-button" disabled={isWorking} onClick={() => void handleInviteUser()} type="button">
-                Send invite
+                Create user
               </button>
             </div>
           </div>
@@ -354,6 +362,7 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
               <span>Full name</span>
               <input
                 className="field-input"
+                type="email"
                 onChange={(event) => setInviteDraft((current) => ({ ...current, name: event.target.value }))}
                 value={inviteDraft.name}
               />
@@ -416,7 +425,7 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
             </div>
           </div>
 
-          {manageMessage ? <div className="banner-success">{manageMessage}</div> : null}
+          {manageMessage ? <div className="banner-success" role="status">{manageMessage}</div> : null}
 
           <div className="editor-grid">
             <label className="field-block">
@@ -483,10 +492,10 @@ export function UsersPage({ embedded = false }: UsersPageProps) {
               onClick={() => handleManageAction(selectedUser.status === "Invited" ? "resend" : "reset")}
               type="button"
             >
-              {selectedUser.status === "Invited" ? "Resend invite" : "Send reset link"}
+              {selectedUser.status === "Invited" ? "Check invite availability" : "Check reset availability"}
             </button>
             <button className="ghost-button" onClick={() => handleManageAction("toggle-status")} type="button">
-              {selectedUser.status === "Suspended" ? "Reactivate user" : "Suspend user"}
+              {selectedUser.status === "Suspended" ? "Stage reactivation" : "Stage suspension"}
             </button>
           </div>
 

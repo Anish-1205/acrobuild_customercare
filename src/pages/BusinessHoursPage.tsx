@@ -4,6 +4,7 @@ import {
   updateBusinessHoursProfile
 } from "../lib/api";
 import type { BusinessHoursProfile, BusinessHoursRange } from "../types";
+import { StaffPageHeader } from "../components/StaffPageHeader";
 
 const dayOptions = [
   "Monday",
@@ -55,7 +56,9 @@ export function BusinessHoursPage({ embedded = false }: BusinessHoursPageProps) 
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
   const [editor, setEditor] = useState<BusinessHoursProfile | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   async function loadProfiles(preferredProfileId?: number | null) {
     const profileResponse = await getBusinessHoursProfiles();
@@ -78,7 +81,11 @@ export function BusinessHoursPage({ embedded = false }: BusinessHoursPageProps) 
   }
 
   useEffect(() => {
-    void loadProfiles();
+    void loadProfiles()
+      .catch((loadError) => {
+        setError(loadError instanceof Error ? loadError.message : "Unable to load business hours.");
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -116,8 +123,10 @@ export function BusinessHoursPage({ embedded = false }: BusinessHoursPageProps) 
     try {
       setIsSaving(true);
       setError("");
+      setNotice("");
       await updateBusinessHoursProfile(editor);
       await loadProfiles(editor.id);
+      setNotice("Business hours saved.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save business hours.");
     } finally {
@@ -127,15 +136,17 @@ export function BusinessHoursPage({ embedded = false }: BusinessHoursPageProps) 
 
   return (
     <div className="stack-page">
-      {!embedded ? (
-        <section className="hero-card">
-          <div className="hero-kicker">Coverage Workspace</div>
-          <h2>Business Hours</h2>
-          <p>Edit the live schedule that drives coverage logic and the business-hours ticket experience.</p>
-        </section>
-      ) : null}
+      <StaffPageHeader
+        description="Edit the selected persisted schedule profile, its timezone, and its existing coverage ranges."
+        eyebrow={embedded ? "Coverage configuration" : "Coverage workspace"}
+        title="Open Hours"
+      />
 
-      {error ? <div className="banner-error">{error}</div> : null}
+      <div aria-live="polite" aria-atomic="true">
+        {isLoading ? <div className="phase6-status" role="status">Loading open hours...</div> : null}
+        {error ? <div className="banner-error" role="alert">{error}</div> : null}
+        {notice ? <div className="banner-success" role="status">{notice}</div> : null}
+      </div>
 
       <section className="plain-card workspace-detail-shell business-hours-compact-shell">
         <div className="workspace-detail-topbar">
@@ -222,6 +233,7 @@ export function BusinessHoursPage({ embedded = false }: BusinessHoursPageProps) 
               {editor.ranges.map((range, index) => (
                 <div className="range-row" key={`${range.day_name}-${index}`}>
                   <select
+                    aria-label={`Day for range ${index + 1}`}
                     className="field-input"
                     onChange={(event) => updateRange(index, "day_name", event.target.value)}
                     value={range.day_name}
@@ -234,6 +246,7 @@ export function BusinessHoursPage({ embedded = false }: BusinessHoursPageProps) 
                   </select>
 
                   <select
+                    aria-label={`Start time for range ${index + 1}`}
                     className="field-input"
                     onChange={(event) => updateRange(index, "start_time", event.target.value)}
                     value={range.start_time}
@@ -246,6 +259,7 @@ export function BusinessHoursPage({ embedded = false }: BusinessHoursPageProps) 
                   </select>
 
                   <select
+                    aria-label={`End time for range ${index + 1}`}
                     className="field-input"
                     onChange={(event) => updateRange(index, "end_time", event.target.value)}
                     value={range.end_time}

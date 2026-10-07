@@ -554,7 +554,7 @@ export function AIAgentPage({ embedded = false }: AIAgentPageProps) {
                 <strong>Shape the answer</strong>
                 <small>Turn raw knowledge into a reusable support response.</small>
               </article>
-              <article className="teach-ai-hero-flow-step accent-violet">
+              <article className="teach-ai-hero-flow-step accent-cyan">
                 <span>3</span>
                 <strong>Test the outcome</strong>
                 <small>Ask a real customer question before it reaches the chat box.</small>
@@ -567,8 +567,8 @@ export function AIAgentPage({ embedded = false }: AIAgentPageProps) {
                 <strong>Uses the same knowledge</strong>
               </div>
               <div className="teach-ai-hero-signal-card">
-                <span>Team handoff</span>
-                <strong>Only when confidence is low</strong>
+                <span>Preview</span>
+                <strong>Shows the returned answer and evidence</strong>
               </div>
             </div>
           </div>
@@ -598,8 +598,10 @@ export function AIAgentPage({ embedded = false }: AIAgentPageProps) {
         </div>
       </section>
 
-      {errorMessage ? <div className="teach-ai-feedback error">{errorMessage}</div> : null}
-      {successMessage ? <div className="teach-ai-feedback success">{successMessage}</div> : null}
+      <div aria-live="polite" aria-atomic="true">
+        {errorMessage ? <div className="teach-ai-feedback error" role="alert">{errorMessage}</div> : null}
+        {successMessage ? <div className="teach-ai-feedback success" role="status">{successMessage}</div> : null}
+      </div>
 
       <section className="teach-ai-card-grid">
         <article className="teach-ai-card">
@@ -611,14 +613,17 @@ export function AIAgentPage({ embedded = false }: AIAgentPageProps) {
             </div>
           </div>
 
-          <input
-            accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.html,.htm"
-            className="teach-ai-file-input"
-            key={uploadInputVersion}
-            multiple
-            onChange={handleFileSelection}
-            type="file"
-          />
+          <label className="teach-ai-field">
+            <span>Training files</span>
+            <input
+              accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.html,.htm"
+              className="teach-ai-file-input"
+              key={uploadInputVersion}
+              multiple
+              onChange={handleFileSelection}
+              type="file"
+            />
+          </label>
 
           {selectedFiles.length ? (
             <div className="teach-ai-file-list">
@@ -755,24 +760,24 @@ export function AIAgentPage({ embedded = false }: AIAgentPageProps) {
               <div className="teach-ai-answer-label">AI answer</div>
               <div className="teach-ai-answer-copy">{assistResponse.answer}</div>
 
-              <div className="teach-ai-answer-meta">
-                <span>Source: {assistResponse.source_label || "AI knowledge"}</span>
-                <span>
-                  {assistResponse.handoff_recommended
-                    ? "A person should check this answer."
-                    : "No handoff needed."}
-                </span>
-              </div>
+              {assistResponse.source_label || assistResponse.handoff_recommended ? (
+                <div className="teach-ai-answer-meta">
+                  {assistResponse.source_label ? <span>Source: {assistResponse.source_label}</span> : null}
+                  {assistResponse.handoff_recommended ? <span>A person should check this answer.</span> : null}
+                </div>
+              ) : null}
 
               {matchedChunks.length ? (
                 <div className="teach-ai-match-list">
-                  {matchedChunks.map((chunk) => (
+                  {matchedChunks.map((chunk, index) => (
                     <div
                       className="teach-ai-match-chip"
-                      key={`${chunk.record_id}-${chunk.chunk_id}`}
+                      key={`${chunk.record_kind}-${chunk.record_id ?? "record"}-${chunk.chunk_id ?? index}`}
                     >
                       <strong>{chunk.title}</strong>
-                      <span>{chunk.source_name || chunk.source_type}</span>
+                      {chunk.source_name || chunk.source_type ? (
+                        <span>{chunk.source_name || chunk.source_type}</span>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -816,7 +821,9 @@ export function AIAgentPage({ embedded = false }: AIAgentPageProps) {
           </div>
         </div>
 
-        {integratedLinkItems.length ? (
+        {isLoading ? (
+          <div className="teach-ai-empty-state" role="status">Loading integrated links...</div>
+        ) : integratedLinkItems.length ? (
           <div className="teach-ai-source-list teach-ai-source-list-scroll">
             {integratedLinkItems.map((item) => (
               <div className="teach-ai-source-row" key={item.key}>

@@ -1,0 +1,211 @@
+/* Phase 6 staff surfaces: AcroBuild Enterprise Clean presentation. */
+.staff-page-header {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0 0 1.25rem;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.staff-page-eyebrow,
+.phase6-kicker {
+  color: #0055ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.staff-page-header h1 {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+  line-height: 1.15;
+}
+
+.staff-page-header p {
+  max-width: 72ch;
+  margin: 0;
+  color: #667085;
+  line-height: 1.65;
+}
+
+.phase6-local-notice {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.phase6-status {
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.86rem;
+}
+
+.phase6-status[role="alert"] {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.phase6-status[role="status"] {
+  border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.phase6-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.phase6-table-wrap table {
+  min-width: 680px;
+}
+
+.phase6-sr-summary {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Remove the legacy marketing treatment from Teach AI without changing its flows. */
+.teach-ai-page {
+  --teach-ai-accent: #0055ff;
+  --teach-ai-accent-strong: #0047d6;
+  --teach-ai-ink: #111827;
+  --teach-ai-muted: #667085;
+  --teach-ai-line: #e5e7eb;
+  --teach-ai-panel: #ffffff;
+  --teach-ai-panel-soft: #f9fafb;
+  --teach-ai-shadow: 0 1px 2px rgba(17, 24, 39, 0.05);
+}
+
+.teach-ai-page .teach-ai-hero,
+.teach-ai-page .teach-ai-card,
+.teach-ai-page .teach-ai-library-card {
+  background: #ffffff;
+  box-shadow: var(--teach-ai-shadow);
+}
+
+.teach-ai-page .teach-ai-hero {
+  border-top: 4px solid #0055ff;
+}
+
+.teach-ai-page .teach-ai-hero-visual-card {
+  background: #f9fafb;
+  box-shadow: none;
+}
+
+.teach-ai-page .teach-ai-hero-flow-step.accent-cyan span,
+.teach-ai-page .teach-ai-hero-flow-step.accent-violet span {
+  background: #eaf1ff;
+  color: #0055ff;
+}
+
+.teach-ai-page .teach-ai-hero-flow-step.accent-amber span {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.teach-ai-page .teach-ai-hero-signal-card > span,
+.teach-ai-page .teach-ai-stat-card > span {
+  color: #475467;
+}
+
+.teach-ai-page .teach-ai-primary-button {
+  background: #0055ff;
+  color: #ffffff;
+}
+
+.teach-ai-page :is(button, input, select, textarea):focus-visible,
+.stack-page :is(button, input, select, textarea, a):focus-visible,
+.automation-page :is(button, input, select, a):focus-visible,
+.api-activity-page :is(button, a, summary):focus-visible {
+  outline: 3px solid rgba(0, 85, 255, 0.28);
+  outline-offset: 2px;
+}
+
+.workspace-directory-shell,
+.workspace-detail-shell,
+.plain-card,
+.analytics-surface,
+.metric-card {
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.05);
+}
+
+.analytics-pie-chart {
+  forced-color-adjust: none;
+}
+
+.api-activity-page.phase6-embedded {
+  min-height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.api-activity-page.phase6-embedded .api-activity-workspace,
+.api-activity-page.phase6-embedded .api-view-tabs,
+.api-activity-page.phase6-embedded .api-page-guide,
+.api-activity-page.phase6-embedded .api-activity-topbar {
+  max-width: none;
+}
+
+.api-activity-page .api-activity-eyebrow {
+  color: #166534;
+}
+
+.api-activity-page .api-activity-button {
+  background: #0055ff;
+  color: #ffffff;
+}
+
+.api-activity-page .api-view-tabs small,
+.api-activity-page .api-activity-empty,
+.api-activity-page .api-activity-detail-empty {
+  color: #475467;
+}
+
+@media (max-width: 760px) {
+  .staff-page-header {
+    padding-bottom: 1rem;
+  }
+
+  .workspace-directory-header,
+  .workspace-detail-topbar,
+  .workspace-detail-actions,
+  .toolbar-row.spread {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspace-detail-actions > *,
+  .management-plus-button {
+    width: 100%;
+  }
+
+  .widget-preview-window {
+    max-width: 100%;
+  }
+
+  .widget-code-shell,
+  .api-activity-code-section pre {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teach-ai-page *,
+  .stack-page *,
+  .automation-page *,
+  .api-activity-page * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

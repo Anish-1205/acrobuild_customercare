@@ -19,6 +19,7 @@ import {
   sortTicketsByRecent
 } from "../lib/ticketPresentation";
 import type { Ticket } from "../types";
+import { StaffPageHeader } from "../components/StaffPageHeader";
 
 type FilterState = {
   priority: string;
@@ -134,15 +135,13 @@ export function AdminAnalyticsPage({ embedded = false }: AdminAnalyticsPageProps
 
   return (
     <div className="stack-page">
-      {!embedded ? (
-        <section className="hero-card compact">
-          <div className="hero-kicker">Operations Dashboard</div>
-          <h2>Analytics</h2>
-          <p>Focus on queue health, ticket pressure, and the highest-priority work without the old cluttered side panels.</p>
-        </section>
-      ) : null}
+      <StaffPageHeader
+        description="Filter and review ticket counts calculated from the currently loaded ticket list."
+        eyebrow={embedded ? "Ticket reporting" : "Operations dashboard"}
+        title="Analytics"
+      />
 
-      {error ? <div className="banner-error">{error}</div> : null}
+      {error ? <div className="banner-error" role="alert">{error}</div> : null}
 
       {isLoading ? (
         <WorkspaceStatePanel
@@ -316,7 +315,7 @@ export function AdminAnalyticsPage({ embedded = false }: AdminAnalyticsPageProps
             <article className="metric-card metric-accent-violet">
               <div className="metric-label">Waiting on customer</div>
               <div className="metric-value">{waitingOnCustomerCount}</div>
-              <p>Threads blocked until the shopper replies.</p>
+              <p>Threads blocked until the customer replies.</p>
             </article>
           </section>
 

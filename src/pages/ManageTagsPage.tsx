@@ -6,6 +6,7 @@ import {
   updateAdminTag
 } from "../lib/api";
 import type { TicketTag } from "../types";
+import { StaffPageHeader } from "../components/StaffPageHeader";
 
 type TagDraft = {
   color: string;
@@ -138,15 +139,13 @@ export function ManageTagsPage({ embedded = false }: ManageTagsPageProps) {
 
   return (
     <div className="stack-page">
-      {!embedded ? (
-        <section className="hero-card compact">
-          <div className="hero-kicker">Fields And Tags</div>
-          <h2>Manage Tags</h2>
-          <p>Keep routing labels tidy, reusable, and easy to manage from one clean tag directory.</p>
-        </section>
-      ) : null}
+      <StaffPageHeader
+        description="Manage the persisted labels used for ticket routing and organization without changing system tag rules."
+        eyebrow={embedded ? "Tag library" : "Fields and tags"}
+        title="Manage Tags"
+      />
 
-      {error ? <div className="banner-error">{error}</div> : null}
+      {error ? <div className="banner-error" role="alert">{error}</div> : null}
 
       {surface === "list" ? (
         <section className="plain-card workspace-directory-shell">
@@ -164,6 +163,7 @@ export function ManageTagsPage({ embedded = false }: ManageTagsPageProps) {
 
           <div className="toolbar-row wrap">
             <input
+              aria-label="Search tags"
               className="rail-search wide"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search tags by name or description"

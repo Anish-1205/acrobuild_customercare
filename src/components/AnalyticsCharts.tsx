@@ -78,6 +78,7 @@ export function AnalyticsDistributionCard(props: AnalyticsDistributionCardProps)
           <div className="analytics-pie-column">
             <div className="analytics-pie-frame">
               <div
+                aria-hidden="true"
                 className="analytics-pie-chart"
                 style={{ background: buildDonutBackground(chartRows) }}
               />
@@ -158,7 +159,11 @@ export function AnalyticsBarGraphCard(props: AnalyticsBarGraphCardProps) {
           </div>
         </div>
 
-        <div className="analytics-bar-plot">
+        <div
+          aria-label={props.points.map((point) => `${point.label}: ${point.value}`).join(", ")}
+          className="analytics-bar-plot"
+          role="img"
+        >
           <div className="analytics-bar-chart">
             {props.points.map((point) => {
               const height = `${Math.max(point.value ? 18 : 8, Math.round((point.value / maxValue) * 100))}%`;

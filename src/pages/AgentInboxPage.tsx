@@ -1042,9 +1042,9 @@ export function AgentInboxPage() {
   }
 
   return (
-    <div className="support-console-page">
-      <div className="support-console-toast-stack">
-        {error ? <div className="banner-error support-console-banner">{error}</div> : null}
+    <div className="support-console-page staff-inbox staff-inbox-agent">
+      <div className="support-console-toast-stack" aria-live="polite" aria-atomic="true">
+        {error ? <div className="banner-error support-console-banner" role="alert">{error}</div> : null}
         {successMessage ? (
           <div className="banner-success support-console-banner">{successMessage}</div>
         ) : null}
@@ -1077,6 +1077,7 @@ export function AgentInboxPage() {
                   return (
                     <button
                       className={`support-view-row${activeTicketView === view.id ? " active" : ""}`}
+                      aria-pressed={activeTicketView === view.id}
                       key={view.id}
                       onClick={() => setActiveTicketView(view.id)}
                       type="button"
@@ -1100,6 +1101,7 @@ export function AgentInboxPage() {
                   return (
                     <button
                       className={`support-view-row${activeTicketView === view.id ? " active" : ""}`}
+                      aria-pressed={activeTicketView === view.id}
                       key={view.id}
                       onClick={() => setActiveTicketView(view.id)}
                       type="button"
@@ -1139,6 +1141,7 @@ export function AgentInboxPage() {
                   className={`support-ticket-item simple${
                     ticket.ticket_id === selectedTicketId ? " active" : ""
                   }${Number(ticket.unread_count || 0) > 0 ? " unread" : ""}`}
+                  aria-current={ticket.ticket_id === selectedTicketId ? "true" : undefined}
                   key={ticket.ticket_id}
                   onClick={() =>
                     startTransition(() => {
@@ -1338,6 +1341,7 @@ export function AgentInboxPage() {
 
                     <div className="support-reply-toolbar">
                       <select
+                        aria-label="Select reply macro"
                         className="field-input support-console-input"
                         onChange={(event) => setSelectedMacroId(Number(event.target.value))}
                         value={selectedMacroId || ""}
@@ -1379,6 +1383,7 @@ export function AgentInboxPage() {
                     </div>
 
                     <textarea
+                      aria-label="Reply message"
                       ref={replyTextareaRef}
                       className="field-textarea support-console-textarea support-reply-textarea"
                       onChange={(event) => setReply(event.target.value)}
@@ -1512,6 +1517,7 @@ export function AgentInboxPage() {
                   )}
 
                   <input
+                    aria-label="Search tags"
                     className="field-input support-console-input"
                     onChange={(event) => setTagSearch(event.target.value)}
                     placeholder="Search tags by name..."
@@ -1687,6 +1693,7 @@ export function AgentInboxPage() {
                 </div>
 
                 <textarea
+                  aria-label="Internal note"
                   className="field-textarea support-console-textarea support-note-textarea"
                   onChange={(event) => setNoteDraft(event.target.value)}
                   placeholder="Add an internal note..."

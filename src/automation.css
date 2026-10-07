@@ -1,6 +1,26 @@
-.automation-page { max-width: 1000px; padding: 24px; margin: auto; }
-.automation-page section { margin: 20px 0; padding: 20px; border: 1px solid #cbd5e1; border-radius: 12px; background: white; }
-.automation-page table { width: 100%; border-collapse: collapse; }
-.automation-page th, .automation-page td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; }
-.automation-page label { display: block; margin: 12px 0; }
-.automation-page input, .automation-page select, .automation-page button { padding: 8px; margin: 4px; }
+.automation-page { width: 100%; max-width: 1180px; margin: 0 auto; }
+.automation-section { display: grid; gap: 1rem; margin: 0; padding: clamp(1rem, 2.5vw, 1.5rem); background: #fff; }
+.automation-section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.automation-section h2, .automation-proposal h3 { margin: 0; color: #111827; }
+.automation-section-head p, .automation-proposal p { margin: .35rem 0 0; color: #667085; line-height: 1.55; }
+.automation-page table { width: 100%; border-collapse: collapse; background: #fff; }
+.automation-page th, .automation-page td { padding: .8rem .9rem; border-bottom: 1px solid #e5e7eb; text-align: left; white-space: nowrap; }
+.automation-page th { background: #f9fafb; color: #475467; font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; }
+.automation-ticket-button { border: 0; background: transparent; color: #0055ff; font: inherit; font-weight: 750; cursor: pointer; }
+.automation-ticket-button[aria-pressed="true"] { text-decoration: underline; text-underline-offset: .2rem; }
+.automation-capacity-list { display: grid; gap: .65rem; margin: 0; padding: 0; list-style: none; }
+.automation-capacity-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 1rem; align-items: center; padding: .85rem 1rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; }
+.automation-capacity-list li div { display: grid; gap: .15rem; }
+.automation-capacity-list li span { color: #667085; font-size: .82rem; }
+.automation-capacity-list li b { color: #047857; font-size: .82rem; }
+.automation-proposal { display: grid; gap: .8rem; margin-top: .5rem; padding: 1rem; border: 1px solid #bfdbfe; border-left: 4px solid #0055ff; border-radius: 10px; background: #f8fbff; }
+.automation-proposal dl { display: grid; gap: .6rem; margin: 0; }
+.automation-proposal dl > div { display: grid; grid-template-columns: minmax(8rem, .4fr) 1fr; gap: .75rem; }
+.automation-proposal dt { color: #475467; font-size: .8rem; font-weight: 750; text-transform: capitalize; }
+.automation-proposal dd { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; color: #667085; }
+.automation-proposal dd strong { color: #111827; }
+@media (max-width: 640px) {
+  .automation-section-head { flex-direction: column; }
+  .automation-capacity-list li { grid-template-columns: 1fr; gap: .35rem; }
+  .automation-proposal dl > div { grid-template-columns: 1fr; gap: .25rem; }
+}

@@ -17,6 +17,28 @@ export interface ApiActivityRecord {
 const STORAGE_KEY = "acrobuild-chat-api-activity-v1";
 const ACTIVITY_EVENT = "acrobuild-api-activity";
 const MAX_RECORDS = 20;
+const SENSITIVE_KEY_PATTERN = /(api[-_]?key|authorization|cookie|credential|password|secret|token)/i;
+
+function sanitizeText(value: unknown, maxLength = 500) {
+  const text = String(value ?? "")
+    .replace(/(bearer\s+)[^\s,;]+/gi, "$1[REDACTED]")
+    .replace(/((?:api[-_]?key|token|secret|password)=)[^&\s]+/gi, "$1[REDACTED]");
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+}
+
+function sanitizeTraceValue(value: unknown, depth = 0): unknown {
+  if (depth > 4) return "[TRUNCATED]";
+  if (Array.isArray(value)) return value.slice(0, 50).map((item) => sanitizeTraceValue(item, depth + 1));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nestedValue]) => [
+        key,
+        SENSITIVE_KEY_PATTERN.test(key) ? "[REDACTED]" : sanitizeTraceValue(nestedValue, depth + 1)
+      ])
+    );
+  }
+  return typeof value === "string" ? sanitizeText(value, 1000) : value;
+}
 
 function readRecords(): ApiActivityRecord[] {
   if (typeof window === "undefined") return [];
@@ -67,12 +89,12 @@ function compactDataApiCalls(calls: unknown) {
       cache_hit: value.cache_hit ?? false,
       duration_ms: value.duration_ms ?? 0,
       endpoint: value.endpoint ?? "",
-      error: value.error ?? "",
+      error: sanitizeText(value.error),
       id: value.id ?? "",
       method: value.method ?? "GET",
-      params: value.params ?? {},
+      params: sanitizeTraceValue(value.params ?? {}) as Record<string, string>,
       provider: value.provider ?? "",
-      response_summary: value.response_summary ?? {},
+      response_summary: sanitizeTraceValue(value.response_summary ?? {}) as Record<string, unknown>,
       status: value.status ?? "completed"
     };
   });
@@ -163,7 +185,7 @@ export function failApiActivity(id: string, error: unknown) {
     ...record,
     completedAt: completedAt.toISOString(),
     durationMs: completedAt.getTime() - new Date(record.startedAt).getTime(),
-    error: error instanceof Error ? error.message : String(error),
+    error: sanitizeText(error instanceof Error ? error.message : error),
     status: "failed"
   } : record));
 }

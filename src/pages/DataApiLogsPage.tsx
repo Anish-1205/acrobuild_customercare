@@ -49,14 +49,15 @@ export function DataApiLogsPage({ basePath = "/home" }: { basePath?: "/home" | "
     [traceRecords, selectedId]
   );
   const selectedCalls = selected ? callsOf(selected) : [];
+  const PageElement = basePath === "/admin" ? "div" : "main";
 
   return (
-    <main className="api-activity-page">
+    <PageElement className={`api-activity-page${basePath === "/admin" ? " phase6-embedded" : ""}`}>
       <header className="api-activity-topbar">
         <div>
           <span className="api-activity-eyebrow">Acrobuild support</span>
           <h1>Chatbot activity</h1>
-          <p>See which verified property data was used for an answer.</p>
+          <p>Review sanitized property-data traces stored only in this browser.</p>
         </div>
         <Link className="api-activity-button" to="/home#help">Open chatbot</Link>
       </header>
@@ -69,14 +70,14 @@ export function DataApiLogsPage({ basePath = "/home" }: { basePath?: "/home" | "
       <section className="api-page-guide data-guide">
         <strong>How to read this page</strong>
         <span>Select a customer question on the left. The right side lists each Acrobuild API lookup in the order it happened.</span>
-        <em>API key hidden</em>
+        <em>Sensitive fields redacted</em>
       </section>
 
       <section className="api-activity-workspace">
         <aside className="api-activity-list">
           <div className="api-activity-list-head"><strong>Questions using property data</strong><span>{traceRecords.length}</span></div>
           {traceRecords.length ? traceRecords.map((record) => (
-            <button className={`api-activity-row${record.id === selected?.id ? " active" : ""}`} key={record.id} onClick={() => setSelectedId(record.id)} type="button">
+            <button aria-current={record.id === selected?.id ? "true" : undefined} className={`api-activity-row${record.id === selected?.id ? " active" : ""}`} key={record.id} onClick={() => setSelectedId(record.id)} type="button">
               <span className="api-activity-status completed" />
               <span className="api-activity-row-copy"><strong>{questionOf(record)}</strong><small>{callsOf(record).length} live lookup{callsOf(record).length === 1 ? "" : "s"}</small></span>
               <b>View</b>
@@ -94,7 +95,7 @@ export function DataApiLogsPage({ basePath = "/home" }: { basePath?: "/home" | "
 
               <section className="data-api-summary">
                 <strong>The chatbot checked {selectedCalls.length} live data source{selectedCalls.length === 1 ? "" : "s"}.</strong>
-                <span>Each row below explains what was requested and what came back. No secret API key is displayed.</span>
+                <span>Each row below explains what was requested and what came back. Sensitive fields are redacted before browser storage.</span>
               </section>
 
               <div className="data-api-call-list">
@@ -120,6 +121,6 @@ export function DataApiLogsPage({ basePath = "/home" }: { basePath?: "/home" | "
           ) : <div className="api-activity-detail-empty"><strong>No property data selected</strong><span>Ask a property question in the chatbot, then return here.</span></div>}
         </article>
       </section>
-    </main>
+    </PageElement>
   );
 }

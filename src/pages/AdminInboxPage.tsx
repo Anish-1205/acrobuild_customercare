@@ -1582,9 +1582,9 @@ function SharedManagerInboxPage() {
   }
 
   return (
-    <div className={`support-console-page${isInboxPanel ? " legacy-inbox" : ""}`}>
-      <div className="support-console-toast-stack">
-        {error ? <div className="banner-error support-console-banner">{error}</div> : null}
+    <div className={`support-console-page${isInboxPanel ? " legacy-inbox staff-inbox staff-inbox-manager" : ""}`}>
+      <div className="support-console-toast-stack" aria-live="polite" aria-atomic="true">
+        {error ? <div className="banner-error support-console-banner" role="alert">{error}</div> : null}
         {successMessage ? (
           <div className="banner-success support-console-banner">{successMessage}</div>
         ) : null}
@@ -1637,6 +1637,7 @@ function SharedManagerInboxPage() {
                 <div className="support-sidebar-controls support-sidebar-controls-elevated">
                   <div className="support-sidebar-filter-grid">
                     <input
+                      aria-label="Search tickets"
                       className="field-input support-console-input"
                       onChange={(event) => setTicketSearchQuery(event.target.value)}
                       placeholder="Search tickets"
@@ -1644,6 +1645,7 @@ function SharedManagerInboxPage() {
                     />
 
                     <select
+                      aria-label="Sort tickets"
                       className="field-input support-console-input"
                       onChange={(event) => setSortBy(event.target.value as SortMode)}
                       value={sortBy}
@@ -1676,6 +1678,7 @@ function SharedManagerInboxPage() {
                       return (
                         <button
                           className={`support-view-row${activeTicketView === view.id ? " active" : ""}`}
+                          aria-pressed={activeTicketView === view.id}
                           key={view.id}
                           onClick={() => setActiveTicketView(view.id)}
                           type="button"
@@ -1699,6 +1702,7 @@ function SharedManagerInboxPage() {
                       return (
                         <button
                           className={`support-view-row${activeTicketView === view.id ? " active" : ""}`}
+                          aria-pressed={activeTicketView === view.id}
                           key={view.id}
                           onClick={() => setActiveTicketView(view.id)}
                           type="button"
@@ -1738,6 +1742,7 @@ function SharedManagerInboxPage() {
                       className={`support-ticket-item simple${
                         ticket.ticket_id === selectedTicketId ? " active" : ""
                       }${Number(ticket.unread_count || 0) > 0 ? " unread" : ""}`}
+                      aria-current={ticket.ticket_id === selectedTicketId ? "true" : undefined}
                       key={ticket.ticket_id}
                       onClick={() =>
                         startTransition(() => {
@@ -2021,6 +2026,7 @@ function SharedManagerInboxPage() {
 
                     <div className="support-reply-toolbar">
                       <select
+                        aria-label="Select reply macro"
                         className="field-input support-console-input"
                         onChange={(event) => setSelectedMacroId(Number(event.target.value))}
                         value={selectedMacroId || ""}
@@ -2062,6 +2068,7 @@ function SharedManagerInboxPage() {
                     </div>
 
                     <textarea
+                      aria-label="Reply message"
                       ref={replyTextareaRef}
                       className="field-textarea support-console-textarea support-reply-textarea"
                       onChange={(event) => setReply(event.target.value)}
@@ -2181,6 +2188,7 @@ function SharedManagerInboxPage() {
                   )}
 
                   <input
+                    aria-label="Search tags"
                     className="field-input support-console-input"
                     onChange={(event) => setTagSearch(event.target.value)}
                     placeholder="Search tags by name..."
@@ -2425,6 +2433,7 @@ function SharedManagerInboxPage() {
                 </div>
 
                 <textarea
+                  aria-label="Internal note"
                   className="field-textarea support-console-textarea support-note-textarea"
                   onChange={(event) => setNoteDraft(event.target.value)}
                   placeholder="Capture refunds in progress, promised callbacks, edge cases, or anything the next agent should know..."

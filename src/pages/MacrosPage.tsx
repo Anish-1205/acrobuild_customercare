@@ -9,6 +9,7 @@ import {
   updateAdminMacro
 } from "../lib/api";
 import type { Macro, TicketTag } from "../types";
+import { StaffPageHeader } from "../components/StaffPageHeader";
 
 type MacroDraft = {
   category: string;
@@ -324,15 +325,13 @@ export function MacrosPage({ embedded = false }: MacrosPageProps) {
 
   return (
     <div className="stack-page">
-      {!embedded ? (
-        <section className="hero-card compact">
-          <div className="hero-kicker">Tools</div>
-          <h2>Macros</h2>
-          <p>Save polished reply templates, keep categories organized, and manage support copy without clutter.</p>
-        </section>
-      ) : null}
+      <StaffPageHeader
+        description="Search, create, preview, duplicate, archive, and delete the reply templates used by the inbox."
+        eyebrow={embedded ? "Reply library" : "Staff tools"}
+        title="Saved Replies"
+      />
 
-      {error ? <div className="banner-error">{error}</div> : null}
+      {error ? <div className="banner-error" role="alert">{error}</div> : null}
 
       {!isEditorOpen ? (
         <section className="plain-card workspace-directory-shell">
@@ -350,6 +349,7 @@ export function MacrosPage({ embedded = false }: MacrosPageProps) {
 
           <div className="filter-grid">
             <input
+              aria-label="Search saved replies"
               className="field-input"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search macros by name or category"
@@ -357,6 +357,7 @@ export function MacrosPage({ embedded = false }: MacrosPageProps) {
             />
 
             <select
+              aria-label="Filter saved replies by language"
               className="field-input"
               onChange={(event) => setLanguageFilter(event.target.value)}
               value={languageFilter}
@@ -370,6 +371,7 @@ export function MacrosPage({ embedded = false }: MacrosPageProps) {
             </select>
 
             <select
+              aria-label="Filter saved replies by category"
               className="field-input"
               onChange={(event) => setCategoryFilter(event.target.value)}
               value={categoryFilter}
@@ -383,6 +385,7 @@ export function MacrosPage({ embedded = false }: MacrosPageProps) {
             </select>
 
             <select
+              aria-label="Show active or archived saved replies"
               className="field-input"
               onChange={(event) => setView(event.target.value as "Active" | "Archived")}
               value={view}

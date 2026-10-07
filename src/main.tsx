@@ -13,6 +13,8 @@ import "./customer-home-v2.css";
 import "./public-home.css";
 import "./public-help-center.css";
 import "./public-customer-lookup.css";
+import "./pages/StaffInbox.css";
+import "./pages/Phase6.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

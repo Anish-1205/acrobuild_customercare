@@ -69,14 +69,15 @@ export function ApiActivityPage({ basePath = "/home" }: { basePath?: "/home" | "
     () => records.find((record) => record.id === selectedId) || records[0],
     [records, selectedId]
   );
+  const PageElement = basePath === "/admin" ? "div" : "main";
 
   return (
-    <main className="api-activity-page">
+    <PageElement className={`api-activity-page${basePath === "/admin" ? " phase6-embedded" : ""}`}>
       <header className="api-activity-topbar">
         <div>
           <span className="api-activity-eyebrow">Acrobuild support</span>
           <h1>Chatbot activity</h1>
-          <p>See how a customer question became an answer.</p>
+          <p>Review request traces stored only in this browser.</p>
         </div>
         <Link className="api-activity-button" to="/home#help">Open chatbot</Link>
       </header>
@@ -88,7 +89,7 @@ export function ApiActivityPage({ basePath = "/home" }: { basePath?: "/home" | "
 
       <section className="api-page-guide">
         <strong>What this page shows</strong>
-        <span>A customer asks a question</span><i>→</i><span>The chatbot API processes it</span><i>→</i><span>The answer returns to chat</span>
+        <span>A customer asks a question</span><i aria-hidden="true">→</i><span>The chatbot API processes it</span><i aria-hidden="true">→</i><span>The answer returns to chat</span>
       </section>
 
       <section className="api-activity-workspace">
@@ -97,6 +98,7 @@ export function ApiActivityPage({ basePath = "/home" }: { basePath?: "/home" | "
           {records.length ? records.map((record) => (
             <button
               className={`api-activity-row${record.id === selected?.id ? " active" : ""}`}
+              aria-current={record.id === selected?.id ? "true" : undefined}
               key={record.id}
               onClick={() => setSelectedId(record.id)}
               type="button"
@@ -173,7 +175,7 @@ export function ApiActivityPage({ basePath = "/home" }: { basePath?: "/home" | "
         </article>
       </section>
 
-      <button className="api-clear-link" onClick={() => clearApiActivity()} type="button">Clear activity history</button>
-    </main>
+      <button className="api-clear-link" onClick={() => clearApiActivity()} type="button">Clear browser activity history</button>
+    </PageElement>
   );
 }
