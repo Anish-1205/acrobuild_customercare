@@ -9,9 +9,9 @@ type PublicHeaderProps = {
 
 const publicNavigation = [
   { className: "help-center-header-home", label: "Home", to: "/home" },
-  { label: "Popular questions", to: "/home#popular-questions" },
-  { label: "All articles", to: "/home#more-information" },
-  { label: "Get support", to: "/home#get-support" }
+  { label: "Popular questions", to: "/home/about#popular-questions" },
+  { label: "All articles", to: "/home/about#more-information" },
+  { label: "Get support", to: "/home/about#get-support" }
 ];
 
 export function PublicHeader({ workspaceLabel, workspaceLink }: PublicHeaderProps) {
@@ -72,9 +72,9 @@ export function PublicFooter() {
           <AcrobuildLogo className="acrobuild-logo-compact" subtitle="Buyer & homeowner support" />
         </Link>
         <nav aria-label="Footer" className="help-center-footer-links">
-          <Link to="/home#more-information">All articles</Link>
-          <Link to="/home#popular-questions">Popular questions</Link>
-          <Link to="/home#get-support">Contact</Link>
+          <Link to="/home/about#more-information">All articles</Link>
+          <Link to="/home/about#popular-questions">Popular questions</Link>
+          <Link to="/home/about#get-support">Contact</Link>
         </nav>
       </div>
     </footer>

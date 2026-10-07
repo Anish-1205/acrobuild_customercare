@@ -1358,11 +1358,30 @@ export function CustomerHomePage() {
   const searchMatchCount = matchingPublishedArticles.length + filteredHelpCenterCategories.length;
 
   useEffect(() => {
+    if (location.hash) {
+      let targetId = location.hash.slice(1);
+
+      try {
+        targetId = decodeURIComponent(targetId);
+      } catch {
+        // Keep the literal hash when a malformed escape sequence is supplied.
+      }
+
+      const target = document.getElementById(targetId);
+
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        target.focus({ preventScroll: true });
+      }
+
+      return;
+    }
+
     window.scrollTo({
       behavior: "smooth",
       top: 0
     });
-  }, [articleSlug, categorySlug]);
+  }, [articleSlug, categorySlug, location.hash, location.pathname]);
 
   useEffect(() => {
     if (!chatBodyRef.current) {
@@ -2896,7 +2915,7 @@ export function CustomerHomePage() {
               </div>
             </section>
 
-            <section className="help-center-shell help-center-section" id="popular-questions">
+            <section className="help-center-shell help-center-section" id="popular-questions" tabIndex={-1}>
               <div className="help-center-section-head">
                 <div>
                   <h2>Popular questions</h2>
@@ -2956,7 +2975,7 @@ export function CustomerHomePage() {
               </div>
             </section>
 
-            <section className="help-center-shell help-center-section" id="more-information">
+            <section className="help-center-shell help-center-section" id="more-information" tabIndex={-1}>
               <div className="help-center-section-head">
                 <div>
                   <h2>All article categories</h2>
@@ -3000,7 +3019,7 @@ export function CustomerHomePage() {
               ) : null}
             </section>
 
-            <section className="help-center-shell help-center-section" id="get-support">
+            <section className="help-center-shell help-center-section" id="get-support" tabIndex={-1}>
               <div className="help-center-section-head">
                 <div>
                   <h2>Get support</h2>

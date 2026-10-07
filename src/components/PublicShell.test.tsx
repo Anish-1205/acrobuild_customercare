@@ -7,8 +7,8 @@ import { PublicFooter, PublicHeader } from "./PublicShell";
 describe("PublicShell", () => {
   afterEach(cleanup);
 
-  it("preserves the existing public destinations and exposes an accessible menu control", () => {
-    render(
+  it("routes navigation to the existing help-centre sections and exposes an accessible menu control", () => {
+    const { container } = render(
       <MemoryRouter>
         <PublicHeader workspaceLabel="Sign in" workspaceLink="/login" />
       </MemoryRouter>
@@ -23,15 +23,20 @@ describe("PublicShell", () => {
     expect(screen.getByRole("link", { name: "Acrobuild home" })).toHaveAttribute("href", "/home");
     expect(screen.getByRole("link", { name: "Popular questions" })).toHaveAttribute(
       "href",
-      "/home#popular-questions"
+      "/home/about#popular-questions"
     );
     expect(screen.getByRole("link", { name: "All articles" })).toHaveAttribute(
       "href",
-      "/home#more-information"
+      "/home/about#more-information"
     );
     expect(screen.getByRole("link", { name: "Get support" })).toHaveAttribute(
       "href",
-      "/home#get-support"
+      "/home/about#get-support"
+    );
+    expect(screen.getByText("ACROBUILD")).toBeVisible();
+    expect(container.querySelector(".acrobuild-logo-mark")).toHaveAttribute(
+      "src",
+      "/Acrobuild_logo.png?v=20260730-2"
     );
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
 
@@ -55,7 +60,15 @@ describe("PublicShell", () => {
     expect(screen.queryByText("English (US)")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute(
       "href",
-      "/home#get-support"
+      "/home/about#get-support"
+    );
+    expect(screen.getByRole("link", { name: "All articles" })).toHaveAttribute(
+      "href",
+      "/home/about#more-information"
+    );
+    expect(screen.getByRole("link", { name: "Popular questions" })).toHaveAttribute(
+      "href",
+      "/home/about#popular-questions"
     );
   });
 });

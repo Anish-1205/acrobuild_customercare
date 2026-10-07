@@ -750,9 +750,13 @@
   color: #fff;
 }
 
-.help-center-content-page .acrobuild-logo-title,
+.help-center-content-page .help-center-footer .acrobuild-logo-title,
 .help-center-content-page .help-center-footer .acrobuild-logo-subtitle {
   color: #fff;
+}
+
+.help-center-content-page .help-center-section[id] {
+  scroll-margin-top: calc(4.75rem + var(--spacing-lg));
 }
 
 @media (max-width: 980px) {

@@ -529,7 +529,7 @@
   color: #fff;
 }
 
-.help-center-marketing-home .acrobuild-logo-title,
+.help-center-marketing-home .help-center-footer .acrobuild-logo-title,
 .help-center-marketing-home .help-center-footer .acrobuild-logo-subtitle {
   color: #fff;
 }
@@ -680,8 +680,16 @@
 }
 
 @media (max-width: 520px) {
-  .help-center-header-brand .acrobuild-logo-copy {
-    display: none;
+  .help-center-header-brand .acrobuild-logo-mark-shell {
+    width: 2.55rem;
+    height: 2.55rem;
+    padding: 0.48rem;
+    border-radius: var(--radius-md);
+  }
+
+  .help-center-header-brand .acrobuild-logo-title {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
   }
 
   .help-center-header-link {

@@ -224,6 +224,10 @@
   color: var(--color-text-primary);
 }
 
+.store-chat-message.bot .store-chat-message-text {
+  line-height: var(--line-height-body-lg);
+}
+
 .store-chat-automation-note {
   padding-left: 2px;
   color: var(--color-text-placeholder);
