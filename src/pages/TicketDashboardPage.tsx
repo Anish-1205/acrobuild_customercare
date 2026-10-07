@@ -381,7 +381,7 @@ export function TicketDashboardPage({ embedded = false }: TicketDashboardPagePro
               <article className="dashboard-focus-card accent-amber">
                 <span>Waiting on customer</span>
                 <strong>{waitingOnCustomerCount}</strong>
-                <small>Threads paused until the shopper replies</small>
+                <small>Threads paused until the customer replies</small>
               </article>
               <article className="dashboard-focus-card accent-violet">
                 <span>Queues covered</span>

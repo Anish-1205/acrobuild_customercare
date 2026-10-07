@@ -230,7 +230,7 @@
 
 .store-chat-automation-note {
   padding-left: 2px;
-  color: var(--color-text-placeholder);
+  color: var(--color-text-secondary);
   font-size: 10px;
   font-weight: var(--font-weight-medium);
   letter-spacing: 0.01em;

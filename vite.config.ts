@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import { configDefaults } from "vitest/config";
 
 const proxy_paths = [
   "/api",
@@ -17,6 +18,7 @@ const ignored_watch_paths = [
   "**/.chrome-preview-profile/**",
   "**/.edge-preview-profile/**",
   "**/admin-inbox-preview.png",
+  "**/data/playwright-results/**",
 ];
 
 export default defineConfig(({ mode }) => {
@@ -31,6 +33,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     test: {
       environment: "jsdom",
+      exclude: [...configDefaults.exclude, "tests/e2e/**"],
     },
     server: {
       port: 5173,

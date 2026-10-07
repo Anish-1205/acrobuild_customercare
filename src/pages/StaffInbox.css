@@ -235,6 +235,10 @@
   box-shadow: none;
 }
 
+.staff-inbox .photo-empty-state-eyebrow {
+  color: var(--color-text-secondary);
+}
+
 /* The manager page carries higher-specificity legacy selectors. Keep these
    neutralizers scoped to its inbox marker so no other workspace panel moves. */
 .support-console-page.staff-inbox.legacy-inbox {

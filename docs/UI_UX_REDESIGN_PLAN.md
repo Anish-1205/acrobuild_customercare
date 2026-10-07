@@ -310,7 +310,12 @@ responsive and accessibility browser checks, build, lint, full tests, and
 **STOP boundary:** Stop after the named public routes. Do not alter chat internals
 from Phase 4 or begin staff workspace migration.
 
-### [ ] Phase 6A — Staff Inbox
+### [x] Phase 6A — Staff Inbox
+
+**Status:** Complete. Committed in `dcc69a4` ("feat: complete Phase 6 staff
+workspace redesign"). `src/pages/StaffInbox.css` and
+`src/pages/StaffInbox.test.tsx` cover both inbox implementations; role
+ownership, polling, and endpoint behavior are unchanged.
 
 **Goal:** Migrate the manager and agent inbox experiences to the design system
 without changing ticket operations or authorization boundaries.
@@ -348,7 +353,11 @@ browser coverage, build, lint, full tests, and `git diff --check`.
 **STOP boundary:** Stop after both reachable inboxes pass. Do not migrate other
 staff panels or decide whether their implementations should merge.
 
-### [ ] Phase 6B — Teach AI and Articles
+### [x] Phase 6B — Teach AI and Articles
+
+**Status:** Complete. Committed in `dcc69a4`, covered by
+`src/pages/Phase6Knowledge.test.tsx`. Teach AI and Articles/Training Documents
+workflows, APIs, and role checks are unchanged.
 
 **Goal:** Migrate the two reachable knowledge/content-management surfaces while
 preserving their distinct current workflows.
@@ -386,7 +395,12 @@ responsive browser checks, build, lint, full tests, and `git diff --check`.
 **STOP boundary:** Stop after Teach AI and Articles. Do not implement workflow
 rules or redesign the remaining staff panels.
 
-### [ ] Phase 6C — Staff configuration and libraries
+### [x] Phase 6C — Staff configuration and libraries
+
+**Status:** Complete. Committed in `dcc69a4`, covered by
+`src/pages/Phase6Configuration.test.tsx`. Chat Box, Open Hours, Saved Replies,
+Manage Tags, Users, and CS API Settings retain their persistence destinations,
+secret boundaries, and role authorization.
 
 **Goal:** Standardize the remaining editable staff libraries and configuration
 forms without expanding their capabilities.
@@ -427,7 +441,13 @@ each accepted surface.
 **STOP boundary:** Stop after the explicitly authorized surface or batch. Do not
 advance automatically through the list or begin reporting/automation work.
 
-### [ ] Phase 6D — Staff reporting, diagnostics, and Automation
+### [x] Phase 6D — Staff reporting, diagnostics, and Automation
+
+**Status:** Complete. Committed in `dcc69a4`, covered by
+`src/pages/Phase6Reporting.test.tsx`. Analytics, Dashboard, API Activity, Data
+APIs, and Automation retain their calculation inputs, local-only trace scope,
+route reachability, and proposal confirmation flow. Automation remains
+URL-only and unlinked.
 
 **Goal:** Migrate Analytics, Dashboard, API Activity, Data APIs, and Automation
 without inventing metrics, diagnostics, or automation outcomes.
@@ -466,7 +486,31 @@ accessibility browser coverage, build, lint, full tests, and `git diff --check`.
 **STOP boundary:** Stop after the explicitly authorized reporting/diagnostic
 batch. Do not expose private diagnostics or link previously URL-only features.
 
-### [ ] Phase 7 — Responsive, accessibility, and UX consistency pass
+### [x] Phase 7 — Responsive, accessibility, and UX consistency pass
+
+**Status:** Complete for the authorized consistency and defect scope.
+
+**Verification outcome:** A reusable Playwright/axe suite now covers the public,
+login, admin, owner, and agent route variants with deterministic API responses.
+The responsive matrix uses 1440px, 1280px, 768px, 390px, and 320px widths;
+reachable surfaces have no measured horizontal page overflow, and the automated
+WCAG A/AA smoke has no serious or critical axe findings. Browser checks also
+cover mobile staff navigation focus/Escape behavior, chat focus restoration,
+role redirects, reduced motion, and a non-default supported widget accent.
+
+**Corrections:** Approved tokens now provide sufficient contrast for staff
+navigation labels, ticket-count metadata, inbox empty-state eyebrows, the public
+"Fast answer lanes" caption, and the chat "Automated" note. The chat online
+indicator now exposes visible text without invalid ARIA, staff-shell motion is
+suppressed under `prefers-reduced-motion`, and the reporting surfaces consistently
+use the source-supported term "customer". No route, role, API, chat, or property
+behavior changed.
+
+**Limitations:** Browser evidence is MOCKED, not LIVE. Arbitrary administrator
+widget colors still have no automatic contrast-selection contract; the tested
+non-default blue is accessible, but every possible custom value cannot be
+certified. Public diagnostic visibility and the other open product decisions
+remain unchanged. Live release verification remains Phase 8 work.
 
 **Goal:** Verify and close cross-screen usability gaps after all approved page
 migrations, without redesigning product behavior.
@@ -504,7 +548,37 @@ reduced-motion checks, full frontend tests/build/lint, and `git diff --check`.
 **STOP boundary:** Stop after recording and resolving only redesign-introduced or
 explicitly authorized cross-screen issues. Do not start final release changes.
 
-### [ ] Phase 8 — Final regression, visual consistency, and production readiness
+### [x] Phase 8 — Final regression, visual consistency, and production readiness
+
+**Status:** Complete for the authorized verification scope. READY FOR RELEASE
+DECISION WITH BLOCKERS (see the Phase 8 readiness report for the full
+breakdown).
+
+**Verification outcome:** Fresh evidence gathered against the current working
+tree: 183/183 frontend unit tests pass; production build and `tsc --noEmit`
+succeed; ESLint reports 0 errors (7 pre-existing `no-explicit-any` warnings,
+outside redesign scope); `git diff --check` is clean; the 7-test Playwright/axe
+suite (`tests/e2e/phase7-accessibility.spec.ts`) passes with MOCKED browser
+responses, covering the public/login/admin/owner/agent route and role matrix
+at five viewports with no serious/critical axe findings and no horizontal
+overflow; backend `ruff check` and the scoped `mypy` run are clean; backend
+pytest passes 1828 of 1866 collected tests, with the remaining 38 failing only
+on a Windows shared-temp-directory `PermissionError` unrelated to any redesign
+change; a fresh, unmocked run of `scripts/live_disambiguation_check.py`
+against the real Sarvam LLM and real CS API passed every live assertion and
+regenerated `docs/evidence/live/disambiguation.json`. Live backend auth
+boundaries were independently smoke-checked (`/api/admin/tickets` and
+`/admin/all-tickets` return 401 without a session).
+
+**Known gaps:** `tests/e2e/` and `playwright.config.ts` remain uncommitted, so
+Phase 7/8 browser evidence currently depends on local working-tree files, not
+repository history. Full manual live chat/staff-workflow/OTP verification
+against a browser was not performed in this pass; see the readiness report for
+what is BLOCKED versus PASS.
+
+**Constraints:** Verification does not authorize fixes outside the approved
+redesign scope, deployment, real customer actions, fabricated live data, or
+changes to backend behavior. Unavailable evidence is BLOCKED, never PASS.
 
 **Goal:** Produce fresh evidence that the approved redesign is behaviorally safe,
 visually consistent, and ready for the user’s release decision.

@@ -256,7 +256,7 @@
 }
 
 .help-center-content-page .help-center-hero-panel-head small {
-  color: var(--color-accent-orange);
+  color: var(--color-action-primary);
   font-size: var(--font-size-caption);
   letter-spacing: 0.08em;
 }

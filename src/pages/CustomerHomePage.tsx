@@ -3372,7 +3372,7 @@ export function CustomerHomePage() {
                   <strong id="store-chat-title">Acrobuild Assistant</strong>
                   <span>Property support</span>
                 </div>
-                <span aria-label="Online" className="store-chat-online" title="Online"><i /></span>
+                <span className="store-chat-online" title="Online"><i aria-hidden="true" />Online</span>
               </div>
             </header>
             <div
