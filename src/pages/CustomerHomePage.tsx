@@ -3058,7 +3058,7 @@ export function CustomerHomePage() {
                   <div className="help-center-support-card-body">
                     <span className="help-center-support-phone">+61 1800 592 299</span>
                     <span className="help-center-support-hours">
-                      Monday to Friday, 9:00 AM - 5:00 PM AEST
+                      Monday to Friday, 9:00 AM - 5:00 PM IST
                     </span>
                   </div>
                 </a>

@@ -332,7 +332,14 @@ async def lifespan(application):
     from services.database_service import DB_PATH
     from services.migration_service import apply_migrations
     initialize_database()
-    apply_migrations(DB_PATH)
+    applied_migrations = apply_migrations(DB_PATH)
+    if 4 in applied_migrations:
+        from services.admin_settings_service import (
+            refresh_ticket_business_hours_labels,
+            sync_workflow_rule_tags,
+        )
+        refresh_ticket_business_hours_labels()
+        sync_workflow_rule_tags()
     warm_ai_knowledge_index()
     yield
 

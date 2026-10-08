@@ -35,9 +35,9 @@ const timezoneOptions: string[] =
         "Europe/London",
         "Europe/Paris",
         "Europe/Berlin",
+        "Asia/Kolkata",
         "Asia/Tokyo",
-        "Asia/Singapore",
-        "Australia/Sydney"
+        "Asia/Singapore"
       ];
 
 type BusinessHoursPageProps = {

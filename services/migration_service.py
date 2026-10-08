@@ -23,10 +23,16 @@ MIGRATIONS = {
         "CREATE TABLE IF NOT EXISTS conversation_turns (session_hash TEXT NOT NULL, conversation_id TEXT NOT NULL, position INTEGER NOT NULL, sender TEXT NOT NULL, text TEXT NOT NULL, expires_at REAL NOT NULL, PRIMARY KEY(session_hash,conversation_id,position))",
         "CREATE INDEX IF NOT EXISTS idx_conversation_expiry ON conversation_turns(expires_at)",
     ),
+    4: (
+        "UPDATE business_hours_profiles SET timezone = 'Asia/Kolkata', updated_at = CURRENT_TIMESTAMP WHERE timezone = 'Australia/Sydney'",
+        "UPDATE business_hours_rule_windows SET timezone = 'Asia/Kolkata', updated_at = CURRENT_TIMESTAMP WHERE timezone = 'Australia/Sydney'",
+    ),
 }
 
 
 def apply_migrations(database_path):
+    applied_versions = []
+
     with closing(sqlite3.connect(database_path, timeout=30)) as conn:
         conn.execute("BEGIN IMMEDIATE")
         try:
@@ -38,7 +44,10 @@ def apply_migrations(database_path):
                 for statement in statements:
                     conn.execute(statement)
                 conn.execute("INSERT INTO schema_migrations(version) VALUES(?)", (version,))
+                applied_versions.append(version)
             conn.commit()
         except Exception:
             conn.rollback()
             raise
+
+    return tuple(applied_versions)

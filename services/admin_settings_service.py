@@ -14,8 +14,8 @@ DB_PATH = str(
 
 DEFAULT_TIMEZONE = os.getenv(
     "SUPPORT_TIMEZONE",
-    "Australia/Sydney",
-).strip() or "Australia/Sydney"
+    "Asia/Kolkata",
+).strip() or "Asia/Kolkata"
 
 DEFAULT_START_HOUR = int(
     os.getenv(

@@ -27,7 +27,42 @@ def workspace(tmp_path, monkeypatch):
 def test_migrations_idempotent(workspace):
     apply_migrations(workspace)
     with closing(sqlite3.connect(workspace)) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 3
+        assert conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 4
+
+
+def test_migration_replaces_legacy_australian_business_hours_timezone(tmp_path):
+    database_path = tmp_path / "legacy-timezone.db"
+
+    with closing(sqlite3.connect(database_path)) as conn, conn:
+        conn.execute(
+            "CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+        )
+        conn.executemany(
+            "INSERT INTO schema_migrations(version) VALUES(?)",
+            [(1,), (2,), (3,)],
+        )
+        conn.execute(
+            "CREATE TABLE business_hours_profiles (timezone TEXT NOT NULL, updated_at TEXT NOT NULL)"
+        )
+        conn.execute(
+            "CREATE TABLE business_hours_rule_windows (timezone TEXT NOT NULL, updated_at TEXT NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO business_hours_profiles VALUES ('Australia/Sydney', 'legacy')"
+        )
+        conn.execute(
+            "INSERT INTO business_hours_rule_windows VALUES ('Australia/Sydney', 'legacy')"
+        )
+
+    assert apply_migrations(database_path) == (4,)
+
+    with closing(sqlite3.connect(database_path)) as conn:
+        assert conn.execute(
+            "SELECT timezone FROM business_hours_profiles"
+        ).fetchone()[0] == "Asia/Kolkata"
+        assert conn.execute(
+            "SELECT timezone FROM business_hours_rule_windows"
+        ).fetchone()[0] == "Asia/Kolkata"
 
 
 def test_cookie_login_csrf_logout_and_revocation(workspace):
