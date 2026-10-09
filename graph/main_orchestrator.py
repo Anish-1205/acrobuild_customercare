@@ -6,6 +6,7 @@ from graph.haystack_conversation_pipeline import (
     validate_support_node,
 )
 import os
+from collections import Counter
 from threading import Lock
 from time import monotonic
 from datetime import datetime
@@ -344,9 +345,144 @@ def _needs_localization(answer, analysis):
 
 
 _NUMBER_RE = re.compile(r"\d[\d,]*(?:\.\d+)?")
+_PLACEHOLDER_RE = re.compile(r"ZXQ[A-Z]+QXZ")
+_PROTECTED_TRANSLATION_PATTERNS = (
+    re.compile(r"\b[1-6]\s*BHK(?:\+T)?(?:\s+Duplex)?\b", re.I),
+    re.compile(r"\bAPI-listed base rate\b", re.I),
+    re.compile(r"\bRate Per Sq\.Ft\.", re.I),
+    re.compile(r"\bsq\. ft\.", re.I),
+    re.compile(r"\bINR\s+\d[\d,]*(?:\.\d+)?\b", re.I),
+    _NUMBER_RE,
+)
 
 
-def _localize_answer(answer, analysis):
+def _placeholder_name(index):
+    letters = ""
+    value = index
+    while True:
+        letters = chr(ord("A") + value % 26) + letters
+        value = value // 26 - 1
+        if value < 0:
+            return f"ZXQ{letters}QXZ"
+
+
+def _mask_translation_facts(answer, protected_terms=None):
+    terms = [str(term).strip() for term in (protected_terms or []) if term is not None and str(term).strip()]
+    for pattern in _PROTECTED_TRANSLATION_PATTERNS:
+        terms.extend(match.group(0) for match in pattern.finditer(answer))
+    terms = sorted(dict.fromkeys(terms), key=len, reverse=True)
+    masked = answer
+    replacements = {}
+    for term in terms:
+        while term in masked:
+            placeholder = _placeholder_name(len(replacements))
+            masked = masked.replace(term, placeholder, 1)
+            replacements[placeholder] = term
+    return masked, replacements
+
+
+def _translation_line_shapes(text):
+    result = []
+    for line in str(text or "").splitlines():
+        if not line.strip():
+            result.append("blank")
+        elif re.match(r"^\s*-\s+", line):
+            result.append("bullet")
+        else:
+            result.append("text")
+    return result
+
+
+def _restore_valid_translation(answer, localized, replacements, analysis):
+    """Restore immutable facts only when structure, script, and every factual
+    occurrence remain exact. An empty result tells the caller to use the safe
+    English fallback."""
+    expected_placeholders = Counter(replacements.keys())
+    actual_placeholders = Counter(_PLACEHOLDER_RE.findall(localized))
+    placeholders_preserved = actual_placeholders == expected_placeholders
+    restored = localized
+    legacy_facts_preserved = False
+    if placeholders_preserved:
+        for placeholder, value in replacements.items():
+            restored = restored.replace(placeholder, value)
+    elif not actual_placeholders:
+        legacy_facts_preserved = all(
+            localized.count(value) == answer.count(value)
+            for value in set(replacements.values())
+        )
+
+    source_numbers = Counter(number.replace(",", "") for number in _NUMBER_RE.findall(answer))
+    localized_numbers = Counter(number.replace(",", "") for number in _NUMBER_RE.findall(restored))
+    source_shapes = _translation_line_shapes(answer)
+    localized_shapes = _translation_line_shapes(restored)
+    same_layout = (
+        localized_shapes == source_shapes
+        if len(source_shapes) == 1
+        else localized_shapes.count("bullet") == source_shapes.count("bullet")
+    )
+    script_matches = analysis.script != "latin" or not detect_script_language(restored)
+    if (restored and restored != answer and (placeholders_preserved or legacy_facts_preserved)
+            and same_layout and source_numbers == localized_numbers and script_matches):
+        return restored
+    return ""
+
+
+def _romanized_marathi_property_template(masked_answer):
+    """Localize the deterministic project home-type templates without giving
+    any property fact or formatting decision to the translation model."""
+    token = r"(ZXQ[A-Z]+QXZ)"
+    localized = masked_answer
+    localized = re.sub(rf"^Home types in {token}:", r"\1 madhil gharanche prakar:", localized)
+    localized = re.sub(
+        rf"^Pricing for (.+) in {token}:",
+        lambda match: f"{match.group(2)} madhil {match.group(1)} chi kimat:",
+        localized,
+    )
+    localized = re.sub(
+        rf"^Complete API-listed base pricing for (.+) in {token}:",
+        lambda match: f"{match.group(2)} madhil {match.group(1)} sathi sampurna API-listed base pricing:",
+        localized,
+    )
+    replacements = (
+        ("unit(s) currently listed as available", "unit(s) sadhya available mhanun nondlele aahet"),
+        ("distinct area/rate variants are listed. Here is a concise overview:",
+         "vegvegale area/rate variants nondlele aahet. Ha sankshipt aadhava aahe:"),
+        ("distinct area/rate variant(s)", "vegvegale area/rate variant(s)"),
+        ("available unit(s) linked to this variant", "ya variant-shi jodaleli available unit(s)"),
+        ("listed plan variant(s)", "nondlele plan variant(s)"),
+        ("This configuration is listed, but no units are currently listed as available.",
+         "Hi configuration listed aahe, pan sadhya kontihi unit available mhanun nondleli nahi."),
+        ("Ask me to show all", "Sampurna mahiti pahanyasathi mala"),
+        ("details for the complete size-by-size breakdown.", "details dakhvayla sanga."),
+        ("These are API-listed base rates, not all-inclusive home quotations.",
+         "He API-listed base rates aahet; he sarva kharchansahit gharache quotations nahit."),
+        ("Ask for all pricing details for the size-by-size breakdown.",
+         "Size-nusar sampurna pricing mahitisathi vichara."),
+        ("The live project configuration lists no", "Live project configuration madhye"),
+        ("option. I have not treated another", "option listed nahi. Dusrya"),
+        ("typology as", "typology la"),
+        ("Not listed in this project's current configuration or available-unit records.",
+         "Ya projectchya current configuration kiwa available-unit records madhye listed nahi."),
+        ("grouped variant(s) have differing or conflicting source labels;",
+         "grouped variant(s) che source labels vegvegle kiwa paraspar-virodhi aahet;"),
+        ("the structured configuration, area, rate, and wing fields are shown without guessing.",
+         "structured configuration, area, rate ani wing fields andaj na lavta dakhavle aahet."),
+        ("Note:", "Tip:"),
+    )
+    for source, target_text in replacements:
+        localized = localized.replace(source, target_text)
+    localized = re.sub(r"(?<=QXZ) to (?=ZXQ)", " te ", localized)
+    return localized
+
+
+def _is_home_type_translation_template(answer):
+    return bool(re.match(
+        r"^(?:Home types in|Pricing for|Complete API-listed base pricing for)\b",
+        str(answer or ""),
+    ))
+
+
+def _localize_answer(answer, analysis, protected_terms=None):
     """Deterministic property answers are English templates; rewrite them into the
     customer's language, keeping every fact. Falls back to the original on any doubt."""
     if not _needs_localization(answer, analysis):
@@ -359,8 +495,16 @@ def _localize_answer(answer, analysis):
     )
     # The instruction must sit in the user turn: with it only in the system prompt,
     # Sarvam echoes the English text back unchanged.
-    source_items = [line[2:].strip() for line in answer.splitlines() if line.startswith("- ")]
-    source_numbers = {number.replace(",", "") for number in _NUMBER_RE.findall(answer)}
+    masked_answer, replacements = _mask_translation_facts(answer, protected_terms)
+    if (analysis.is_property and analysis.reply_language == "Marathi" and analysis.script == "latin"
+            and len(_translation_line_shapes(answer)) > 1 and _is_home_type_translation_template(answer)):
+        localized = _romanized_marathi_property_template(masked_answer)
+        restored = _restore_valid_translation(answer, localized, replacements, analysis)
+        if restored:
+            return restored
+        logger.warning("structured localization rejected %s", kv(language=analysis.reply_language))
+        return answer
+
     for attempt in (1, 2):
         try:
             localized = str(generate_qwen_chat_response(
@@ -368,10 +512,11 @@ def _localize_answer(answer, analysis):
                 user_prompt=(
                     f"Translate the English support message below into {target}. Keep project names, place names, "
                     "numbers, prices, INR amounts, RERA numbers, dates, URLs, email addresses and real-estate terms "
-                    "(BHK, wing, floor, site visit, carpet area, sq. ft.) exactly as they are. Keep the same line "
-                    "breaks and bullets. Keep each bulleted item exactly as written. Do not add bullets, lines, or repeated sentences. "
+                    "(BHK, wing, floor, site visit, carpet area, sq. ft.) exactly as they are. Tokens beginning "
+                    "with ZXQ and ending with QXZ are immutable facts: reproduce each token exactly once. Keep the same line "
+                    "breaks and bullets. Do not add bullets, lines, or repeated sentences. "
                     "Do not add or remove information. Output only the translation.\n\n"
-                    f"ENGLISH MESSAGE:\n{answer}"
+                    f"ENGLISH MESSAGE:\n{masked_answer}"
                 ),
                 conversation_messages=[],
                 temperature=0 if attempt == 1 else 0.3,
@@ -379,19 +524,13 @@ def _localize_answer(answer, analysis):
         except Exception as error:
             logger.warning("answer localization failed %s", kv(error=error, language=analysis.reply_language))
             return answer
-        localized_numbers = {number.replace(",", "") for number in _NUMBER_RE.findall(localized)}
-        # A one-line answer must stay one line: the translator sometimes pads
-        # it with invented bullets or repeated sentences.
-        added_lines = len(answer.splitlines()) == 1 and (
-            len(localized.splitlines()) != 1 or " * " in localized or " • " in localized
-        )
-        if (localized and localized != answer and not added_lines and source_numbers <= localized_numbers
-                and all(item in localized for item in source_items)):
-            return localized
+        restored = _restore_valid_translation(answer, localized, replacements, analysis)
+        if restored:
+            return restored
         logger.warning(
             "answer localization rejected %s",
             kv(language=analysis.reply_language, attempt=attempt, echoed=localized == answer,
-               missing_numbers=sorted(source_numbers - localized_numbers)),
+               output_chars=len(localized)),
         )
     return answer
 
@@ -400,7 +539,14 @@ def localize_response(response, analysis):
     """Last step for every payload (including router shortcuts and the live-data
     fallback text), so no English template reaches a non-English conversation."""
     response = dict(response or {})
-    response["answer"] = _localize_answer(response.get("answer", ""), analysis)
+    protected_terms = []
+    for chunk in response.get("matched_chunks") or []:
+        project = chunk.get("project")
+        if isinstance(project, dict):
+            protected_terms.append(project.get("projectName"))
+        protected_terms.append(chunk.get("project_name"))
+    protected_terms.extend(reply.get("label") for reply in response.get("quick_replies") or [])
+    response["answer"] = _localize_answer(response.get("answer", ""), analysis, protected_terms)
     response.update({key: value for key, value in _language_fields(analysis).items() if key != "route"})
     response.setdefault("route", _language_fields(analysis)["route"])
     return response

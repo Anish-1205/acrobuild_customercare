@@ -26,6 +26,7 @@ PENDING_HUMAN_CONTACT_MARKER = f"{_MARKER_CHAR}pending_human_contact{_MARKER_CHA
 _PENDING_PROJECT_LOOKUP_PREFIX = f"{_MARKER_CHAR}pending_project_lookup:"
 _CURRENT_PROJECT_PREFIX = f"{_MARKER_CHAR}current_project:"
 _DISCOVERY_SLOTS_PREFIX = f"{_MARKER_CHAR}discovery_slots:"
+_HOME_TYPE_SCOPE_PREFIX = f"{_MARKER_CHAR}home_type_scope:"
 
 
 def has_pending_call_booking_marker(message_text):
@@ -82,6 +83,61 @@ def get_current_project_context(message_text):
         return {"project": str(payload.get("project") or "").strip()}
     except (ValueError, TypeError, json.JSONDecodeError):
         return None
+
+
+def _validated_home_type_scope(scope):
+    """Small, server-owned scope used by contextual subtype and price turns."""
+    if not isinstance(scope, dict):
+        return {}
+    project = _clean_slot_text(scope.get("project"), 160, False)
+    config = scope.get("config")
+    if not project or not isinstance(config, list):
+        return {}
+    numbers = list(dict.fromkeys(
+        value for value in config
+        if isinstance(value, str) and re.fullmatch(r"[1-6]", value)
+    ))
+    if not numbers:
+        return {}
+    result = {"project": project, "config": numbers}
+    subtype = str(scope.get("subtype") or "").strip().lower()
+    if subtype == "duplex":
+        result["subtype"] = subtype
+    return result
+
+
+def build_home_type_scope_marker(scope):
+    """Persist verified BHK/subtype scope without parsing localized bot copy."""
+    clean = _validated_home_type_scope(scope)
+    payload = json.dumps(clean, separators=(",", ":")).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+    return f"{_HOME_TYPE_SCOPE_PREFIX}{encoded}{_MARKER_CHAR}"
+
+
+def get_home_type_scope(message_text):
+    pattern = re.escape(_HOME_TYPE_SCOPE_PREFIX) + r"([A-Za-z0-9_-]*)" + re.escape(_MARKER_CHAR)
+    for encoded in reversed(re.findall(pattern, str(message_text or ""))):
+        try:
+            payload = json.loads(base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4)))
+        except (ValueError, TypeError, json.JSONDecodeError):
+            continue
+        if payload == {}:
+            return {}
+        clean = _validated_home_type_scope(payload)
+        if clean:
+            return clean
+    return None
+
+
+def latest_home_type_scope(messages):
+    """Newest trusted bot marker; customer-authored marker text is ignored."""
+    for message in reversed(list(messages or [])):
+        if str(_message_field(message, "sender") or "").lower() != "bot":
+            continue
+        scope = get_home_type_scope(_message_field(message, "text"))
+        if scope is not None:
+            return scope
+    return {}
 
 
 # -----------------------------------

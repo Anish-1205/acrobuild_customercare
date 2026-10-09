@@ -256,9 +256,12 @@ def _name_checks(turn, data):
             elif line.startswith("- ") and turn["discovery_kind"] in {"locality_question", "locality_not_found"}:
                 if line[2:] not in places:
                     problems.append(f"area bullet not live: {line[2:]}")
-        for figure in re.findall(r"INR [\d.]+ (?:crore|lakh)", str(turn["answer"] or "")):
-            if figure not in allowed_figures:
-                problems.append(f"unexplained figure: {figure}")
+        # A budget question may contain a fixed input-format example. It is not
+        # a property price; only result figures must be backed by live rates.
+        if turn["discovery_kind"] == "results":
+            for figure in re.findall(r"INR [\d.]+ (?:crore|lakh)", str(turn["answer"] or "")):
+                if figure not in allowed_figures:
+                    problems.append(f"unexplained figure: {figure}")
     return problems
 
 
@@ -315,9 +318,13 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
     loc, other_loc = live["loc"], live["other_loc"]
     if name == "T1":
         first = ask("Show me 3 BHK")
+        expect(first["quick_replies"] == (first["options"] or []) and "Any area" not in first["quick_replies"],
+               f"locality buttons are live options only: {first['quick_replies']}")
         tap = _first_option(first) if first["discovery_kind"] == "locality_question" else None
         second = ask(tap) if tap else first
         expect(second["discovery_kind"] == "budget_question", f"area step -> {second['discovery_kind']} (tap={tap})")
+        expect(not second["quick_replies"] and "any budget" in str(second["answer"]).lower(),
+               f"budget is guided free text: buttons={second['quick_replies']}")
         shortlist = ask("1.5 crore")
         expect(shortlist["discovery_kind"] == "results", f"budget -> {shortlist['discovery_kind']}")
         project = _first_option(shortlist)
@@ -335,6 +342,7 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
         budget = ask("Any area")
         expect(budget["discovery_kind"] == "budget_question" and (budget["discovery_slots"] or {}).get("locality") == "any",
                f"'Any area' -> {budget['discovery_kind']} {(budget['discovery_slots'] or {}).get('locality')}")
+        expect(not budget["quick_replies"], f"typed wildcard reaches button-free budget prompt: {budget['quick_replies']}")
         results = ask("any budget")
         expect(results["discovery_kind"] == "results", f"'any budget' -> {results['discovery_kind']}")
     elif name == "T4":
@@ -347,7 +355,9 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
     elif name == "T5":
         ask("Show me 3 BHK")
         unknown = ask(live["unknown_place"])
-        expect(unknown["discovery_kind"] == "locality_not_found" and "Any area" in unknown["quick_replies"],
+        expect(unknown["discovery_kind"] == "locality_not_found"
+               and unknown["quick_replies"] == (unknown["options"] or [])
+               and "Any area" not in unknown["quick_replies"],
                f"unknown place -> {unknown['discovery_kind']}, buttons={unknown['quick_replies']}")
         expect(live["unknown_place"] not in json.dumps(unknown["discovery_slots"]), "unknown place not stored")
         after = ask("Any area")

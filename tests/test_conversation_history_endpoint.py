@@ -68,9 +68,19 @@ def test_history_restores_pending_choices_without_marker_payload(workspace):
     assert payload["quick_replies"] == [
         {"label": "Wakad", "value": "Wakad"},
         {"label": "Thane", "value": "Thane"},
-        {"label": "Any area", "value": "Any area"},
     ]
     assert "pending_project_lookup" not in str(payload)
+
+
+def test_history_does_not_restore_a_lone_any_budget_reply(workspace):
+    session = ConversationSession("", "budget")
+    marker = build_discovery_slots_marker({
+        "config": ["3"], "locality": "Wakad", "awaiting": "budget",
+    })
+    session.append("Wakad", "What's your approximate budget?", marker=marker)
+    payload = _client(session.token).get("/api/support/conversations/budget/history").json()
+    assert payload["messages"][-1] == {"sender": "bot", "text": "What's your approximate budget?"}
+    assert payload["quick_replies"] == []
 
 
 def test_expired_history_is_not_returned(workspace, monkeypatch):

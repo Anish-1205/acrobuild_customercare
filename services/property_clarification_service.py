@@ -327,6 +327,30 @@ def apply_clarification_contract(payload, issue, history=None):
     return result
 
 
+def build_home_type_scope_clarification(issue, project_name, options):
+    """Build a focused, live-derived home-type choice through this contract.
+
+    Used when a subtype such as Duplex is verified for more than one BHK in
+    the selected project, so the chatbot does not guess which BHK to replace.
+    """
+    clean_options = list(dict.fromkeys(_clean_option_text(option) for option in options if _clean_option_text(option)))
+    state = {
+        "kind": "selection", "original_issue": issue, "entity": "home_type",
+        "options": clean_options, "scope": {"project": _clean_option_text(project_name)},
+        "purpose": "home_type_scope",
+    }
+    answer = build_entity_choice_answer("home type", clean_options, _clean_option_text(project_name))
+    return {
+        "answer": answer, "route": "property", "source_status": "live_api", "used_llm": False,
+        "agent_mode": "knowledge_retrieval", "retrieval_mode": "live_project_records",
+        "confidence_label": "high", "clarification_entity": "home_type",
+        "pending_project_lookup": state,
+        "quick_replies": [{"label": option, "value": option} for option in clean_options],
+        "matched_chunks": [{"record_kind": "company_api", "source_key": "live-home-type-scope-options",
+                            "body_text": "\n".join(clean_options), "title": "Live home type options"}],
+    }
+
+
 def _project_names(projects):
     return list(dict.fromkeys(str(project.get("projectName") or "").strip()
                               for project in projects if str(project.get("projectName") or "").strip()))
@@ -545,12 +569,22 @@ def resume_selection(state, reply):
         state["scope"] = scope
         return effective
     if state.get("purpose") == "home_type_search" and state["entity"] == "project":
-        # "s?" -- a plural mention ("3bhks") names the type as specifically as
-        # the singular form and must not be dropped here either.
-        requested = list(dict.fromkeys(re.findall(
-            r"\b([1-6])\s*b(?:h)?ks?\b", state.get("original_issue", ""), re.I,
-        )))
-        effective = f"Show {' and '.join(f'{number}BHK' for number in requested)} details in project {matches[0]}"
+        # Retain the customer's exact question depth; the project-specific
+        # builder decides whether a summary or full breakdown was requested.
+        original = str(state["original_issue"]).rstrip()
+        separator = " " if original.endswith((".", "?", "!")) else ". "
+        effective = original + separator + f"Selected project: {matches[0]}"
+        state["effective_issue"] = effective
+        state["scope"] = scope
+        return effective
+    if state.get("purpose") == "home_type_scope" and state["entity"] == "home_type":
+        number = (_HOME_TYPE_NUMBER_RE.search(matches[0]) or [None, ""])[1]
+        subtype = "Duplex" if re.search(r"\bduplex\b", matches[0], re.I) else ""
+        effective = str(state["original_issue"]).rstrip(". ")
+        if number:
+            effective += f". Requested home types: {number}BHK"
+        if subtype:
+            effective += f". Requested subtype: {subtype}"
         state["effective_issue"] = effective
         state["scope"] = scope
         return effective

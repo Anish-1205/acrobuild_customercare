@@ -4651,5 +4651,2517 @@
         }
       }
     }
-  ]
+  ],
+  "discovery": {
+    "flag": "default-on (flag unset)",
+    "started_at": "2026-10-08T07:31:47.666950+00:00",
+    "preflight": {
+      "cs_api_configured": true,
+      "llm_configured": true,
+      "cs_api_projects": 10,
+      "llm_reply_chars": 2
+    },
+    "data_checks": {
+      "projects": 9,
+      "project_names": [
+        "Vishwajeet Empire",
+        "Vishwajeet Empire NX",
+        "Vishwajeet Heights",
+        "Vishwajeet Myspace",
+        "Vishwajeet Paradise",
+        "Vishwajeet Precious (Emerald)",
+        "Vishwajeet Precious(Pearl)",
+        "Vishwajeet Prime",
+        "Vishwajeet Town"
+      ],
+      "localities": {
+        "(empty)": 5,
+        "Ambernath": 2,
+        "Chikhloli": 1,
+        "Varap": 1
+      },
+      "cities": {
+        "Pune": 1,
+        "Thane": 8
+      },
+      "projects_with_empty_locality": [
+        "Vishwajeet Empire NX",
+        "Vishwajeet Myspace",
+        "Vishwajeet Precious (Emerald)",
+        "Vishwajeet Prime",
+        "Vishwajeet Town"
+      ],
+      "typology_fetch_errors": {},
+      "typologies": 305,
+      "rate_types": {
+        "Rate Per Sq.Ft.": {
+          "typologies": 305,
+          "example": {
+            "project": "Vishwajeet Heights",
+            "typology": "1BHK+T 842(SQ.FT)",
+            "minBasePrice": 3300.0,
+            "saleableArea": 842.0
+          },
+          "treated_as_priced_by_budget_maths": true
+        }
+      },
+      "image_url": {
+        "typologies_with_imageUrl": 35,
+        "of_total": 305,
+        "examples_query_stripped": [
+          "https://eko.blr1.digitaloceanspaces.com/acrobuild/wing/55/684.png",
+          "https://eko.blr1.digitaloceanspaces.com/acrobuild/wing/55/631.png",
+          "https://eko.blr1.digitaloceanspaces.com/acrobuild/wing/55/624.png"
+        ],
+        "description": "imageUrl (content unverified)"
+      },
+      "places_with_invisible_or_control_characters": {
+        "count": 0,
+        "cleaned": []
+      }
+    },
+    "inputs": {
+      "loc": "Pune",
+      "other_loc": "Thane",
+      "unknown_place": "Kharadi",
+      "city_not_option": "",
+      "no_3bhk_place": "Ambernath",
+      "single_3bhk_area": false,
+      "any_project": "Vishwajeet Precious (Emerald)"
+    },
+    "transcripts": {
+      "T1": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS locality buttons are live options only: ['Pune', 'Thane']",
+            "PASS area step -> budget_question (tap=Pune)",
+            "PASS budget is guided free text: buttons=[]",
+            "PASS budget -> results",
+            "PASS tap 'Vishwajeet Precious (Emerald)' -> Home types in Vishwajeet Precious (Emerald):\n- 3BHK: 11 unit(s) currently listed",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1158.1,
+              "leaks": []
+            },
+            {
+              "user": "Pune",
+              "answer": "What's your approximate budget for a 3BHK in Pune? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "Pune",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1217.5,
+              "leaks": []
+            },
+            {
+              "user": "1.5 crore",
+              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Pune",
+                "budget_label": "1.5 crore",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1255.9,
+              "leaks": []
+            },
+            {
+              "user": "Vishwajeet Precious (Emerald)",
+              "answer": "Home types in Vishwajeet Precious (Emerald):\n- 3BHK: 11 unit(s) currently listed as available.\n  3BHK 1644(SQ.FT); carpet area: 713.1 sq. ft.; saleable area: 1644.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  3BHK 1753(SQ.FT); carpet area: 713.1 sq. ft.; saleable area: 1753.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)",
+              "quick_replies": [
+                "Browse all projects",
+                "Book a site visit",
+                "Raise a support ticket"
+              ],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 1691.1,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS locality buttons are live options only: ['Pune', 'Thane']",
+            "PASS area step -> budget_question (tap=Pune)",
+            "PASS budget is guided free text: buttons=[]",
+            "PASS budget -> results",
+            "PASS tap 'Vishwajeet Precious (Emerald)' -> Home types in Vishwajeet Precious (Emerald):\n- 3BHK: 11 unit(s) currently listed",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1829.6,
+              "leaks": []
+            },
+            {
+              "user": "Pune",
+              "answer": "What's your approximate budget for a 3BHK in Pune? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "Pune",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1347.4,
+              "leaks": []
+            },
+            {
+              "user": "1.5 crore",
+              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Pune",
+                "budget_label": "1.5 crore",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1244.7,
+              "leaks": []
+            },
+            {
+              "user": "Vishwajeet Precious (Emerald)",
+              "answer": "Home types in Vishwajeet Precious (Emerald):\n- 3BHK: 11 unit(s) currently listed as available.\n  3BHK 1644(SQ.FT); carpet area: 713.1 sq. ft.; saleable area: 1644.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  3BHK 1753(SQ.FT); carpet area: 713.1 sq. ft.; saleable area: 1753.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)",
+              "quick_replies": [
+                "Browse all projects",
+                "Book a site visit",
+                "Raise a support ticket"
+              ],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 532.3,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T2": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS one-shot -> results",
+            "PASS locality slot Pune",
+            "PASS turn '3 BHK in Pune under 1.5 crore': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "3 BHK in Pune under 1.5 crore",
+              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Pune",
+                "budget_label": "1.5 crore",
+                "origin_issue": "3BHK in Pune under 1.5 crore"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 2484.9,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS one-shot -> results",
+            "PASS locality slot Pune",
+            "PASS turn '3 BHK in Pune under 1.5 crore': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "3 BHK in Pune under 1.5 crore",
+              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Pune",
+                "budget_label": "1.5 crore",
+                "origin_issue": "3BHK in Pune under 1.5 crore"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1985.4,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T3": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS 'Any area' -> budget_question any",
+            "PASS typed wildcard reaches button-free budget prompt: []",
+            "PASS 'any budget' -> results",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Any area': discovery source=live_api",
+            "PASS turn 'any budget': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1176.1,
+              "leaks": []
+            },
+            {
+              "user": "Any area",
+              "answer": "What's your approximate budget for a 3BHK? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "any",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1120.3,
+              "leaks": []
+            },
+            {
+              "user": "any budget",
+              "answer": "3BHK projects (estimated base amount):\n- Vishwajeet Prime: estimated base amount from INR 58.92 lakh\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": null,
+                "awaiting": null,
+                "locality": "any",
+                "budget_label": "any budget",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1413.9,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS 'Any area' -> budget_question any",
+            "PASS typed wildcard reaches button-free budget prompt: []",
+            "PASS 'any budget' -> results",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Any area': discovery source=live_api",
+            "PASS turn 'any budget': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1212.9,
+              "leaks": []
+            },
+            {
+              "user": "Any area",
+              "answer": "What's your approximate budget for a 3BHK? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "any",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1178.6,
+              "leaks": []
+            },
+            {
+              "user": "any budget",
+              "answer": "3BHK projects (estimated base amount):\n- Vishwajeet Prime: estimated base amount from INR 58.92 lakh\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": null,
+                "awaiting": null,
+                "locality": "any",
+                "budget_label": "any budget",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1101.9,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T4": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS 'anywhere' -> budget_question",
+            "PASS '80 lakh' -> results budget=8000000",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'anywhere': discovery source=live_api",
+            "PASS turn '80 lakh': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 2551.9,
+              "leaks": []
+            },
+            {
+              "user": "anywhere",
+              "answer": "What's your approximate budget for a 3BHK? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "any",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1140.3,
+              "leaks": []
+            },
+            {
+              "user": "80 lakh",
+              "answer": "3BHK projects within about INR 80.00 lakh (estimated base amount):\n- Vishwajeet Prime: estimated base amount from INR 58.92 lakh\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 8000000,
+                "awaiting": null,
+                "locality": "any",
+                "budget_label": "80 lakh",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1140.2,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS 'anywhere' -> budget_question",
+            "PASS '80 lakh' -> results budget=8000000",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'anywhere': discovery source=live_api",
+            "PASS turn '80 lakh': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1422.7,
+              "leaks": []
+            },
+            {
+              "user": "anywhere",
+              "answer": "What's your approximate budget for a 3BHK? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "any",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1829.4,
+              "leaks": []
+            },
+            {
+              "user": "80 lakh",
+              "answer": "3BHK projects within about INR 80.00 lakh (estimated base amount):\n- Vishwajeet Prime: estimated base amount from INR 58.92 lakh\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 8000000,
+                "awaiting": null,
+                "locality": "any",
+                "budget_label": "80 lakh",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1135.2,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T5": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS unknown place -> locality_not_found, buttons=['Pune', 'Thane']",
+            "PASS unknown place not stored",
+            "PASS 'Any area' after not-found -> budget_question",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Kharadi': discovery source=live_api",
+            "PASS turn 'Any area': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1154.2,
+              "leaks": []
+            },
+            {
+              "user": "Kharadi",
+              "answer": "I couldn't find any current 3BHK projects in 'Kharadi'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_not_found",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1212.3,
+              "leaks": []
+            },
+            {
+              "user": "Any area",
+              "answer": "What's your approximate budget for a 3BHK? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "any",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1121.8,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS unknown place -> locality_not_found, buttons=['Pune', 'Thane']",
+            "PASS unknown place not stored",
+            "PASS 'Any area' after not-found -> budget_question",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Kharadi': discovery source=live_api",
+            "PASS turn 'Any area': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1406.6,
+              "leaks": []
+            },
+            {
+              "user": "Kharadi",
+              "answer": "I couldn't find any current 3BHK projects in 'Kharadi'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_not_found",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1387.6,
+              "leaks": []
+            },
+            {
+              "user": "Any area",
+              "answer": "What's your approximate budget for a 3BHK? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "any",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1198.6,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T6": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS N/A typed-city case (city=, first=locality_question)",
+            "PASS place without 3BHK 'Ambernath' -> locality_not_found",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Ambernath': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1185.8,
+              "leaks": []
+            },
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1221.4,
+              "leaks": []
+            },
+            {
+              "user": "Ambernath",
+              "answer": "I couldn't find any current 3BHK projects in 'Ambernath'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_not_found",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1238.7,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS N/A typed-city case (city=, first=locality_question)",
+            "PASS place without 3BHK 'Ambernath' -> locality_not_found",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Ambernath': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1291.9,
+              "leaks": []
+            },
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1446.1,
+              "leaks": []
+            },
+            {
+              "user": "Ambernath",
+              "answer": "I couldn't find any current 3BHK projects in 'Ambernath'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_not_found",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1229.8,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T7": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS amenities digression -> The available project data does not currently list amenities for Vishwajeet Prec",
+            "PASS '2 BHK?' -> current project Vishwajeet Precious (Emerald) slots=None",
+            "NOTE '2 BHK?' answered for: current project",
+            "PASS '3 BHK in Thane' after a project turn -> results catalogue=True slots={'config': ['3'], 'budget_max_inr': 15000000, 'awaiting': None, 'locality': 'Thane', 'budget_label': '1.5 crore', 'origin_issue': '3BHK in Thane'} answer=3BHK projects in Thane within about INR 1.50 crore (estimated base amount):\n- Vi",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api",
+            "PASS turn '3 BHK in Thane': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1192.8,
+              "leaks": []
+            },
+            {
+              "user": "Pune",
+              "answer": "What's your approximate budget for a 3BHK in Pune? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "Pune",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1228.0,
+              "leaks": []
+            },
+            {
+              "user": "1.5 crore",
+              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Pune",
+                "budget_label": "1.5 crore",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1092.7,
+              "leaks": []
+            },
+            {
+              "user": "What amenities does Vishwajeet Precious (Emerald) have?",
+              "answer": "The available project data does not currently list amenities for Vishwajeet Precious (Emerald). Please contact the sales team for the latest confirmed amenity details.\n\nWould you like to raise a support ticket, book a site visit, or request a call?",
+              "quick_replies": [
+                "Browse all projects",
+                "Book a site visit",
+                "Raise a support ticket"
+              ],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 1522.6,
+              "leaks": []
+            },
+            {
+              "user": "2 BHK?",
+              "answer": "Home types in Vishwajeet Precious (Emerald):\n- 2BHK: 87 unit(s) currently listed as available.\n  2BHK 1330(SQ.FT); carpet area: 544.1 sq. ft.; saleable area: 1330.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1165(SQ.FT); carpet area: 585.38 sq. ft.; saleable area: 1165.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1127(SQ.FT); carpet area: 506.0 sq. ft.; saleable area: 1127.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1383(SQ.FT); carpet area: 532.8 sq. ft.; saleable area: 1383.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1088(SQ.FT); carpet area: 506.01 sq. ft.; saleable area: 1088.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1282(SQ.FT); carpet area: 544.1 sq. ft.; saleable area: 1282.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1227(SQ.FT); carpet area: 506.0 sq. ft.; saleable area: 1227.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1287(SQ.FT); carpet area: 532.8 sq. ft.; saleable area: 1287.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1438(SQ.FT); carpet area: 549.4 sq. ft.; saleable area: 1438.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1099(SQ.FT); carpet area: 531.3 sq. ft.; saleable area: 1099.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1302(SQ.FT); carpet area: 585.3 sq. ft.; saleable area: 1302.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1139(SQ.FT); carpet area: 531.3 sq. ft.; saleable area: 1139.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1316(SQ.FT); carpet area: 549.38 sq. ft.; saleable area: 1316.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)",
+              "quick_replies": [
+                "Browse all projects",
+                "Book a site visit",
+                "Raise a support ticket"
+              ],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 1393.2,
+              "leaks": []
+            },
+            {
+              "user": "3 BHK in Thane",
+              "answer": "3BHK projects in Thane within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Prime: estimated base amount from INR 58.92 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Prime"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Prime"
+              ],
+              "pending_options": [
+                "Vishwajeet Prime"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Thane",
+                "budget_label": "1.5 crore",
+                "origin_issue": "3BHK in Thane"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1261.9,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS amenities digression -> The available project data does not currently list amenities for Vishwajeet Prec",
+            "PASS '2 BHK?' -> current project Vishwajeet Precious (Emerald) slots=None",
+            "NOTE '2 BHK?' answered for: current project",
+            "PASS '3 BHK in Thane' after a project turn -> results catalogue=True slots={'config': ['3'], 'budget_max_inr': 15000000, 'awaiting': None, 'locality': 'Thane', 'budget_label': '1.5 crore', 'origin_issue': '3BHK in Thane'} answer=3BHK projects in Thane within about INR 1.50 crore (estimated base amount):\n- Vi",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api",
+            "PASS turn '3 BHK in Thane': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1524.2,
+              "leaks": []
+            },
+            {
+              "user": "Pune",
+              "answer": "What's your approximate budget for a 3BHK in Pune? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "Pune",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1524.0,
+              "leaks": []
+            },
+            {
+              "user": "1.5 crore",
+              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Pune",
+                "budget_label": "1.5 crore",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 2450.1,
+              "leaks": []
+            },
+            {
+              "user": "What amenities does Vishwajeet Precious (Emerald) have?",
+              "answer": "The available project data does not currently list amenities for Vishwajeet Precious (Emerald). Please contact the sales team for the latest confirmed amenity details.\n\nWould you like to raise a support ticket, book a site visit, or request a call?",
+              "quick_replies": [
+                "Browse all projects",
+                "Book a site visit",
+                "Raise a support ticket"
+              ],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 1440.9,
+              "leaks": []
+            },
+            {
+              "user": "2 BHK?",
+              "answer": "Home types in Vishwajeet Precious (Emerald):\n- 2BHK: 87 unit(s) currently listed as available.\n  2BHK 1330(SQ.FT); carpet area: 544.1 sq. ft.; saleable area: 1330.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1165(SQ.FT); carpet area: 585.38 sq. ft.; saleable area: 1165.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1127(SQ.FT); carpet area: 506.0 sq. ft.; saleable area: 1127.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1383(SQ.FT); carpet area: 532.8 sq. ft.; saleable area: 1383.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1088(SQ.FT); carpet area: 506.01 sq. ft.; saleable area: 1088.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1282(SQ.FT); carpet area: 544.1 sq. ft.; saleable area: 1282.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1227(SQ.FT); carpet area: 506.0 sq. ft.; saleable area: 1227.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1287(SQ.FT); carpet area: 532.8 sq. ft.; saleable area: 1287.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1438(SQ.FT); carpet area: 549.4 sq. ft.; saleable area: 1438.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1099(SQ.FT); carpet area: 531.3 sq. ft.; saleable area: 1099.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1302(SQ.FT); carpet area: 585.3 sq. ft.; saleable area: 1302.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1139(SQ.FT); carpet area: 531.3 sq. ft.; saleable area: 1139.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)\n  2BHK 1316(SQ.FT); carpet area: 549.38 sq. ft.; saleable area: 1316.0 sq. ft.; base rate: INR 3500.0 to INR 3800.0 (Rate Per Sq.Ft.)",
+              "quick_replies": [
+                "Browse all projects",
+                "Book a site visit",
+                "Raise a support ticket"
+              ],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 567.1,
+              "leaks": []
+            },
+            {
+              "user": "3 BHK in Thane",
+              "answer": "3BHK projects in Thane within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Prime: estimated base amount from INR 58.92 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Prime"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Prime"
+              ],
+              "pending_options": [
+                "Vishwajeet Prime"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Thane",
+                "budget_label": "1.5 crore",
+                "origin_issue": "3BHK in Thane"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1199.0,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T8": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS bare 'start over' -> fixed reply: Done, I've cleared your search preferences. What would you like to look for now? You can tell me the home size, area or ",
+            "PASS after 'start over', 'Show me 3 BHK' -> locality_question",
+            "PASS 'start over, show me 2 BHK' -> locality_question slots={'config': ['2'], 'awaiting': 'locality', 'origin_issue': 'start over, show me 2BHK'}",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'start over, show me 2 BHK': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1197.5,
+              "leaks": []
+            },
+            {
+              "user": "Pune",
+              "answer": "What's your approximate budget for a 3BHK in Pune? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "Pune",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1491.5,
+              "leaks": []
+            },
+            {
+              "user": "start over",
+              "answer": "Done, I've cleared your search preferences. What would you like to look for now? You can tell me the home size, area or budget you have in mind, or browse all projects.",
+              "quick_replies": [
+                "Browse all projects"
+              ],
+              "clarification_entity": null,
+              "source_status": "workspace",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "general",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 471.4,
+              "leaks": []
+            },
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1573.5,
+              "leaks": []
+            },
+            {
+              "user": "start over, show me 2 BHK",
+              "answer": "I found 2BHK projects in these areas:\n- Ambernath\n- Chikhloli\n- Pune\n- Thane\n- Varap\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Ambernath",
+                "Chikhloli",
+                "Pune",
+                "Thane",
+                "Varap"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Ambernath",
+                "Chikhloli",
+                "Pune",
+                "Thane",
+                "Varap"
+              ],
+              "pending_options": [
+                "Ambernath",
+                "Chikhloli",
+                "Pune",
+                "Thane",
+                "Varap"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "2"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "start over, show me 2BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1245.1,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS bare 'start over' -> fixed reply: Done, I've cleared your search preferences. What would you like to look for now? You can tell me the home size, area or ",
+            "PASS after 'start over', 'Show me 3 BHK' -> locality_question",
+            "PASS 'start over, show me 2 BHK' -> locality_question slots={'config': ['2'], 'awaiting': 'locality', 'origin_issue': 'start over, show me 2BHK'}",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'start over, show me 2 BHK': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1426.6,
+              "leaks": []
+            },
+            {
+              "user": "Pune",
+              "answer": "What's your approximate budget for a 3BHK in Pune? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "Pune",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1470.9,
+              "leaks": []
+            },
+            {
+              "user": "start over",
+              "answer": "Done, I've cleared your search preferences. What would you like to look for now? You can tell me the home size, area or budget you have in mind, or browse all projects.",
+              "quick_replies": [
+                "Browse all projects"
+              ],
+              "clarification_entity": null,
+              "source_status": "workspace",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "general",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 391.5,
+              "leaks": []
+            },
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1248.9,
+              "leaks": []
+            },
+            {
+              "user": "start over, show me 2 BHK",
+              "answer": "I found 2BHK projects in these areas:\n- Ambernath\n- Chikhloli\n- Pune\n- Thane\n- Varap\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Ambernath",
+                "Chikhloli",
+                "Pune",
+                "Thane",
+                "Varap"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Ambernath",
+                "Chikhloli",
+                "Pune",
+                "Thane",
+                "Varap"
+              ],
+              "pending_options": [
+                "Ambernath",
+                "Chikhloli",
+                "Pune",
+                "Thane",
+                "Varap"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "2"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "start over, show me 2BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1535.7,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T9": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS 'good night' -> locality_not_found (Phase 2 item e)",
+            "PASS 'what is RERA?' -> property: RERA stands for Real Estate Regulatory Authority. It’s a government body set up ",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'good night': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1436.5,
+              "leaks": []
+            },
+            {
+              "user": "good night",
+              "answer": "I couldn't find any current 3BHK projects in 'good night'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_not_found",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1346.1,
+              "leaks": []
+            },
+            {
+              "user": "what is RERA?",
+              "answer": "RERA stands for Real Estate Regulatory Authority. It’s a government body set up to protect home buyers by ensuring transparency, accountability, and timely project completion from developers.\n\nSince you’re looking at our projects, would you like me to share the RERA registration details for any specific one?",
+              "quick_replies": [
+                "Browse all projects",
+                "Book a site visit",
+                "Raise a support ticket"
+              ],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": true,
+              "catalogue_home_type_search": null,
+              "duration_ms": 1801.5,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS 'good night' -> locality_not_found (Phase 2 item e)",
+            "PASS 'what is RERA?' -> property: RERA stands for Real Estate Regulatory Authority. It’s a government body set up ",
+            "PASS turn 'Show me 3 BHK': discovery source=live_api",
+            "PASS turn 'good night': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "I found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1264.9,
+              "leaks": []
+            },
+            {
+              "user": "good night",
+              "answer": "I couldn't find any current 3BHK projects in 'good night'.\nI found 3BHK projects in these areas:\n- Pune\n- Thane\nWhich area would you like to explore?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_not_found",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "Show me 3BHK"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1497.9,
+              "leaks": []
+            },
+            {
+              "user": "what is RERA?",
+              "answer": "RERA stands for Real Estate Regulatory Authority. It’s a government body set up to protect home buyers by making sure developers follow fair practices, disclose project details, and stick to promised timelines.\n\nIf you’re looking at one of our projects, the RERA number is listed in the project details—for example, Vishwajeet Heights is registered under P51700054685.\n\nWould you like me to pull up the RERA and full details for a specific project?",
+              "quick_replies": [
+                "Browse all projects",
+                "Book a site visit",
+                "Raise a support ticket"
+              ],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": null,
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": true,
+              "catalogue_home_type_search": null,
+              "duration_ms": 2148.1,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T10": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS localized area bullets verbatim: ['Pune', 'Thane']",
+            "PASS localized shortlist keeps names: ['Vishwajeet Precious (Emerald)']",
+            "PASS turn 'mujhe 3 BHK flat dikhao': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "mujhe 3 BHK flat dikhao",
+              "answer": "Mujhe in areas mein 3BHK projects mile hain:\n- Pune\n- Thane\nAap kis area mein explore karna chahenge?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "show me 3BHK flats"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 2002.0,
+              "leaks": []
+            },
+            {
+              "user": "Pune",
+              "answer": "What's your approximate budget for a 3BHK in Pune? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "Pune",
+                "origin_issue": "show me 3BHK flats"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1864.2,
+              "leaks": []
+            },
+            {
+              "user": "1.5 crore",
+              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Pune",
+                "budget_label": "1.5 crore",
+                "origin_issue": "show me 3BHK flats"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1847.3,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS localized area bullets verbatim: ['Pune', 'Thane']",
+            "PASS localized shortlist keeps names: ['Vishwajeet Precious (Emerald)']",
+            "PASS turn 'mujhe 3 BHK flat dikhao': discovery source=live_api",
+            "PASS turn 'Pune': discovery source=live_api",
+            "PASS turn '1.5 crore': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "mujhe 3 BHK flat dikhao",
+              "answer": "Mujhe in areas mein 3BHK projects mile hain:\n- Pune\n- Thane\nAap kis area mein explore karna chahenge?",
+              "quick_replies": [
+                "Pune",
+                "Thane"
+              ],
+              "clarification_entity": "locality",
+              "source_status": "live_api",
+              "discovery_kind": "locality_question",
+              "options": [
+                "Pune",
+                "Thane"
+              ],
+              "pending_options": [
+                "Pune",
+                "Thane"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "locality",
+                "origin_issue": "show me 3BHK flat"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1766.1,
+              "leaks": []
+            },
+            {
+              "user": "Pune",
+              "answer": "What's your approximate budget for a 3BHK in Pune? Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'.",
+              "quick_replies": [],
+              "clarification_entity": null,
+              "source_status": "live_api",
+              "discovery_kind": "budget_question",
+              "options": [],
+              "pending_options": null,
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "awaiting": "budget",
+                "locality": "Pune",
+                "origin_issue": "show me 3BHK flat"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 2529.4,
+              "leaks": []
+            },
+            {
+              "user": "1.5 crore",
+              "answer": "3BHK projects in Pune within about INR 1.50 crore (estimated base amount):\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": 15000000,
+                "awaiting": null,
+                "locality": "Pune",
+                "budget_label": "1.5 crore",
+                "origin_issue": "show me 3BHK flat"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 2247.2,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T11": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS flag off -> entity=project, options=['Vishwajeet Heights', 'Vishwajeet Empire NX', 'Vishwajeet Prime', 'Vishwajeet Myspace', 'Vishwajeet Paradise', 'Vishwajeet Precious(Pearl)', 'Vishwajeet Town', 'Vishwajeet Empire', 'Vishwajeet Precious (Emerald)']"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "Which project should I check?\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Paradise\n- Vishwajeet Precious(Pearl)\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious (Emerald)",
+              "quick_replies": [
+                "Vishwajeet Heights",
+                "Vishwajeet Empire NX",
+                "Vishwajeet Prime",
+                "Vishwajeet Myspace",
+                "Vishwajeet Paradise",
+                "Vishwajeet Precious(Pearl)",
+                "Vishwajeet Town",
+                "Vishwajeet Empire",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": [
+                "Vishwajeet Heights",
+                "Vishwajeet Empire NX",
+                "Vishwajeet Prime",
+                "Vishwajeet Myspace",
+                "Vishwajeet Paradise",
+                "Vishwajeet Precious(Pearl)",
+                "Vishwajeet Town",
+                "Vishwajeet Empire",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 473.6,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS flag off -> entity=project, options=['Vishwajeet Heights', 'Vishwajeet Empire NX', 'Vishwajeet Prime', 'Vishwajeet Myspace', 'Vishwajeet Paradise', 'Vishwajeet Precious(Pearl)', 'Vishwajeet Town', 'Vishwajeet Empire', 'Vishwajeet Precious (Emerald)']"
+          ],
+          "turns": [
+            {
+              "user": "Show me 3 BHK",
+              "answer": "Which project should I check?\n- Vishwajeet Heights\n- Vishwajeet Empire NX\n- Vishwajeet Prime\n- Vishwajeet Myspace\n- Vishwajeet Paradise\n- Vishwajeet Precious(Pearl)\n- Vishwajeet Town\n- Vishwajeet Empire\n- Vishwajeet Precious (Emerald)",
+              "quick_replies": [
+                "Vishwajeet Heights",
+                "Vishwajeet Empire NX",
+                "Vishwajeet Prime",
+                "Vishwajeet Myspace",
+                "Vishwajeet Paradise",
+                "Vishwajeet Precious(Pearl)",
+                "Vishwajeet Town",
+                "Vishwajeet Empire",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": null,
+              "options": null,
+              "pending_options": [
+                "Vishwajeet Heights",
+                "Vishwajeet Empire NX",
+                "Vishwajeet Prime",
+                "Vishwajeet Myspace",
+                "Vishwajeet Paradise",
+                "Vishwajeet Precious(Pearl)",
+                "Vishwajeet Town",
+                "Vishwajeet Empire",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": null,
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": null,
+              "duration_ms": 477.1,
+              "leaks": []
+            }
+          ]
+        }
+      },
+      "T12": {
+        "json": {
+          "result": "PASS",
+          "evidence": [
+            "PASS -> results",
+            "PASS N/A: every 3BHK project has a per-sq-ft rate",
+            "PASS turn '3 BHK in any area, any budget': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "3 BHK in any area, any budget",
+              "answer": "3BHK projects (estimated base amount):\n- Vishwajeet Prime: estimated base amount from INR 58.92 lakh\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": null,
+                "awaiting": null,
+                "locality": "any",
+                "budget_label": "any budget",
+                "origin_issue": "3BHK in any area, any budget"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1650.5,
+              "leaks": []
+            }
+          ]
+        },
+        "stream": {
+          "result": "PASS",
+          "evidence": [
+            "PASS -> results",
+            "PASS N/A: every 3BHK project has a per-sq-ft rate",
+            "PASS turn '3 BHK in any area, any budget': discovery source=live_api"
+          ],
+          "turns": [
+            {
+              "user": "3 BHK in any area, any budget",
+              "answer": "3BHK projects (estimated base amount):\n- Vishwajeet Prime: estimated base amount from INR 58.92 lakh\n- Vishwajeet Precious (Emerald): estimated base amount from INR 57.54 lakh\n\nEstimated base amount = minimum listed rate x saleable area. It is a base estimate only and excludes taxes, registration, floor rise and parking; rates can change.\n\nSelect a project and I'll check its current details and availability.",
+              "quick_replies": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "clarification_entity": "project",
+              "source_status": "live_api",
+              "discovery_kind": "results",
+              "options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "pending_options": [
+                "Vishwajeet Prime",
+                "Vishwajeet Precious (Emerald)"
+              ],
+              "discovery_slots": {
+                "config": [
+                  "3"
+                ],
+                "budget_max_inr": null,
+                "awaiting": null,
+                "locality": "any",
+                "budget_label": "any budget",
+                "origin_issue": "3BHK in any area, any budget"
+              },
+              "route": "property",
+              "used_llm": false,
+              "catalogue_home_type_search": true,
+              "duration_ms": 1511.7,
+              "leaks": []
+            }
+          ]
+        }
+      }
+    },
+    "latency": {
+      "json": {
+        "turns": 36,
+        "median_ms": 1241.9,
+        "max_ms": 2551.9,
+        "over_8s": 0
+      },
+      "stream": {
+        "turns": 36,
+        "median_ms": 1414.7,
+        "max_ms": 2529.4,
+        "over_8s": 0
+      }
+    },
+    "summary": {
+      "T1": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T2": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T3": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T4": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T5": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T6": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T7": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T8": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T9": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T10": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T11": {
+        "json": "PASS",
+        "stream": "PASS"
+      },
+      "T12": {
+        "json": "PASS",
+        "stream": "PASS"
+      }
+    },
+    "completed_at": "2026-10-08T07:33:28.663219+00:00",
+    "passed": true
+  }
 }

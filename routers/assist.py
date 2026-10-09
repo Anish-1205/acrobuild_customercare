@@ -14,7 +14,8 @@ from services.property_clarification_service import (
 from graph.haystack_conversation_pipeline import is_short_flat_cost_question, is_small_talk_message
 from services.project_home_type_service import (
     build_catalogue_home_type_answer, build_generic_home_type_answer,
-    build_project_home_type_answer, requested_home_types,
+    build_project_home_type_answer, build_project_home_type_price_answer,
+    requested_home_types,
 )
 import re
 from time import monotonic
@@ -29,6 +30,7 @@ from services.conversation_store_service import (
     ConversationSession,
     build_current_project_marker,
     build_discovery_slots_marker,
+    build_home_type_scope_marker,
     build_pending_project_lookup_marker,
     customer_visible_history,
     get_discovery_slots,
@@ -292,6 +294,7 @@ def _grounded_property_shortcut(request, turn, failure_state=None, pending=None,
             # BHK signal first so an amenity lookup cannot intercept it or,
             # on failure, prevent the home-type search from running.
             or build_catalogue_home_type_answer(shortcut_request.issue)
+            or build_project_home_type_price_answer(shortcut_request.issue, turn.conversation_messages)
             or build_project_home_type_answer(shortcut_request.issue, turn.conversation_messages)
             # A numberless BHK question ("what bhks are available") names no
             # specific type, so neither builder above matches it; without this,
@@ -524,12 +527,32 @@ def _current_project_marker(response_payload, pending=None):
     return build_current_project_marker(names[0]) if len(names) == 1 else ""
 
 
+def _home_type_scope_marker(response_payload, reset=False):
+    """Persist only verified home scope; catalogue/reset turns clear it."""
+    if reset or response_payload.get("catalogue_home_type_search"):
+        return build_home_type_scope_marker({})
+    if "home_type_scope" in response_payload:
+        return build_home_type_scope_marker(response_payload.get("home_type_scope") or {})
+    response_pending = response_payload.get("pending_project_lookup")
+    if (isinstance(response_pending, dict) and response_pending.get("entity") == "project"
+            and not (response_pending.get("scope") or {}).get("project")):
+        return build_home_type_scope_marker({})
+    return ""
+
+
+def _remove_server_state(response_payload):
+    """Keep contextual scope in persisted markers, never in the public API."""
+    response_payload.pop("home_type_scope", None)
+    return response_payload
+
+
 def _conversation_state_marker(response_payload, pending=None, customer_issue="", shortcut_failed=False,
                                slots=None, slot_reply=False, reset=False):
     return (
         _project_lookup_marker(response_payload, pending, customer_issue, shortcut_failed)
         + _current_project_marker(response_payload, pending)
         + _discovery_slots_marker(response_payload, slots, slot_reply, reset)
+        + _home_type_scope_marker(response_payload, reset)
     )
 
 
@@ -542,7 +565,8 @@ def _turn_marker(response_payload, pending=None, customer_issue="", shortcut_fai
     if response_payload.get("pending_human_contact"):
         return PENDING_HUMAN_CONTACT_MARKER + discovery
     return (_project_lookup_marker(response_payload, pending, customer_issue, shortcut_failed)
-            + _current_project_marker(response_payload, pending) + discovery)
+            + _current_project_marker(response_payload, pending) + discovery
+            + _home_type_scope_marker(response_payload, reset))
 
 
 def _complete_payload(response_payload, cleaned_issue, turn):
@@ -561,6 +585,7 @@ def _complete_payload(response_payload, cleaned_issue, turn):
     if (turn.analysis.is_property and response_payload.get("source_status") in {"live_api", "snapshot"}
             and not response_payload.get("pending_project_lookup")
             and not response_payload.get("clarification_entity")
+            and response_payload.get("discovery_prompt") != "budget"
             and not response_payload.get("quick_replies")):
         project_names = set()
         for chunk in response_payload.get("matched_chunks", []):
@@ -664,7 +689,7 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
         pending_marker = _turn_marker(response_payload, pending_lookup, cleaned_issue,
                                       shortcut_failure.get("failed", False), slots, slot_reply, reset_slots)
         session.append(cleaned_issue, response_payload.get("answer"), marker=pending_marker)
-        return response_payload
+        return _remove_server_state(response_payload)
     except Exception:
         turn_logger.exception("turn failed %s", kv(kind="assist", question=preview(cleaned_issue)))
         raise
@@ -730,6 +755,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 response_payload = _complete_payload(build_reset_answer(), cleaned_issue, turn)
                 session.append(cleaned_issue, response_payload.get("answer"),
                                marker=_discovery_slots_marker(response_payload, slots, slot_reply, True))
+                _remove_server_state(response_payload)
                 yield json.dumps({"text": response_payload["answer"], "type": "delta"}, ensure_ascii=True) + "\n"
                 yield json.dumps({"response": response_payload, "type": "done"}, ensure_ascii=True) + "\n"
                 _log_turn_result("stream", cleaned_issue, response_payload, started)
@@ -741,6 +767,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 marker = _conversation_state_marker(response_payload, None, cleaned_issue,
                                                     slots=slots, slot_reply=slot_reply, reset=True)
                 session.append(cleaned_issue, response_payload.get("answer"), marker=marker)
+                _remove_server_state(response_payload)
                 yield json.dumps({"text": response_payload["answer"], "type": "delta"}, ensure_ascii=True) + "\n"
                 yield json.dumps({"response": response_payload, "type": "done"}, ensure_ascii=True) + "\n"
                 _log_turn_result("stream", cleaned_issue, response_payload, started)
@@ -750,6 +777,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 response_payload = _complete_payload(build_confusion_response(turn.analysis), cleaned_issue, turn)
                 session.append(cleaned_issue, response_payload.get("answer"),
                                marker=_discovery_slots_marker(response_payload, slots, slot_reply, reset_slots))
+                _remove_server_state(response_payload)
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
                 }, ensure_ascii=True) + "\n"
@@ -768,6 +796,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                                marker=_turn_marker(response_payload, pending_lookup, cleaned_issue,
                                                    shortcut_failure.get("failed", False), slots, slot_reply,
                                                    reset_slots))
+                _remove_server_state(response_payload)
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
                 }, ensure_ascii=True) + "\n"
@@ -784,6 +813,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                                marker=_turn_marker(response_payload, pending_lookup, cleaned_issue,
                                                    shortcut_failure.get("failed", False), slots, slot_reply,
                                                    reset_slots))
+                _remove_server_state(response_payload)
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
                 }, ensure_ascii=True) + "\n"
@@ -831,6 +861,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                                                   shortcut_failure.get("failed", False), slots, slot_reply,
                                                   reset_slots)
                     session.append(cleaned_issue, response_payload.get("answer"), marker=pending_marker)
+                    _remove_server_state(response_payload)
                 if property_request:
                     property_events.append(event)
                 else:
@@ -899,10 +930,6 @@ def get_conversation_history(conversation_id: str, http_request: Request, respon
             for option in options
             if isinstance(option, str) and option.strip()
         ]
-        if pending.get("entity") == "locality" and pending.get("purpose") == "discovery":
-            quick_replies.append({"label": "Any area", "value": "Any area"})
-    elif (get_discovery_slots(last_bot) or {}).get("awaiting") == "budget":
-        quick_replies = [{"label": "Any budget", "value": "any budget"}]
     return {"exists": True, "messages": customer_visible_history(stored), "quick_replies": quick_replies}
 
 

@@ -30,8 +30,6 @@ from services.project_home_type_service import is_catalogue_home_type_query, req
 logger = get_logger("discovery")
 
 ANY = "any"
-ANY_AREA_REPLY = "Any area"
-ANY_BUDGET_REPLY = "Any budget"
 
 _MAX_ISSUE_CHARS = 500
 _MAX_REPLY_CHARS = 120
@@ -202,6 +200,49 @@ def _place_index(items):
 def _display_localities(items):
     places = {_clean(item["project"].get("locality")) or _clean(item["project"].get("city")) for item in items}
     return sorted((place for place in places if place), key=str.lower)[:_MAX_OPTIONS]
+
+
+def _natural_list(values):
+    values = list(values)
+    if len(values) < 2:
+        return "".join(values)
+    if len(values) == 2:
+        return " and ".join(values)
+    return ", ".join(values[:-1]) + ", and " + values[-1]
+
+
+def _catalogue_summary(slots, items, search):
+    """Grounded answer-first summary from this search's already-loaded records.
+
+    Discovery has verified catalogue typologies at this point, not available
+    units. Keep that distinction explicit and do not trigger any inventory read.
+    When a project read was skipped, qualify the count rather than presenting it
+    as complete coverage.
+    """
+    config = slots.get("config") or []
+    count = len(items)
+    places = _display_localities(items)
+    noun = "project" if count == 1 else "projects"
+    coverage = "Among the projects successfully checked, the" if search.get("skipped") else "The"
+    if len(places) == 1:
+        location = f" in {places[0]}"
+    elif places:
+        location = f" across {_natural_list(places)}"
+    else:
+        location = ""
+    return (
+        f"{coverage} current catalogue lists {_config_phrase(config)} configurations in {count} {noun}{location}.\n"
+        "This confirms catalogue listings only; current unit availability has not been checked yet."
+    )
+
+
+def _active_budget_note(slots):
+    if "budget_max_inr" not in slots:
+        return ""
+    budget = slots.get("budget_max_inr")
+    if isinstance(budget, int):
+        return f"I've kept your budget of up to {_format_inr(budget)}."
+    return "I've kept your preference to browse without a budget limit."
 
 
 def _match_places(text, index):
@@ -488,14 +529,16 @@ def _locality_question(slots, search, items, origin, prefix=""):
     options = _display_localities(items)
     slots = {**slots, "awaiting": "locality"}
     slots.pop("locality", None)
+    budget_note = _active_budget_note(slots)
     lines = ([prefix] if prefix else []) + [
-        f"I found {_config_phrase(config)} projects in these areas:",
+        _catalogue_summary(slots, items, search),
+        *([budget_note] if budget_note else []),
+        f"Matching {_config_phrase(config)} catalogue listings are in these areas:",
         *[f"- {option}" for option in options],
         "Which area would you like to explore?",
     ]
     answer = "\n".join(lines) + _skipped_note(search)
     quick_replies = [{"label": option, "value": option} for option in options]
-    quick_replies.append({"label": ANY_AREA_REPLY, "value": ANY_AREA_REPLY})
     return _draft("locality_question", answer, slots, search, search["evidence"],
                   options=options, quick_replies=quick_replies, clarification_entity="locality",
                   pending_project_lookup=_selection("locality", options, origin, "discovery"))
@@ -510,18 +553,19 @@ def _no_config_draft(slots, search):
     return _draft("no_config", answer, slots, search, search["evidence"])
 
 
-def _budget_question(slots, search, items, auto_locality=False):
+def _budget_question(slots, search, items):
     config = slots.get("config") or []
     locality = slots.get("locality")
     where = f" in {locality}" if locality and locality != ANY else ""
-    lead = (f"All current {_config_phrase(config)} projects are in {locality}. " if auto_locality else "")
-    answer = (f"{lead}What's your approximate budget for a {_config_phrase(config)}{where}? "
-              "You can say 'any budget'.") + _skipped_note(search)
+    answer = (
+        _catalogue_summary(slots, items, search) + "\n"
+        f"What's your approximate budget for a {_config_phrase(config)}{where}? "
+        "Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'."
+    ) + _skipped_note(search)
     evidence = [chunk for chunk in search["evidence"]
                 if any(chunk.get("project") is item["project"] for item in items)]
     return _draft("budget_question", answer, {**slots, "awaiting": "budget"}, search, evidence,
-                  discovery_prompt="budget",
-                  quick_replies=[{"label": ANY_BUDGET_REPLY, "value": ANY_BUDGET_REPLY.lower()}])
+                  discovery_prompt="budget")
 
 
 def _composed_query(slots):
@@ -551,7 +595,7 @@ def _results_draft(slots, search, items):
         return f"- {name(item)}: estimated base amount from {_format_inr(item['estimated_base_min_inr'])}"
 
     within = f" within about {_format_inr(budget)}" if budget is not None else ""
-    lines = []
+    lines = [_catalogue_summary(slots, items, search), ""]
     if matches:
         lines += [f"{phrase} projects{where}{within} (estimated base amount):", *map(line, matches[:_MAX_OPTIONS])]
     elif budget is not None:
@@ -686,7 +730,7 @@ def build_discovery_answer(issue, slots=None, pending=None, project_names: Itera
             # One live area: select it; no area listed at all: search every area.
             working["locality"] = places[0] if places else ANY
             scoped = [i for i in items if not places or tools.project_in_locality(i["project"], places[0])]
-            draft = (_budget_question(working, search, scoped, auto_locality=bool(places))
+            draft = (_budget_question(working, search, scoped)
                      if "budget_max_inr" not in working else _results_draft(working, search, scoped))
         else:
             draft = _locality_question(working, search, items, origin)

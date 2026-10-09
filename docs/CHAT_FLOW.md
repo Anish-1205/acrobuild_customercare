@@ -102,8 +102,12 @@ Key rules:
 - Area choices come only from locality/city fields on projects that have the
   requested configuration. The customer cannot introduce a plausible but
   unverified locality into stored state.
-- `Any area` is a UI reply, not a live pending option. `Any budget` stores an
-  explicit no-limit choice.
+- Area quick replies contain only the eligible live locality/city values. A
+  customer may still type `any area` or `anywhere` to choose no locality
+  preference, but that wildcard is not presented as a peer location.
+- Budget is a free-text decision point because the live-data contract does not
+  define approved budget bands. The prompt gives an amount example and explains
+  that a customer may type `any budget`; no lone wildcard button is shown.
 - Unknown areas are quoted back safely once and eligible live areas are offered
   again. They are not searched or persisted as valid localities.
 - A budget shortlist uses estimated base amount = minimum listed per-square-foot
