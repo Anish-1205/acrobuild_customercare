@@ -92,6 +92,10 @@ Phase 0.5 pass (2026-10-05) and are now VERIFIED — see section 18.
 `AGENTS.md`, `docs/README.md`, `docs/ARCHITECTURE.md`, `docs/CHAT_FLOW.md`,
 `docs/PRODUCT_STATUS.md`.
 
+> **Documentation consolidation update (2026-10-08):** `docs/README.md` was
+> merged into the root `README.md` and removed. The list above preserves what
+> this audit originally inspected.
+
 ### Missing or conflicting documentation
 
 | Item | Finding |
@@ -1043,7 +1047,7 @@ Observed, not fixed.
 | Asset | Location | Used by |
 | --- | --- | --- |
 | AcroBuild logo (PNG) | `public/Acrobuild_logo.png` | `AcrobuildLogo` (with cache-busting query, `?v=20260730-2`). Rendered as a small mark beside a text "ACROBUILD" wordmark and subtitle. **This is the canonical, only in-app logo file.** |
-| AcroBuild logo copy | `docs/assets/Acrobuild_logo.png` | `docs/README.md` only — confirmed byte-identical to `public/Acrobuild_logo.png` (`cmp` match, same size: 324×340 RGBA PNG, 18,287 bytes). It is a documentation copy, not a second asset. |
+| Former documentation logo copy | `docs/assets/Acrobuild_logo.png` | Removed on 2026-10-08 after `docs/README.md` was consolidated into the root README; the root README now uses the canonical `public/` asset. |
 | `public/logo.svg` | `public/` | No reference in `src/` or `index.html` |
 | Favicon | — | None declared in `index.html` |
 | Page title | `index.html` | "Customer Support Agent" |
