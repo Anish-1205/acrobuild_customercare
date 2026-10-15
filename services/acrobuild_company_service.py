@@ -96,7 +96,7 @@ INVENTORY_TERMS = {
     "availability", "available", "flat", "flats", "floor", "floors", "inventory", "unit", "units",
     "want", "looking", "need", "take", "choose", "interested",
     "book", "visit", "site", "shop", "shops", "commercial",
-    "size", "sizes", "pricing", "price", "affordable", "budget", "friendly", "recommend", "suggest", "best",
+    "size", "sizes", "affordable", "budget", "friendly", "recommend", "suggest", "best",
 }
 
 

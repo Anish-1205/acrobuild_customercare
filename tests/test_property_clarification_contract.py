@@ -142,6 +142,17 @@ def test_factual_text_and_non_property_routes_are_unchanged():
         assert service.apply_clarification_contract(payload, "hello") == payload
 
 
+@pytest.mark.parametrize("answer", [
+    "Construction status for the project was not provided in the retrieved project records, so I can't verify it.",
+    "The project records do not provide a construction status.",
+    "The shared project records mention a wing but do not verify its status.",
+])
+def test_explanatory_project_records_do_not_create_selection(answer):
+    payload = {"answer": answer, "route": "property", "source_status": "live_api"}
+    assert service.clarification_entity(payload) is None
+    assert service.apply_clarification_contract(payload, "What is its construction status?") == payload
+
+
 def test_future_explicit_metadata_does_not_depend_on_prompt_wording():
     result = service.apply_clarification_contract({"clarification_entity": "project", "answer": "arbitrary wording"}, "Show amenities")
     assert result["pending_project_lookup"]["options"] == [p["projectName"] for p in PROJECTS]

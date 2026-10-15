@@ -159,7 +159,7 @@ def test_no_over_matching(dirty, locality, expected):
 def test_unknown_text_still_gets_not_found(dirty):
     draft = _build("Kharadi", AWAIT_LOCALITY)
     assert draft["discovery_kind"] == "locality_not_found"
-    assert draft["answer"].startswith("I couldn't find any current 3BHK projects in 'Kharadi'.")
+    assert draft["answer"].startswith("I couldn't find any listed 3BHK projects in 'Kharadi'.")
     assert "locality" not in draft["discovery_slots"]
 
 

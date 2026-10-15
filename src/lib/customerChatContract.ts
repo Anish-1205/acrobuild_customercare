@@ -14,9 +14,28 @@ export type QuickReplyDispatch =
   | { customerMessageText: string; issue: string; kind: "assist"; resetConversation: boolean };
 
 // The answer's bullet list is the plain-text fallback for API clients; when the
-// same options are shown as quick-reply buttons, show and speak only the prompt.
+// same options are shown as quick-reply buttons, show and speak only the prompt
+// -- but only when every bulleted line is nothing more than a restated option
+// label. A shortlist bullet can carry its own content (e.g. "- Acro Iris:
+// estimated base amount from INR 50.00 lakh") or be followed by more text
+// (a pricing disclaimer, a closing prompt); dropping that content would hide
+// information the quick replies never duplicated in the first place.
+function bulletsAreRedundantWithQuickReplies(text: string, quickReplies: SupportQuickReply[]): boolean {
+  const lines = text.split("\n");
+  const bulletIndex = lines.findIndex((line) => /^\s*[-•*]\s/.test(line));
+  if (bulletIndex === -1) return false;
+  const labels = new Set(quickReplies.map((option) => option.label.trim()));
+  return lines.slice(bulletIndex).every((line) => {
+    const match = line.match(/^\s*[-•*]\s(.*)$/);
+    return !!match && labels.has(match[1].trim());
+  });
+}
+
 export function visibleMessageText(message: ChatContractMessage): string {
-  return message.quickReplies?.length && message.quickReplies.every((option) => !option.action)
+  const quickReplies = message.quickReplies ?? [];
+  return quickReplies.length
+    && quickReplies.every((option) => !option.action)
+    && bulletsAreRedundantWithQuickReplies(message.text, quickReplies)
     ? message.text.split(/\n\s*[-•*]\s/)[0].trim()
     : message.text;
 }

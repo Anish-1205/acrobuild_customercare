@@ -120,13 +120,23 @@ from services.macro_service import (
     increment_macro_usage,
     update_macro,
 )
-from services.ai_agent_service import (
-    answer_matches_response_language,
-    localize_ai_answer,
-build_ai_support_answer,
+from services.answer_engine_service import (
+    build_ai_support_answer,
     clear_assist_response_cache,
     stream_ai_support_answer_events,
 )
+
+
+def answer_matches_response_language(*args, **kwargs):
+    """Legacy compatibility export, loaded only if an external caller uses it."""
+    from services.ai_agent_service import answer_matches_response_language as implementation
+    return implementation(*args, **kwargs)
+
+
+def localize_ai_answer(*args, **kwargs):
+    """Legacy compatibility export; the assist router uses readable localization."""
+    from services.ai_agent_service import localize_ai_answer as implementation
+    return implementation(*args, **kwargs)
 from graph.main_orchestrator import (
     run_support_orchestration,
     stream_support_orchestration_events,
@@ -1666,6 +1676,12 @@ _CUSTOMER_FINANCE_RE = re.compile(
     re.IGNORECASE,
 )
 
+_MORTGAGE_FINANCE_RE = re.compile(
+    r"\b(?:mortgage|home[\s-]*loan|housing[\s-]*loan"
+    r"|(?:loan|financing)\s+(?:interest\s+)?rates?)\b",
+    re.IGNORECASE,
+)
+
 _INVESTMENT_GUARANTEE_RE = re.compile(
     r"\b(?:(?:will|would|can|does)\s+(?:the\s+|this\s+|that\s+|my\s+)?(?:project'?s?\s+)?(?:price|value|property|project|investment)"
     r"\s+(?:definitely|surely|certainly|guaranteed?|for\s+sure)?\s*(?:double|triple|increase|appreciate|grow|rise|go\s+up))"
@@ -1743,6 +1759,14 @@ def build_unsupported_capability_assist(request):
             "for payment status, outstanding balance, or receipt queries."
         )
         return _unsupported_capability_response(answer, "customer_finance")
+
+    if _MORTGAGE_FINANCE_RE.search(cleaned):
+        answer = (
+            "I don't have verified current mortgage or home loan rates from banks "
+            "in this chat, so I can't compare lenders or identify the best rate. "
+            "Please check current rates and terms directly with the lenders."
+        )
+        return _unsupported_capability_response(answer, "mortgage_rates")
 
     # 2. Investment guarantees — before generic pricing check
     if _INVESTMENT_GUARANTEE_RE.search(cleaned):

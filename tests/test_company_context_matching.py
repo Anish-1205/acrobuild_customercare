@@ -43,6 +43,9 @@ class PropertySupportTermMatchingTests(unittest.TestCase):
     def test_home_as_a_whole_word_still_matches(self):
         self.assertTrue(is_property_support_message("do you have any homes available"))
 
+    def test_plural_wings_is_property_support(self):
+        self.assertTrue(is_property_support_message("show me the wings"))
+
     def test_unrelated_general_question_does_not_match(self):
         self.assertFalse(is_property_support_message("what is the capital of Australia"))
 

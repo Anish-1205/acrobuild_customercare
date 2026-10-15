@@ -1,5 +1,6 @@
 """Assist HTTP endpoints."""
 from services.amenity_search_service import (
+    is_amenity_lookup_query,
     is_reverse_amenity_query,
     live_amenity_index,
     live_amenity_names,
@@ -18,6 +19,7 @@ from services.project_home_type_service import (
     requested_home_types,
 )
 import re
+import anyio
 from time import monotonic
 from dataclasses import replace
 
@@ -90,6 +92,21 @@ from graph.main_orchestrator import build_confusion_response, localize_response,
 router = APIRouter(tags=["assist"])
 
 turn_logger = get_logger("assist")
+
+
+class _ClosingStreamingResponse(StreamingResponse):
+    """Close the synchronous producer when the socket stream ends or disconnects."""
+
+    def __init__(self, producer, **kwargs):
+        self._producer = producer
+        super().__init__(producer, **kwargs)
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            with anyio.CancelScope(shield=True):
+                await anyio.to_thread.run_sync(self._producer.close)
 
 
 def _log_turn_start(kind, request, cleaned_issue):
@@ -413,8 +430,10 @@ def _prepare_lookup_turn(request, cleaned_issue, slots=None):
         pending, cleaned_issue,
         starts_new_intent=bool(not pending.get("options") and is_small_talk_message(cleaned_issue)),
     ))
-    # A bare reset answers no pending choice, so it must not read live amenity or area data for one.
-    can_narrow = bool(pending and not selection_reply and not _discovery_reset_only(slots, cleaned_issue, turn)
+    # Reset and fresh catalogue requests replace a pending choice; neither needs
+    # amenity or area data from that old choice.
+    can_narrow = bool(pending and not selection_reply and not _is_broad_project_request(cleaned_issue, turn.property_issue)
+                      and not _discovery_reset_only(slots, cleaned_issue, turn)
                       and turn.analysis.intent not in {"call_booking", "human_contact"})
     generic_shortlist_details = bool(can_narrow and is_amenity_shortlist_detail_followup(
         pending, turn.analysis.english or turn.property_issue,
@@ -460,17 +479,28 @@ def _prepare_lookup_turn(request, cleaned_issue, slots=None):
             ) else cleaned_issue
             turn = replace(turn, property_issue=property_issue,
                            analysis=replace(turn.analysis, intent="property", unsure=False))
+        elif turn.analysis.is_property:
+            # The grounded shortcut still checks live amenities when this is
+            # an amenity question; no second read is needed to set intent.
+            turn = replace(turn, analysis=replace(turn.analysis, unsure=False))
         # An amenity search ("which projects have a gym") is a property turn
         # even though it names no project and need not contain the word
         # "amenities". Detected on the English rendering so it holds in every
         # supported language -- and property_issue is deliberately left alone
         # here: overwriting it with the raw text would hand the amenity
         # shortcut the customer's untranslated message and break every
-        # non-English case.
-        elif is_reverse_amenity_query(turn.property_issue):
+        # non-English case. is_reverse_amenity_query() alone is a shape-only
+        # test ("which/what ... homes/projects") that also matches plain
+        # exploratory greetings ("what can you help me with" about "homes");
+        # requiring a live amenity name too (is_amenity_lookup_query) keeps
+        # this branch to genuine amenity questions. Unscoped catalogue
+        # requests have their own route in both endpoints.
+        elif (not _is_broad_project_request(processing_issue, turn.property_issue)
+              and is_reverse_amenity_query(turn.property_issue)
+              and is_amenity_lookup_query(
+                  turn.property_issue, live_amenity_names(live_amenity_index()))
+        ):
             turn = replace(turn, analysis=replace(turn.analysis, intent="property", unsure=False))
-        elif turn.analysis.is_property:
-            turn = replace(turn, analysis=replace(turn.analysis, unsure=False))
     # "1.5 crore" answering the discovery budget question, or "Wakad lo"
     # answering the area question after its pending selection was dropped, is a
     # property turn whatever the analyzer called it (IS §28). Only then.
@@ -511,12 +541,20 @@ def _current_project_marker(response_payload, pending=None):
     ):
         return build_current_project_marker("")
 
-    names = []
+    scoped_names = []
     for state in (response_pending, pending):
         if isinstance(state, dict):
             name = str((state.get("scope") or {}).get("project") or "").strip()
             if name:
-                names.append(name)
+                scoped_names.append(name)
+    scoped_names = list(dict.fromkeys(scoped_names))
+    if scoped_names:
+        # An already-disambiguated selection is authoritative: retrieval may
+        # still carry sibling candidates' chunks as evidence, and those must
+        # not make this resolved scope look ambiguous again.
+        return build_current_project_marker(scoped_names[0]) if len(scoped_names) == 1 else ""
+
+    names = []
     for chunk in response_payload.get("matched_chunks") or []:
         project = chunk.get("project")
         name = str(project.get("projectName") or "").strip() if isinstance(project, dict) else ""
@@ -741,6 +779,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
         delta_count = 0
         streamed_chars = 0
         response_payload = None
+        orchestration_events = None
         clear_assist_response_cache()
         trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
         try:
@@ -831,7 +870,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 kv(branch="property" if property_request else "conversational",
                    language=turn.analysis.reply_language, source=turn.analysis.source),
             )
-            for event in stream_support_orchestration_events(
+            orchestration_events = stream_support_orchestration_events(
                 issue=processing_issue,
                 conversation_id=request.conversation_id,
                 customer_name=request.customer_name,
@@ -845,7 +884,8 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 prefer_qwen_response=bool(request.prefer_qwen_response),
                 language_hint=request.language_hint,
                 turn=turn,
-            ):
+            )
+            for event in orchestration_events:
                 event_type = event.get("type")
                 if event_type == "route":
                     continue
@@ -904,9 +944,14 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 "type": "error",
             }, ensure_ascii=True) + "\n"
         finally:
-            end_data_api_trace(trace_token)
+            try:
+                close = getattr(orchestration_events, "close", None)
+                if close is not None:
+                    close()
+            finally:
+                end_data_api_trace(trace_token)
 
-    response = StreamingResponse(event_stream(), media_type="application/x-ndjson")
+    response = _ClosingStreamingResponse(event_stream(), media_type="application/x-ndjson")
     session.set_cookie(response)
     return response
 

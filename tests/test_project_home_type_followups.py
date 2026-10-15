@@ -36,6 +36,12 @@ def catalogue(monkeypatch):
     monkeypatch.setattr(home, "get_wing_inventory", lambda _id: [{"typologyId": 20, "typologyName": "2BHK"}])
 
 
+@pytest.fixture
+def no_amenity_lookup(monkeypatch):
+    """Keep non-amenity endpoint tests independent of the live amenity catalogue."""
+    monkeypatch.setattr(assist, "live_amenity_index", lambda: {})
+
+
 def test_full_suffix_and_ambiguous_fragment():
     assert resolve_project_candidates_from_text(PROJECTS, "Empire") == PROJECTS
     assert resolve_project_candidates_from_text(PROJECTS, "Vishwajeet Empire NX") == [PROJECTS[1]]
@@ -438,7 +444,7 @@ def test_structured_localization_rejects_corrupted_fact_occurrences(monkeypatch,
     ) == ""
 
 
-def test_romanized_marathi_inventory_answer_has_json_stream_parity(monkeypatch):
+def test_romanized_marathi_inventory_answer_has_json_stream_parity(monkeypatch, no_amenity_lookup):
     _large_typology_catalogue(monkeypatch)
     monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", "false")
     monkeypatch.setattr(
@@ -502,7 +508,7 @@ def test_localization_falls_back_when_an_immutable_fact_is_dropped(monkeypatch):
 
 
 @pytest.mark.parametrize("endpoint", ["/api/support/assist", "/api/support/assist/stream"])
-def test_large_home_type_summary_has_endpoint_parity_and_terminal_actions(endpoint, monkeypatch):
+def test_large_home_type_summary_has_endpoint_parity_and_terminal_actions(endpoint, monkeypatch, no_amenity_lookup):
     _large_typology_catalogue(monkeypatch)
     monkeypatch.setenv("ACROBUILD_DISCOVERY_SLOTS", "false")
     history = []
@@ -670,7 +676,7 @@ def test_endpoint_followups_and_handoff(endpoint, catalogue, monkeypatch):
 
 
 @pytest.mark.parametrize("endpoint", ["/api/support/assist", "/api/support/assist/stream"])
-def test_real_selection_sequence_and_bare_followup(endpoint, catalogue, monkeypatch):
+def test_real_selection_sequence_and_bare_followup(endpoint, catalogue, monkeypatch, no_amenity_lookup):
     history = []
     monkeypatch.setattr(orchestrator, "analyze_turn", lambda *_a: TurnAnalysis("property", "English", "latin", "test"))
     monkeypatch.setattr(assist, "_enforce_live_property_data", lambda payload, *_a: payload)
@@ -720,7 +726,7 @@ def test_real_selection_sequence_and_bare_followup(endpoint, catalogue, monkeypa
 
 
 @pytest.mark.parametrize("endpoint", ["/api/support/assist", "/api/support/assist/stream"])
-def test_catalogue_filter_then_selection_over_http(endpoint, catalogue, monkeypatch):
+def test_catalogue_filter_then_selection_over_http(endpoint, catalogue, monkeypatch, no_amenity_lookup):
     history = []
     monkeypatch.setattr(orchestrator, "analyze_turn", lambda *_a: TurnAnalysis("property", "English", "latin", "test"))
     monkeypatch.setattr(assist, "_enforce_live_property_data", lambda payload, *_a: payload)
@@ -843,7 +849,7 @@ def test_generic_home_type_query_resolves_directly_with_one_wing(catalogue, monk
 
 
 @pytest.mark.parametrize("endpoint", ["/api/support/assist", "/api/support/assist/stream"])
-def test_generic_bhk_followup_over_http_asks_for_wing(endpoint, catalogue, monkeypatch):
+def test_generic_bhk_followup_over_http_asks_for_wing(endpoint, catalogue, monkeypatch, no_amenity_lookup):
     monkeypatch.setattr(orchestrator, "analyze_turn", lambda *_a: TurnAnalysis("property", "English", "latin", "test"))
     monkeypatch.setattr(assist, "_enforce_live_property_data", lambda payload, *_a: payload)
     monkeypatch.setattr(assist, "evaluate_rag_response", lambda *_a: {})

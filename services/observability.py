@@ -247,7 +247,7 @@ def configure_logging() -> None:
         logging.getLogger(name).setLevel(app_level)
 
     # Third-party chatter: keep it out of the way unless something breaks.
-    for name in ("httpx", "httpcore", "urllib3", "haystack", "sentence_transformers",
+    for name in ("httpx", "httpcore", "urllib3", "sentence_transformers",
                  "transformers", "torch", "filelock"):
         logging.getLogger(name).setLevel(os.getenv("LIB_LOG_LEVEL", "WARNING").upper())
 

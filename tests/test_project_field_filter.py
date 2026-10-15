@@ -168,6 +168,7 @@ def test_which_projects_have_a_bhk_returns_filtered_list_not_full_catalogue(endp
     # unfiltered "pick a project" clarification would offer all 9, so
     # asserting fewer than 9 options proves this went through the filter.
     monkeypatch.setattr(clarification, "get_company_projects", lambda: NINE_PROJECTS)
+    monkeypatch.setattr(assist, "live_amenity_index", lambda: {})
     monkeypatch.setattr(home, "get_company_projects", lambda: NINE_PROJECTS)
     monkeypatch.setattr(home, "get_project_typologies", lambda project_id: (
         [{"typologyName": "3BHK"}, {"typologyName": "2BHK"}] if project_id <= 3

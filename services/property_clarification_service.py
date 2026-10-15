@@ -160,9 +160,11 @@ def clarification_entity(payload):
     if payload.get("pending_project_lookup"):
         return "project"
     answer = str(payload.get("answer") or "")
-    # Only interrogative/selection clauses, not factual mentions of entities.
+    # Legacy prose fallback: selection requests begin a sentence or line.
+    # Factual text can contain verbs such as "provided" or "mention".
     match = re.search(
-        r"(?:which|choose|select|pick|specify|share|provide|mention|tell me|would you like me to check another|please ask again as)"
+        r"(?:^|[.?!]\s+|\n)\s*(?:please\s+)?"
+        r"(?:which|choose|select|pick|specify|share|provide|mention|tell me|would you like me to check another|please ask again as)\b"
         r"[^.?!\n]{0,95}?\b(home type|configuration|project|property name|wing|tower|floor|flat|unit)\b",
         answer, re.I,
     )

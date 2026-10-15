@@ -112,6 +112,9 @@ def ask(client, endpoint, issue, conversation_id=None):
 
 
 LIMITATION_CASES = (
+    ("Can you tell me todays best mortgage rate across every bank?", "mortgage_rates"),
+    ("Which bank offers the best home loan rate?", "mortgage_rates"),
+    ("Which banks are near Vishwajeet Prime?", "nearby_places"),
     ("Which hospitals are within 3 km of Vishwajeet Prime?", "nearby_places"),
     ("What hospitals are near Vishwajeet Prime?", "nearby_places"),
     ("What schools are within 5 km of Vishwajeet Prime?", "nearby_places"),
@@ -147,6 +150,10 @@ def test_complete_limitation_survives_endpoint_postprocessing(support_env, endpo
     elif family == "investment_guarantee":
         assert "cannot guarantee" in answer
         assert "definitely double" not in answer
+    elif family == "mortgage_rates":
+        assert "mortgage" in answer or "home loan" in answer
+        assert "verified" in answer and "rate" in answer
+        assert "nearby places" not in answer
 
 
 @pytest.mark.parametrize(("issue", "family"), LIMITATION_CASES)

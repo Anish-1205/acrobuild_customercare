@@ -19,13 +19,80 @@ describe("customer chat contract helpers", () => {
     const fallbackList = { ...projectChoices, text: "Choose a project:\n- Acro Iris\n- Acro Tulip" };
     expect(visibleMessageText({
       ...fallbackList,
-      quickReplies: [{ label: "Acro Iris", value: "Acro Iris" }]
+      quickReplies: [{ label: "Acro Iris", value: "Acro Iris" }, { label: "Acro Tulip", value: "Acro Tulip" }]
     })).toBe("Choose a project:");
 
     expect(visibleMessageText({
       ...fallbackList,
       quickReplies: [{ action: "browse_projects", label: "Browse", value: "Show me all projects" }]
     })).toBe(fallbackList.text);
+  });
+
+  it("keeps bullet content that is not purely a restated quick-reply label", () => {
+    // A bulleted line with its own content (price, disclaimer, closing prompt)
+    // must survive even though the same project names are offered as buttons.
+    const shortlist = {
+      ...projectChoices,
+      text: [
+        "2BHK projects (estimated base amount):",
+        "- Acro Iris: estimated base amount from INR 50.00 lakh",
+        "- Acro Tulip: estimated base amount from INR 60.00 lakh",
+        "",
+        "Estimated base amount excludes taxes, registration, floor rise and parking.",
+        "",
+        "Select a project and I'll check its current details and availability.",
+      ].join("\n"),
+      quickReplies: [{ label: "Acro Iris", value: "Acro Iris" }, { label: "Acro Tulip", value: "Acro Tulip" }]
+    };
+    expect(visibleMessageText(shortlist)).toBe(shortlist.text);
+  });
+
+  it("keeps a fallback list unabridged when a quick reply only partially covers the bullets", () => {
+    const partiallyCovered = {
+      ...projectChoices,
+      text: "Choose a project:\n- Acro Iris\n- Acro Tulip",
+      quickReplies: [{ label: "Acro Iris", value: "Acro Iris" }]
+    };
+    expect(visibleMessageText(partiallyCovered)).toBe(partiallyCovered.text);
+  });
+
+  it("shows the discovery question and qualifier with live area buttons plus Any area", () => {
+    const localityTurn: ChatContractMessage = {
+      isComplete: true,
+      sender: "bot",
+      text: [
+        "We have two projects listing 3BHK homes in Pune and Thane.",
+        "These are catalogue listings; I haven't checked current unit availability yet.",
+        'Which location would you like to explore? You can also say "any area".',
+        "- Pune",
+        "- Thane"
+      ].join("\n"),
+      quickReplies: [
+        { label: "Pune", value: "Pune" },
+        { label: "Thane", value: "Thane" },
+        { label: "Any area", value: "Any area" }
+      ]
+    };
+    expect(visibleMessageText(localityTurn)).toContain("Which location would you like to explore?");
+    expect(visibleMessageText(localityTurn)).toContain("I haven't checked current unit availability yet.");
+    expect(visibleMessageText(localityTurn)).not.toContain("- Pune");
+    expect(getQuickReplyDispatch(localityTurn.quickReplies![2], localityTurn)).toEqual({
+      customerMessageText: "Any area", issue: "Any area", kind: "assist", resetConversation: false
+    });
+  });
+
+  it("shows the full budget prompt and dispatches its wildcard as free text", () => {
+    const budgetTurn: ChatContractMessage = {
+      isComplete: true,
+      sender: "bot",
+      text: "We have one project listed with 3BHK configurations in Pune.\nDo you have a budget limit, or should I include all prices?\nFeel free to type your budget in the chat.",
+      quickReplies: [{ label: "Any budget", value: "any budget" }]
+    };
+    expect(visibleMessageText(budgetTurn)).toBe(budgetTurn.text);
+    expect(getQuickReplyDispatch(budgetTurn.quickReplies![0], budgetTurn)).toEqual({
+      customerMessageText: "any budget", issue: "any budget", kind: "assist", resetConversation: false
+    });
+    expect(resolveProjectSelection([budgetTurn], "1")).toBe("");
   });
 
   it("resolves exact named and numbered project selections from completed bot choices", () => {

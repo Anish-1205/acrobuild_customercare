@@ -83,6 +83,7 @@ def test_tenglish_choice_keeps_official_names_and_rejects_padding(monkeypatch):
 @pytest.mark.parametrize("path", ["/api/support/assist", "/api/support/assist/stream"])
 def test_both_assist_endpoints_return_project_choices(path, monkeypatch):
     monkeypatch.setattr(clarification, "get_company_projects", lambda: PROJECTS)
+    monkeypatch.setattr(assist, "live_amenity_index", lambda: {})
     monkeypatch.setattr(assist, "prepare_turn", lambda issue, *_args: TurnContext(
         [], issue, TurnAnalysis("property", "English", "latin", "test"), issue,
     ))
