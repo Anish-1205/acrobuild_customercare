@@ -23,7 +23,9 @@ from urllib.parse import urlsplit, urlunsplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi.testclient import TestClient
 from app import api
-from scripts.live_discovery_acceptance_checks import honesty_problems
+from scripts.live_discovery_acceptance_checks import (
+    figures_in, honesty_problems, localized_estimate_lines,
+)
 
 RESULTS_PATH = Path(os.getenv("ACROBUILD_DISAMBIGUATION_OUTPUT", "docs/evidence/live/disambiguation.json"))
 
@@ -247,21 +249,24 @@ def _name_checks(turn, data):
             allowed_figures.add(_format_inr(budget))
         for line in str(turn["answer"] or "").splitlines():
             match = re.match(r"- (.+?): estimated base amount from (INR [\d.]+ (?:crore|lakh))$", line)
-            if match:
-                expected = _expected_estimate(data, match.group(1), config)
-                if match.group(1) not in names:
-                    problems.append(f"project not live: {match.group(1)}")
-                elif expected is None or _format_inr(expected) != match.group(2):
-                    problems.append(f"figure mismatch for {match.group(1)}: shown {match.group(2)}, "
+            # A localized line keeps the live project name and the digits.
+            localized = None if match else (localized_estimate_lines(line, names) or [None])[0]
+            if match or localized:
+                project, shown = (match.group(1), match.group(2)) if match else localized
+                expected = _expected_estimate(data, project, config)
+                if project not in names:
+                    problems.append(f"project not live: {project}")
+                elif expected is None or _format_inr(expected) != shown:
+                    problems.append(f"figure mismatch for {project}: shown {shown}, "
                                     f"recomputed {_format_inr(expected) if expected else 'unpriced'}")
-                allowed_figures.add(match.group(2))
+                allowed_figures.add(shown)
             elif line.startswith("- ") and turn["discovery_kind"] in {"locality_question", "locality_not_found"}:
                 if line[2:] not in places:
                     problems.append(f"area bullet not live: {line[2:]}")
         # A budget question may contain a fixed input-format example. It is not
         # a property price; only result figures must be backed by live rates.
         if turn["discovery_kind"] == "results":
-            for figure in re.findall(r"INR [\d.]+ (?:crore|lakh)", str(turn["answer"] or "")):
+            for figure in figures_in(turn["answer"]):
                 if figure not in allowed_figures:
                     problems.append(f"unexplained figure: {figure}")
     return problems
