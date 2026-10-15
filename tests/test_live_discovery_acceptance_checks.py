@@ -126,3 +126,32 @@ def test_unsupported_live_availability_claim_is_rejected():
 ])
 def test_honest_snapshot_and_failure_messages_are_accepted(source_status, answer):
     assert honesty_problems(_turn(answer, kind="locality_question", source_status=source_status)) == []
+
+
+_ROMANIZED_RESULTS = (
+    "Lagbhag INR 1.50 crore (estimated base amount) ke andar Pune mein 3BHK projects:\n"
+    "- Project A: INR 57.54 lakh se estimated base amount\n\n"
+)
+
+
+def test_romanized_disclaimer_with_grounded_amount_is_accepted():
+    answer = _ROMANIZED_RESULTS + (
+        "Yeh sirf ek base estimate hai aur ismein taxes, registration, floor rise "
+        "aur parking shaamil nahi hain; rates change ho sakte hain.")
+    assert honesty_problems(_turn(answer, kind="results"),
+                            expected_figures={"Project A": "INR 57.54 lakh"}) == []
+
+
+@pytest.mark.parametrize("line", [
+    "Yeh sirf ek base estimate hai; rates change ho sakte hain.",
+    "Yeh sirf ek base estimate hai aur ismein taxes shaamil hain.",
+])
+def test_romanized_disclaimer_without_exclusion_is_rejected(line):
+    assert "missing disclaimer" in honesty_problems(_turn(_ROMANIZED_RESULTS + line, kind="results"))
+
+
+def test_romanized_reply_with_wrong_amount_is_rejected():
+    answer = _ROMANIZED_RESULTS + "Yeh sirf ek base estimate hai; taxes shaamil nahi hain."
+    problems = honesty_problems(_turn(answer, kind="results"),
+                                expected_figures={"Project A": "INR 60.00 lakh"})
+    assert any(p.startswith("figure mismatch") for p in problems)

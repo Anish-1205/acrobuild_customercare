@@ -29,6 +29,11 @@ _LOCALIZED_CHARGE_WORDS = ("टैक्स", "पंजीकरण", "रज�
 # "केवल"/"सिर्फ" (only) never prove an exclusion; the charges must be excluded or additional.
 _LOCALIZED_EXCLUDED_PHRASES = ("शामिल नहीं", "अलग से", "अतिरिक्त", "छोड़कर", "के अलावा")
 _TOKEN_SPLIT_RE = re.compile(r"[\s,।.;:()!?\-]+")
+# Romanized Hindi/Marathi keeps English charge names; only the exclusion is translated.
+_ROMANIZED_CHARGE_RE = re.compile(r"\b(?:tax(?:es)?|gst|registration|stamp duty)\b", re.IGNORECASE)
+_ROMANIZED_EXCLUDED_RE = re.compile(
+    r"\b(?:sh?aa?mil\s+nahi+n?|alag\s+se|chh?odkar|ke\s+alawa|samavisht\s+nahi)\b", re.IGNORECASE,
+)
 
 
 def normalize_figure(match):
@@ -76,6 +81,17 @@ def _has_localized_disclaimer(answer):
     )
 
 
+def _has_romanized_disclaimer(answer):
+    """A non-bullet line: a base estimate whose named charges are excluded in Romanized text."""
+    return any(
+        not line.startswith("- ")
+        and "base estimate" in line.lower()
+        and _ROMANIZED_CHARGE_RE.search(line)
+        and _ROMANIZED_EXCLUDED_RE.search(line)
+        for line in answer.splitlines()
+    )
+
+
 def _has_localized_estimate_labels(answer):
     """Every result bullet with a figure carries the translated estimate label."""
     figure_lines = [line for line in answer.splitlines()
@@ -102,7 +118,8 @@ def honesty_problems(turn, expected_figures=None):
                 localized and _has_localized_estimate_labels(answer)):
             problems.append("missing 'estimated base amount'")
         if "It is a base estimate only" not in answer and not (
-                localized and _has_localized_disclaimer(answer)):
+                (localized and _has_localized_disclaimer(answer))
+                or _has_romanized_disclaimer(answer)):
             problems.append("missing disclaimer")
         if expected_figures:
             for name, shown in localized_estimate_lines(answer, expected_figures):
