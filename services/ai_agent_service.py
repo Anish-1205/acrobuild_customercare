@@ -1,4 +1,6 @@
 """Recovered runtime loader plus deterministic intent fixes."""
+from contextlib import contextmanager as _contextmanager
+from contextvars import ContextVar as _ContextVar
 from pathlib import Path as _Path
 import marshal as _marshal
 import os as _os
@@ -18,8 +20,56 @@ with _active_runtime_path.open("rb") as _runtime_file:
     _runtime_code = _marshal.load(_runtime_file)
 exec(_runtime_code, globals(), globals())
 build_company_api_direct_answer = globals()["build_company_api_direct_answer"]
+build_assist_cache_key = globals()["build_assist_cache_key"]
 normalize_ai_text = globals()["normalize_ai_text"]
 _legacy_build_company_api_direct_answer = build_company_api_direct_answer
+_legacy_build_assist_cache_key = build_assist_cache_key
+
+# --- readable cache isolation scope -----------------------------------------
+# The compiled base key includes customer email and recent messages but not the
+# customer name or conversation id, even though the name can affect generated
+# output. Keep the compiled key policy/TTL/store intact and add only the missing
+# per-request namespace. ContextVar keeps concurrent streams isolated.
+_ASSIST_CACHE_SCOPE = _ContextVar("assist_cache_scope", default=("", ""))
+
+
+@_contextmanager
+def assist_cache_scope(customer_name="", conversation_id=""):
+    scope = (
+        normalize_ai_text(customer_name).lower(),
+        normalize_ai_text(conversation_id),
+    )
+    token = _ASSIST_CACHE_SCOPE.set(scope)
+    try:
+        yield
+    finally:
+        _ASSIST_CACHE_SCOPE.reset(token)
+
+
+def build_assist_cache_key(
+    issue,
+    customer_email="",
+    issue_type="",
+    business_hours_tag="",
+    article_hint_url="",
+    conversation_messages=None,
+    limit=3,
+    prefer_fast_response=False,
+    prefer_qwen_response=True,
+):
+    base_key = _legacy_build_assist_cache_key(
+        issue=issue,
+        customer_email=customer_email,
+        issue_type=issue_type,
+        business_hours_tag=business_hours_tag,
+        article_hint_url=article_hint_url,
+        conversation_messages=conversation_messages,
+        limit=limit,
+        prefer_fast_response=prefer_fast_response,
+        prefer_qwen_response=prefer_qwen_response,
+    )
+    customer_name, conversation_id = _ASSIST_CACHE_SCOPE.get()
+    return f"{base_key}|request_scope={customer_name!r},{conversation_id!r}"
 
 # --- bytecode-fallback usage telemetry -------------------------------------
 # Measures how often traffic actually reaches the un-reconstructed bytecode and

@@ -1,30 +1,61 @@
-"""Compatibility loader for the recovered Haystack conversation runtime."""
-from pathlib import Path as _Path
-import marshal as _marshal
+"""Source-native facade for the readable conversation pipeline.
+
+The reconstructed implementation is imported normally. The small compatibility
+overrides preserve established callers, patch points, and reload behavior.
+"""
 import re as _re
 
-# The original module is bytecode-only. A hand-reconstruction —
-# `haystack_conversation_pipeline_source.py`, verified against the bytecode by
-# scripts/verify_pipeline_reconstruction.py — is exec'd in preference when
-# present. It is exec'd (not imported) so the wrapper overrides below still apply
-# to the pipeline it builds. See docs/runtime/COMPILED_RUNTIME.md.
-_runtime_path = _Path(__file__).with_name("haystack_conversation_pipeline_runtime.pyc")
-_source_path = _Path(__file__).with_name("haystack_conversation_pipeline_source.py")
-if _source_path.exists():
-    _runtime_code = compile(_source_path.read_text(encoding="utf-8"), str(_source_path), "exec")
-else:
-    with _runtime_path.open("rb") as _runtime_file:
-        from services.runtime_compatibility_service import validate_runtime_header
-        validate_runtime_header(_runtime_file.read(16))
-        _runtime_code = _marshal.load(_runtime_file)
-exec(_runtime_code, globals(), globals())
-build_deterministic_conversation_answer = globals()["build_deterministic_conversation_answer"]
-is_small_talk_message = globals()["is_small_talk_message"]
-normalize_text = globals()["normalize_text"]
-resolve_contextual_support_issue = globals()["resolve_contextual_support_issue"]
-validate_support_node = globals()["validate_support_node"]
-get_live_project_names = globals()["get_live_project_names"]
-_conversation_project_name = globals()["_conversation_project_name"]
+from graph import haystack_conversation_pipeline_source as _source
+from graph.haystack_conversation_pipeline_source import *  # noqa: F403
+
+# Keep stable originals across development reloads. The facade bridges below
+# intentionally make existing patch points affect functions defined in the
+# imported module, whose globals otherwise live in a separate namespace.
+_original_search_company_knowledge = getattr(
+    _source,
+    "_facade_original_search_company_knowledge",
+    _source.search_company_knowledge,
+)
+_original_get_live_project_names = getattr(
+    _source,
+    "_facade_original_get_live_project_names",
+    _source.get_live_project_names,
+)
+_original_build_deterministic_conversation_answer = getattr(
+    _source,
+    "_facade_original_build_deterministic_conversation_answer",
+    _source.build_deterministic_conversation_answer,
+)
+_original_is_small_talk_message = getattr(
+    _source,
+    "_facade_original_is_small_talk_message",
+    _source.is_small_talk_message,
+)
+_original_resolve_contextual_support_issue = getattr(
+    _source,
+    "_facade_original_resolve_contextual_support_issue",
+    _source.resolve_contextual_support_issue,
+)
+_original_validate_support_node = getattr(
+    _source,
+    "_facade_original_validate_support_node",
+    _source.validate_support_node,
+)
+_source._facade_original_search_company_knowledge = _original_search_company_knowledge
+_source._facade_original_get_live_project_names = _original_get_live_project_names
+_source._facade_original_build_deterministic_conversation_answer = (
+    _original_build_deterministic_conversation_answer
+)
+_source._facade_original_is_small_talk_message = _original_is_small_talk_message
+_source._facade_original_resolve_contextual_support_issue = _original_resolve_contextual_support_issue
+_source._facade_original_validate_support_node = _original_validate_support_node
+search_company_knowledge = _original_search_company_knowledge
+get_live_project_names = _original_get_live_project_names
+build_deterministic_conversation_answer = _original_build_deterministic_conversation_answer
+is_small_talk_message = _original_is_small_talk_message
+resolve_contextual_support_issue = _original_resolve_contextual_support_issue
+validate_support_node = _original_validate_support_node
+_conversation_project_name = _source._conversation_project_name
 
 _legacy_build_deterministic_conversation_answer = build_deterministic_conversation_answer
 _legacy_is_small_talk_message = is_small_talk_message
@@ -255,3 +286,26 @@ def validate_support_node(state):
     if contextual_flat_cost:
         return state
     return _legacy_validate_support_node(state)
+
+
+# The imported implementation resolves these names from its own module globals.
+# Install the compatibility overrides there before rebuilding its native
+# pipeline adapter so direct calls and pipeline execution follow the same path.
+def _facade_search_company_knowledge(*args, **kwargs):
+    return search_company_knowledge(*args, **kwargs)
+
+
+def _facade_get_live_project_names():
+    return get_live_project_names()
+
+
+_source.search_company_knowledge = _facade_search_company_knowledge
+_source.get_live_project_names = _facade_get_live_project_names
+_source.build_deterministic_conversation_answer = build_deterministic_conversation_answer
+_source.is_small_talk_message = is_small_talk_message
+_source.resolve_contextual_support_issue = resolve_contextual_support_issue
+_source.validate_support_node = validate_support_node
+_source.CONVERSATION_PIPELINE = _source.build_conversation_pipeline()
+
+CONVERSATION_PIPELINE = _source.CONVERSATION_PIPELINE
+run_conversation_pipeline = _source.run_conversation_pipeline

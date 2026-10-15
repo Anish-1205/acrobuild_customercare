@@ -255,9 +255,12 @@ def _merge_conversation(conversation_id, incoming, issue):
 def _remember_response(conversation_id, messages, response):
     # Live-only mode never persists server-side conversation or answer memory.
     return
-from services.ai_agent_service import (
-    _build_contextual_flat_cost_answer,
-    _build_contextual_same_price_floor_answer,
+from services.contextual_property_answer_service import (
+    build_contextual_flat_cost_answer,
+    build_contextual_same_price_floor_answer,
+)
+from services.answer_engine_service import (
+    answer_engine_conversation_scope,
     build_ai_support_answer,
     stream_ai_support_answer_events,
 )
@@ -552,13 +555,13 @@ def localize_response(response, analysis):
     return response
 
 
-def _general_llm_failure_response(error, analysis):
+def _general_llm_failure_response(_error, analysis):
     source_label = get_llm_source_label()
     return {
         "agent_mode": get_llm_agent_mode(success=False),
-        "answer": f"The live LLM ({source_label}) is unavailable: {error}",
+        "answer": "The live support service is temporarily unavailable. Please try again shortly.",
         "articles": [],
-        "assist_error": str(error),
+        "assist_error": "Live support service unavailable.",
         "confidence_label": "low",
         "handoff_recommended": True,
         "knowledge_documents": [],
@@ -614,8 +617,8 @@ def _finalize_property_response(response, resolved_issue, conversation_messages,
     response = dict(response or {})
     cleaned_issue = str(resolved_issue or "").lower()
     contextual_answer = (
-        _build_contextual_same_price_floor_answer(cleaned_issue, response.get("matched_chunks", []), conversation_messages)
-        or _build_contextual_flat_cost_answer(cleaned_issue, conversation_messages)
+        build_contextual_same_price_floor_answer(cleaned_issue, response.get("matched_chunks", []), conversation_messages)
+        or build_contextual_flat_cost_answer(cleaned_issue, conversation_messages)
     )
     if contextual_answer:
         response.update({
@@ -1008,18 +1011,19 @@ def run_support_orchestration(
     property_issue = turn.property_issue
 
     def existing_support_handler():
-        return build_ai_support_answer(
-            issue=_generation_issue(property_issue, replace(analysis, reply_language=ENGLISH, script="latin")),
-            customer_name=customer_name,
-            customer_email=customer_email,
-            business_hours_tag=business_hours_tag,
-            issue_type=issue_type,
-            article_hint_url=article_hint_url,
-            conversation_messages=_recent_history(conversation_messages),
-            limit=limit,
-            prefer_fast_response=prefer_fast_response,
-            prefer_qwen_response=prefer_qwen_response,
-        )
+        with answer_engine_conversation_scope(conversation_id):
+            return build_ai_support_answer(
+                issue=_generation_issue(property_issue, replace(analysis, reply_language=ENGLISH, script="latin")),
+                customer_name=customer_name,
+                customer_email=customer_email,
+                business_hours_tag=business_hours_tag,
+                issue_type=issue_type,
+                article_hint_url=article_hint_url,
+                conversation_messages=_recent_history(conversation_messages),
+                limit=limit,
+                prefer_fast_response=prefer_fast_response,
+                prefer_qwen_response=prefer_qwen_response,
+            )
 
     if analysis.intent == "call_booking":
         logger.info("orchestration branch %s", kv(mode="call_booking", language=analysis.reply_language))
@@ -1142,46 +1146,48 @@ def stream_support_orchestration_events(
 
     if prefer_qwen_response:
         logger.info("orchestration branch %s", kv(mode="property_stream", language=analysis.reply_language))
-        for event in stream_ai_support_answer_events(
-            issue=_generation_issue(property_issue, replace(analysis, reply_language=ENGLISH, script="latin")),
-            customer_name=customer_name,
-            customer_email=customer_email,
-            business_hours_tag=business_hours_tag,
-            issue_type=issue_type,
-            article_hint_url=article_hint_url,
-            conversation_messages=_recent_history(conversation_messages),
-            limit=limit,
-            prefer_fast_response=prefer_fast_response,
-            prefer_qwen_response=prefer_qwen_response,
-        ):
-            if event.get("type") == "done" and isinstance(event.get("response"), dict):
-                event = {
-                    **event,
-                    "response": _finalize_property_response(
-                        event["response"], property_issue, conversation_messages, analysis,
-                    ),
-                }
-                _remember_response(conversation_id, conversation_messages, event["response"])
-            yield event
+        with answer_engine_conversation_scope(conversation_id):
+            for event in stream_ai_support_answer_events(
+                issue=_generation_issue(property_issue, replace(analysis, reply_language=ENGLISH, script="latin")),
+                customer_name=customer_name,
+                customer_email=customer_email,
+                business_hours_tag=business_hours_tag,
+                issue_type=issue_type,
+                article_hint_url=article_hint_url,
+                conversation_messages=_recent_history(conversation_messages),
+                limit=limit,
+                prefer_fast_response=prefer_fast_response,
+                prefer_qwen_response=prefer_qwen_response,
+            ):
+                if event.get("type") == "done" and isinstance(event.get("response"), dict):
+                    event = {
+                        **event,
+                        "response": _finalize_property_response(
+                            event["response"], property_issue, conversation_messages, analysis,
+                        ),
+                    }
+                    _remember_response(conversation_id, conversation_messages, event["response"])
+                yield event
         return
 
     logger.info("orchestration branch %s", kv(mode="rag_pipeline_stream", language=analysis.reply_language))
-    response = run_conversation_pipeline(
-        issue=resolved_issue,
-        conversation_messages=conversation_messages,
-        support_handler=lambda: build_ai_support_answer(
-            issue=_generation_issue(resolved_issue, analysis),
-            customer_name=customer_name,
-            customer_email=customer_email,
-            business_hours_tag=business_hours_tag,
-            issue_type=issue_type,
-            article_hint_url=article_hint_url,
-            conversation_messages=_recent_history(conversation_messages),
-            limit=limit,
-            prefer_fast_response=prefer_fast_response,
-            prefer_qwen_response=prefer_qwen_response,
-        ),
-    )
+    with answer_engine_conversation_scope(conversation_id):
+        response = run_conversation_pipeline(
+            issue=resolved_issue,
+            conversation_messages=conversation_messages,
+            support_handler=lambda: build_ai_support_answer(
+                issue=_generation_issue(resolved_issue, analysis),
+                customer_name=customer_name,
+                customer_email=customer_email,
+                business_hours_tag=business_hours_tag,
+                issue_type=issue_type,
+                article_hint_url=article_hint_url,
+                conversation_messages=_recent_history(conversation_messages),
+                limit=limit,
+                prefer_fast_response=prefer_fast_response,
+                prefer_qwen_response=prefer_qwen_response,
+            ),
+        )
     _log_retrieval(resolved_issue, response, is_property=analysis.is_property)
     if isinstance(response, dict):
         response["agent_mode"] = normalize_agent_mode(response.get("agent_mode"))

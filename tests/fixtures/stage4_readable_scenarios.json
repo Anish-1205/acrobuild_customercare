@@ -1,0 +1,24 @@
+{
+  "evidence_class": "constructed_sanitized_scenarios",
+  "note": "Synthetic project and customer names only; not production conversation evidence.",
+  "upstream_contracts": [
+    {"family": "discovery_and_feature_flag", "owner": "services.discovery_slot_service", "tests": ["tests/test_discovery_slots.py", "tests/test_discovery_flow.py"]},
+    {"family": "property_clarification", "owner": "services.property_clarification_service", "tests": ["tests/test_property_clarification_contract.py", "tests/test_locality_clarification_contract.py"]},
+    {"family": "bhk_and_project_selection", "owner": "services.project_home_type_service", "tests": ["tests/test_project_home_type_followups.py", "tests/test_project_field_filter.py"]},
+    {"family": "amenities", "owner": "services.amenity_search_service", "tests": ["tests/test_project_amenities.py", "tests/test_reverse_amenity_search.py"]},
+    {"family": "multilingual_finalization", "owner": "graph.main_orchestrator and routers.assist", "tests": ["tests/test_free_chat_language.py", "tests/test_discovery_flow.py"]},
+    {"family": "support_actions", "owner": "graph.main_orchestrator and graph.workflow", "tests": ["tests/test_call_booking_intent.py", "tests/test_human_contact_intent.py", "tests/test_callback_intent_expansion.py", "tests/test_capability_overstatement.py"]},
+    {"family": "grounding_and_failures", "owner": "routers.assist and services.property_tools_service", "tests": ["tests/test_property_tools_service.py", "tests/test_public_cs_api_trace.py", "tests/test_snapshot_property_fallback.py"]}
+  ],
+  "scenarios": [
+    {"id": "project-list", "family": "project_catalogue", "issue": "Show me all projects", "handler": "project_catalogue"},
+    {"id": "project-location", "family": "project_details", "issue": "Where is Acro Heights located?", "handler": "project_detail"},
+    {"id": "bhk-price", "family": "configuration_pricing", "issue": "What is the 2BHK price in Acro Heights?", "handler": "project_detail"},
+    {"id": "inventory", "family": "inventory_availability", "issue": "How many units are available in Acro Heights?", "handler": "project_detail"},
+    {"id": "construction", "family": "construction", "issue": "What is the construction status of Acro Heights?", "handler": "project_detail"},
+    {"id": "workspace", "family": "knowledge_retrieval", "issue": "What documents should I prepare?", "handler": "workspace_direct"},
+    {"id": "opt-out", "family": "prefer_qwen_false", "issue": "Explain the support policy", "handler": "grounded_generation", "prefer_qwen_response": false},
+    {"id": "multilingual-input", "family": "multilingual_pre_finalization", "issue": "Acro Heights ki price kya hai?", "handler": "project_detail"},
+    {"id": "historical-retail", "family": "excluded_retail", "issue": "List the snack vendor product feed", "handler": "excluded_historical_retail"}
+  ]
+}

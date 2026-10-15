@@ -1,26 +1,19 @@
-"""Reconstructed source for the Haystack conversation runtime.
+"""Reconstructed source for the conversation routing runtime.
 
-This is a hand-reconstruction of ``haystack_conversation_pipeline_runtime.pyc``
-(bytecode-only, no original source). It is loaded by
-``graph/haystack_conversation_pipeline.py`` in preference to marshalling the
-``.pyc`` — see ``docs/runtime/COMPILED_RUNTIME.md``.
+This is a hand-reconstruction of the historical bytecode-only conversation
+runtime. It is imported normally by ``graph/haystack_conversation_pipeline.py``
+— see ``docs/runtime/COMPILED_RUNTIME.md``.
 
-The loader ``exec``s this file into its own module globals (exactly as it did
-the bytecode), so the wrapper overrides in that loader
+The source-native facade installs compatibility overrides so
 (``build_deterministic_conversation_answer``, ``is_small_talk_message``,
-``resolve_contextual_support_issue``, ``validate_support_node``) still apply to
+``resolve_contextual_support_issue``, and ``validate_support_node``) still apply to
 the pipeline defined here.
 
 Verified against the bytecode by differential testing — see
 ``scripts/verify_pipeline_reconstruction.py``.
 """
-import os
 import re
 from typing import Any, Callable, TypedDict
-
-os.environ.setdefault("HAYSTACK_TELEMETRY_ENABLED", "False")
-
-from haystack import Pipeline, component
 
 from qwen import generate_qwen_chat_response
 from services.acrobuild_company_service import search_company_knowledge
@@ -41,7 +34,7 @@ PROPERTY_SUPPORT_TERMS = frozenset({
     "home", "homes", "inventory", "location", "maintenance", "payment", "plot", "plots",
     "possession", "price", "pricing", "project", "projects", "properties", "property",
     "rate", "rates", "refund", "rera", "site visit", "size", "sq ft", "sq.ft", "support",
-    "ticket", "tower", "unit", "units", "villa", "villas", "wing",
+    "ticket", "tower", "unit", "units", "villa", "villas", "wing", "wings",
     # Romanized Indian-language words for home/price (fallback routing only; the
     # LLM turn analyzer is the primary router).
     "ghar", "makaan", "makan", "illu", "veedu", "keemat", "kimat", "daam", "dhara", "vilai",
@@ -664,11 +657,9 @@ def validate_support_node(state: ConversationState) -> ConversationState:
     return {**state, "response": response}
 
 
-@component
 class ConversationOrchestrator:
-    """Route and execute one chatbot turn inside a Haystack pipeline."""
+    """Route and execute one chatbot turn."""
 
-    @component.output_types(response=dict)
     def run(
         self,
         issue: str,
@@ -688,10 +679,19 @@ class ConversationOrchestrator:
         return {"response": completed_state["response"]}
 
 
-def build_conversation_pipeline() -> Pipeline:
-    pipeline = Pipeline()
-    pipeline.add_component("orchestrator", ConversationOrchestrator())
-    return pipeline
+class ConversationPipeline:
+    """Small native adapter preserving the historical pipeline call contract."""
+
+    def __init__(self) -> None:
+        self.orchestrator = ConversationOrchestrator()
+
+    def run(self, inputs: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        orchestrator_inputs = inputs["orchestrator"]
+        return {"orchestrator": self.orchestrator.run(**orchestrator_inputs)}
+
+
+def build_conversation_pipeline() -> ConversationPipeline:
+    return ConversationPipeline()
 
 
 CONVERSATION_PIPELINE = build_conversation_pipeline()
