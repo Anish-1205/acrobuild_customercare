@@ -1,24 +1,25 @@
-"""Differential test: reconstructed pipeline source vs the original bytecode.
+"""Differential test: reconstructed pipeline source vs archived bytecode.
 
-Loads both the marshalled `.pyc` and `haystack_conversation_pipeline_source.py`
+Loads an explicitly supplied historical `.pyc` and the readable pipeline source
 into isolated namespaces (with `search_company_knowledge` /
 `generate_qwen_chat_response` stubbed), then compares every function's output
 across a large input corpus. Exits non-zero on any mismatch.
 
-Run:  .venv/Scripts/python.exe scripts/verify_pipeline_reconstruction.py
+The historical runtime is deliberately not retained in the active application.
 """
 from __future__ import annotations
 
+import argparse
 import marshal
 import random
 import sys
 import types
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-PYC = ROOT / "graph" / "haystack_conversation_pipeline_runtime.pyc"
 SRC = ROOT / "graph" / "haystack_conversation_pipeline_source.py"
 
 # ---- stubs -------------------------------------------------------------------
@@ -40,9 +41,9 @@ def _stub_generate_qwen_chat_response(**kwargs):
     return f"QWEN[{kwargs.get('user_prompt', '')!r}|{len(kwargs.get('conversation_messages') or [])}|{kwargs.get('temperature')}]"
 
 
-def _load_pyc():
+def _load_pyc(runtime_path):
     ns: dict = {"__name__": "graph.haystack_conversation_pipeline"}
-    code = marshal.loads(PYC.read_bytes()[16:])
+    code = marshal.loads(runtime_path.read_bytes()[16:])
     exec(code, ns, ns)
     return ns
 
@@ -112,10 +113,30 @@ ANSWERS = [
 ]
 
 
-def main() -> int:
-    pyc, src = _load_pyc(), _load_src()
+def _mismatch_family(name, args, pyc_result, source_result):
+    """Stable Stage 0 grouping for known source-evolution differences."""
+    if name == "is_property_support_message":
+        return "property-term-boundary-routing"
+    if name == "validate_support_answer":
+        pyc_failures = pyc_result[1] if pyc_result[0] == "ok" else []
+        source_failures = source_result[1] if source_result[0] == "ok" else []
+        if "requested project" in source_failures and "requested project" not in pyc_failures:
+            return "all-explicit-projects-required"
+        if "pricing" in pyc_failures and "pricing" not in source_failures:
+            return "property-scoped-pricing-guard"
+    if name == "validate_support_node":
+        return "safe-relevance-fallback-copy"
+    return "unclassified"
+
+
+def main(runtime_path) -> int:
+    pyc, src = _load_pyc(runtime_path), _load_src()
     _patch(pyc)
     _patch(src)
+    # Keep the characterization corpus reproducible. The source has evolved
+    # beyond the historical runtime, so mismatches are expected evidence; a
+    # changing mismatch count caused by random answer selection is not useful.
+    selection_rng = random.Random(20261009)
 
     mismatches = []
     counter = [0]
@@ -168,7 +189,10 @@ def main() -> int:
             check("classify_conversation_route", state)
             check("select_route", {**state, "route": "support"})
             check("conversation_node", state)
-            check("validate_support_node", {"issue": issue, "response": {"answer": random.choice(ANSWERS)}})
+            check(
+                "validate_support_node",
+                {"issue": issue, "response": {"answer": selection_rng.choice(ANSWERS)}},
+            )
             check("support_node", {**state, "support_handler": lambda: {"answer": "handled"}})
 
     # fuzz
@@ -185,6 +209,13 @@ def main() -> int:
 
     if mismatches:
         print(f"MISMATCHES: {len(mismatches)} / {counter[0]} cases")
+        families = Counter(
+            _mismatch_family(name, args, pyc_result, source_result)
+            for name, args, pyc_result, source_result in mismatches
+        )
+        print("FAMILIES: " + ", ".join(
+            f"{family}={count}" for family, count in sorted(families.items())
+        ))
         for name, args, a, b in mismatches[:40]:
             print(f"\n  {name}{args!r}\n    pyc: {a!r}\n    src: {b!r}")
         return 1
@@ -193,4 +224,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "runtime_pyc",
+        type=Path,
+        help="Path to an archived historical conversation-pipeline .pyc",
+    )
+    args = parser.parse_args()
+    raise SystemExit(main(args.runtime_pyc))

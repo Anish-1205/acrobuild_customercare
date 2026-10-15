@@ -6,7 +6,8 @@ Default run: the original disambiguation scenarios (stream endpoint).
 §28, §32) on both assist endpoints. Uses the configured discovery flag (default
 on after Step 8); explicit false stops the run. Adds a "discovery" key to
 docs/evidence/live/disambiguation.json and leaves the other transcripts as they
-are. Never prints or stores keys, tokens, headers or .env contents.
+are. Set ACROBUILD_DISAMBIGUATION_OUTPUT to an isolated JSON path to preserve
+the tracked evidence file. Never prints or stores keys, tokens, headers or .env contents.
 """
 import json
 import os
@@ -22,8 +23,9 @@ from urllib.parse import urlsplit, urlunsplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fastapi.testclient import TestClient
 from app import api
+from scripts.live_discovery_acceptance_checks import honesty_problems
 
-RESULTS_PATH = Path("docs/evidence/live/disambiguation.json")
+RESULTS_PATH = Path(os.getenv("ACROBUILD_DISAMBIGUATION_OUTPUT", "docs/evidence/live/disambiguation.json"))
 
 
 # -----------------------------------
@@ -265,21 +267,6 @@ def _name_checks(turn, data):
     return problems
 
 
-def _honesty(turn):
-    answer = str(turn["answer"] or "")
-    problems = []
-    if turn["discovery_kind"] == "results":
-        if "estimated base amount" not in answer:
-            problems.append("missing 'estimated base amount'")
-        if "It is a base estimate only" not in answer:
-            problems.append("missing disclaimer")
-    if turn["discovery_kind"] and re.search(r"\bprices?\b", answer, re.IGNORECASE):
-        problems.append("says 'price'")
-    if turn["discovery_kind"] and "floor plan" in answer.lower():
-        problems.append("says 'floor plan'")
-    return problems
-
-
 _AREA_QUESTION_RE = re.compile(r"\b(?:which|what)\s+(?:area|locality|place|city)\b|\barea\s+in\b|"
                                r"\b(?:looking|searching)\s+(?:at|in|for)\b", re.IGNORECASE)
 
@@ -318,13 +305,14 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
     loc, other_loc = live["loc"], live["other_loc"]
     if name == "T1":
         first = ask("Show me 3 BHK")
-        expect(first["quick_replies"] == (first["options"] or []) and "Any area" not in first["quick_replies"],
-               f"locality buttons are live options only: {first['quick_replies']}")
+        expect(first["quick_replies"] == (first["options"] or []) + ["Any area"]
+               and "Any area" not in (first["options"] or []),
+               f"locality buttons contain live options plus the wildcard: {first['quick_replies']}")
         tap = _first_option(first) if first["discovery_kind"] == "locality_question" else None
         second = ask(tap) if tap else first
         expect(second["discovery_kind"] == "budget_question", f"area step -> {second['discovery_kind']} (tap={tap})")
-        expect(not second["quick_replies"] and "any budget" in str(second["answer"]).lower(),
-               f"budget is guided free text: buttons={second['quick_replies']}")
+        expect(second["quick_replies"] == ["Any budget"] and "type your budget" in str(second["answer"]).lower(),
+               f"budget accepts free text and the wildcard button: buttons={second['quick_replies']}")
         shortlist = ask("1.5 crore")
         expect(shortlist["discovery_kind"] == "results", f"budget -> {shortlist['discovery_kind']}")
         project = _first_option(shortlist)
@@ -342,7 +330,8 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
         budget = ask("Any area")
         expect(budget["discovery_kind"] == "budget_question" and (budget["discovery_slots"] or {}).get("locality") == "any",
                f"'Any area' -> {budget['discovery_kind']} {(budget['discovery_slots'] or {}).get('locality')}")
-        expect(not budget["quick_replies"], f"typed wildcard reaches button-free budget prompt: {budget['quick_replies']}")
+        expect(budget["quick_replies"] == ["Any budget"],
+               f"typed area wildcard reaches budget prompt: {budget['quick_replies']}")
         results = ask("any budget")
         expect(results["discovery_kind"] == "results", f"'any budget' -> {results['discovery_kind']}")
     elif name == "T4":
@@ -356,8 +345,8 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
         ask("Show me 3 BHK")
         unknown = ask(live["unknown_place"])
         expect(unknown["discovery_kind"] == "locality_not_found"
-               and unknown["quick_replies"] == (unknown["options"] or [])
-               and "Any area" not in unknown["quick_replies"],
+               and unknown["quick_replies"] == (unknown["options"] or []) + ["Any area"]
+               and "Any area" not in (unknown["options"] or []),
                f"unknown place -> {unknown['discovery_kind']}, buttons={unknown['quick_replies']}")
         expect(live["unknown_place"] not in json.dumps(unknown["discovery_slots"]), "unknown place not stored")
         after = ask("Any area")
@@ -473,7 +462,7 @@ def _run_transcript(name, client, endpoint_key, secrets, data, live):
         if turn["discovery_kind"]:
             expect(turn["source_status"] == "live_api",
                    f"turn '{turn['user']}': discovery source={turn['source_status']}")
-        for problem in _name_checks(turn, data) + _honesty(turn):
+        for problem in _name_checks(turn, data) + honesty_problems(turn):
             expect(False, f"turn '{turn['user']}': {problem}")
         if turn["leaks"]:
             expect(False, f"turn '{turn['user']}': leak {turn['leaks']}")
