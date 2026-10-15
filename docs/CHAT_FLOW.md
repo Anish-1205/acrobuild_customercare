@@ -23,7 +23,8 @@ flowchart TD
   Shortcut -->|yes| Draft[Property or support draft]
   Shortcut -->|no| Route{General chat or support/property?}
   Route -->|general| LLM[Sarvam]
-  Route -->|support/property| Engine[Property/RAG engine]
+  Route -->|support/property| Seam[Readable answer-engine interface]
+  Seam --> Engine[Compiled property/RAG backend]
   Draft --> Complete[Clarification contract → live-data guard → localization]
   Engine --> Complete
   LLM --> Complete
@@ -38,6 +39,19 @@ not rewritten before validation.
 
 Generative calls pass through the compatibility-named `qwen.py` facade and use
 Sarvam. The LLM and CS API are independent dependencies.
+
+Property/RAG orchestration calls `services/answer_engine_service.py` for both
+JSON answers and stream events. The interface records only non-sensitive
+execution metadata and currently delegates production requests to
+`LegacyCompiledAnswerEngine`. Stage 4 added an independently executable
+`ReadableAnswerEngine` with source-visible retrieval, cache, dispatch,
+prompting/Sarvam generation, confidence/handoff, and response/event assembly.
+It is available only through explicit isolated selection while representative
+coverage is verified with a constructed sanitized corpus and mapped upstream
+contract suites. Historical retail/product-feed behavior is intentionally
+unsupported by the readable engine; real-estate project catalogue behavior is
+preserved. Production still selects the legacy backend, and property stream
+events still reach shared completion before any buffered answer is exposed.
 
 ## Grounding and completion order
 
@@ -102,12 +116,12 @@ Key rules:
 - Area choices come only from locality/city fields on projects that have the
   requested configuration. The customer cannot introduce a plausible but
   unverified locality into stored state.
-- Area quick replies contain only the eligible live locality/city values. A
-  customer may still type `any area` or `anywhere` to choose no locality
-  preference, but that wildcard is not presented as a peer location.
+- Area quick replies show eligible live locality/city values followed by
+  `Any area`. The wildcard is excluded from real options and the pending
+  selection; customers may also type `any area` or `anywhere`.
 - Budget is a free-text decision point because the live-data contract does not
-  define approved budget bands. The prompt gives an amount example and explains
-  that a customer may type `any budget`; no lone wildcard button is shown.
+  define approved budget bands. The prompt accepts a typed amount and offers
+  one `Any budget` button, which applies no budget filter.
 - Unknown areas are quoted back safely once and eligible live areas are offered
   again. They are not searched or persisted as valid localities.
 - A budget shortlist uses estimated base amount = minimum listed per-square-foot

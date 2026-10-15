@@ -98,11 +98,24 @@ authorization checks remain authoritative.
 
 ## Runtime compatibility layer
 
-`graph/haystack_conversation_pipeline.py` prefers the reconstructed Python
-source in `graph/haystack_conversation_pipeline_source.py`, with the original
-bytecode retained as fallback/reference. `services/ai_agent_service.py` still
-loads a Python 3.12 bytecode runtime and wraps it with source-visible fixes.
-Details and verification commands are in
+`graph/haystack_conversation_pipeline.py` normally imports the readable
+implementation in `graph/haystack_conversation_pipeline_source.py`; there is no
+conversation-routing bytecode fallback. The facade retains source-visible
+compatibility overrides, while a small native Python adapter preserves the
+historical pipeline call shape. The application no longer imports or depends on
+the Haystack framework.
+`services/answer_engine_service.py` is the readable JSON/stream/cache-invalidation
+boundary used by orchestration. Its production-selected
+`LegacyCompiledAnswerEngine` delegates to `services/ai_agent_service.py`, which
+still loads a Python 3.12 bytecode runtime and wraps it with source-visible
+fixes. `services/readable_answer_engine.py` now independently implements
+retrieval, cache, deterministic dispatch, prompting/Sarvam generation,
+confidence/handoff, and response/event assembly for Stage 4 verification. It is
+not production-selected. Stage 4 completed constructed scenario coverage,
+upstream contract mapping, no-legacy execution tests, and live CS API/Sarvam
+checks. Historical retail/product-feed helpers are deliberately excluded while
+the real-estate project catalogue remains supported. Details and verification
+commands are in
 [Compiled runtime](runtime/COMPILED_RUNTIME.md).
 
 ## Task-oriented source map
@@ -110,6 +123,7 @@ Details and verification commands are in
 | Task | Start here |
 | --- | --- |
 | Change chat routing | `routers/assist.py`, `graph/main_orchestrator.py`, [chat flow](CHAT_FLOW.md) |
+| Change answer-engine integration | `services/answer_engine_service.py`, `graph/main_orchestrator.py`, [compiled runtime](runtime/COMPILED_RUNTIME.md) |
 | Change property answers | `services/acrobuild_company_service.py`, relevant property service, clarification contract in `AGENTS.md` |
 | Change discovery | `services/discovery_slot_service.py`, `services/conversation_store_service.py`, discovery wiring in `routers/assist.py` |
 | Change live API access | `services/acrobuild_company_service.py`, [CS API integration](integrations/CS_API.md) |
