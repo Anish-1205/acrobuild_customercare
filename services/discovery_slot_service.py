@@ -31,6 +31,12 @@ logger = get_logger("discovery")
 
 ANY = "any"
 
+# Wildcard quick-reply labels. Both parse back through the normal text path
+# (_ANY_AREA_RE / _ANY_BUDGET_RE), so a tap is indistinguishable from typing.
+# They are offered as buttons only; neither is ever a real live option.
+ANY_AREA_LABEL = "Any area"
+ANY_BUDGET_LABEL = "Any budget"
+
 _MAX_ISSUE_CHARS = 500
 _MAX_REPLY_CHARS = 120
 _MAX_BUDGET_TEXT_CHARS = 300
@@ -179,6 +185,12 @@ _SELECTED_PLACE_RE = re.compile(r"\b(?:selected|requested)\s+locality:\s*([^.\n]
 _REPLY_PREFIX_RE = re.compile(r"^(?:(?:in|at|near|around|the|my|preferred|area|locality|is)\s+)+", re.IGNORECASE)
 _REPLY_SUFFIX_RE = re.compile(r"(?:\s+(?:area|locality|side|please|only|lo|mein))+$", re.IGNORECASE)
 _PLACE_LIKE_RE = re.compile(r"[a-z][a-z .'-]{0,39}", re.IGNORECASE)
+_COMPOUND_LOCALITY_BUDGET_RE = re.compile(
+    r"^\s*(?P<locality>(?:in\s+)?[a-z][a-z .'-]{0,39}?)\s*(?:[,;]\s*|\s+)"
+    r"(?=(?:under|below|within|upto|up\s+to|max(?:imum)?|around|budget|any\s+budget|"
+    r"no\s+(?:budget|limit)|flexible\s+budget|open\s+budget|₹|inr\b|rs\.?\s*|\d))",
+    re.IGNORECASE,
+)
 _NOT_A_PLACE = frozenset({
     "hi", "hello", "hey", "thanks", "thank you", "ok", "okay", "yes", "no", "yeah", "yep", "nope", "sure",
     "cancel", "stop", "bye", "help", "retry", "again", "try again", "never mind", "nevermind", "start over",
@@ -211,29 +223,80 @@ def _natural_list(values):
     return ", ".join(values[:-1]) + ", and " + values[-1]
 
 
-def _catalogue_summary(slots, items, search):
-    """Grounded answer-first summary from this search's already-loaded records.
+_COUNT_WORDS = ("no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
 
-    Discovery has verified catalogue typologies at this point, not available
-    units. Keep that distinction explicit and do not trigger any inventory read.
-    When a project read was skipped, qualify the count rather than presenting it
-    as complete coverage.
-    """
+
+def _plural(count, noun):
+    """"1 project" reads as mechanical output; "one project" reads as an answer.
+    Small counts are spelled out, larger ones stay numeric."""
+    word = _COUNT_WORDS[count] if count < len(_COUNT_WORDS) else str(count)
+    return f"{word} {noun}" if count == 1 else f"{word} {noun}s"
+
+
+def _where(locality):
+    """" in Wakad" for a real area; nothing for "any" or no area chosen yet."""
+    return f" in {locality}" if locality and locality != ANY else ""
+
+
+# The catalogue/inventory distinction is a grounding contract, not a polite
+# disclaimer: discovery has verified catalogue typologies at this point, never
+# available units, and it must not trigger an inventory read to find out. Each
+# lead below carries its own short qualifier, so the distinction survives even
+# when the locality question is skipped (exactly one eligible area) and the
+# customer never sees the locality turn that would otherwise state it.
+_LISTINGS_NOTE = "These are catalogue listings; I haven't checked current unit availability yet."
+_LISTING_NOTE = "That's a catalogue listing; I haven't checked current unit availability yet."
+
+# The leads are deliberately freshness-neutral: no "as of now", no "currently
+# live". api_context._enforce_live_property_data() can prepend a snapshot
+# banner ("Live property data is unavailable. This answer uses saved data from
+# ...") after these drafts are built, and a present-tense freshness claim would
+# then sit underneath it contradicting it. The honest-coverage qualifier for a
+# partial read is a separate concern and is still applied below.
+
+
+def _coverage_prefix(search):
+    """Qualifies a count when some project reads were skipped, so a partial
+    catalogue is never presented as complete coverage."""
+    return "Among the projects I could check, we" if search.get("skipped") else "We"
+
+
+def _locality_lead(slots, items, search):
+    """Answer-first lead for the locality question: the real eligible areas,
+    named inline, before anything is asked of the customer."""
+    config = slots.get("config") or []
+    places = _display_localities(items)
+    where = f" in {_natural_list(places)}" if places else ""
+    return (f"{_coverage_prefix(search)} have {_plural(len(items), 'project')} listing "
+            f"{_config_phrase(config)} homes{where}.\n{_LISTINGS_NOTE}")
+
+
+def _scoped_lead(slots, items, search):
+    """Answer-first lead for the budget question: how many projects match the
+    configuration and area the customer has settled on."""
     config = slots.get("config") or []
     count = len(items)
-    places = _display_localities(items)
-    noun = "project" if count == 1 else "projects"
-    coverage = "Among the projects successfully checked, the" if search.get("skipped") else "The"
-    if len(places) == 1:
-        location = f" in {places[0]}"
-    elif places:
-        location = f" across {_natural_list(places)}"
-    else:
-        location = ""
-    return (
-        f"{coverage} current catalogue lists {_config_phrase(config)} configurations in {count} {noun}{location}.\n"
-        "This confirms catalogue listings only; current unit availability has not been checked yet."
-    )
+    return (f"{_coverage_prefix(search)} have {_plural(count, 'project')} listed with "
+            f"{_config_phrase(config)} configurations{_where(slots.get('locality'))}.\n"
+            f"{_LISTING_NOTE if count == 1 else _LISTINGS_NOTE}")
+
+
+def _results_lead(slots, matches, unpriced, over, search):
+    """Answer-first lead for the shortlist.
+
+    Counts what the customer can actually act on -- the priced projects within
+    budget, plus those whose pricing is not listed. Counting every retrieved
+    project instead would claim "one matching project" immediately above "No
+    current 3BHK projects ... have an estimated base amount within ...".
+    """
+    count = len(matches) + len(unpriced)
+    where = _where(slots.get("locality"))
+    if not count:
+        if over:
+            return (f"{_coverage_prefix(search)} found {_plural(len(over), 'project')}{where}, "
+                    "but none have an estimated base amount within your budget.")
+        return f"{_coverage_prefix(search)} couldn't find a matching project{where} in the catalogue data."
+    return f"{_coverage_prefix(search)}'ve got {_plural(count, 'matching project')}{where}."
 
 
 def _active_budget_note(slots):
@@ -266,7 +329,7 @@ def _place_candidate(text, reply_mode):
         candidate = match.group(1).strip(" .'-")
         return candidate if candidate and candidate.lower() not in _NOT_A_PLACE else None
     if reply_mode:
-        return _reply_place(cleaned)
+        return _locality_reply_candidate(cleaned)
     return None
 
 
@@ -280,12 +343,31 @@ def _reply_place(reply):
     return text
 
 
+def _compound_locality_candidate(reply):
+    """A locality prefix followed by an already-supported budget expression.
+
+    This helper separates the fields but never interprets money: the existing
+    budget parser remains the sole authority for whether the trailing text is a
+    supported amount or the established no-filter value.
+    """
+    text = _clean(reply, _MAX_REPLY_CHARS)
+    if parse_budget_inr(text) is None:
+        return None
+    match = _COMPOUND_LOCALITY_BUDGET_RE.match(text)
+    return _reply_place(match.group("locality")) if match else None
+
+
+def _locality_reply_candidate(reply):
+    return _reply_place(reply) or _compound_locality_candidate(reply)
+
+
 def _is_locality_reply(text):
     """"Any area", or a short place-like reply that is not a question."""
     lowered = _clean(text, _MAX_REPLY_CHARS).lower()
     if _ANY_AREA_RE.search(lowered):
         return True
-    return "?" not in lowered and not _QUESTION_WORD_RE.search(lowered) and _reply_place(text) is not None
+    return ("?" not in lowered and not _QUESTION_WORD_RE.search(lowered)
+            and _locality_reply_candidate(text) is not None)
 
 
 def _echo(candidate):
@@ -320,6 +402,15 @@ _REQUESTED_PROJECT_RE = re.compile(r"\brequested\s+project\s*:", re.IGNORECASE)
 _QUESTION_WORD_RE = re.compile(
     r"\b(?:what|which|where|when|why|who|how|show|list|tell|amenit\w*|facilit\w*|visit|document\w*|"
     r"ticket|call|contact|price|pricing|cost|brochure)\b"
+)
+_NUMBER_WORD_RE = re.compile(
+    r"\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|"
+    r"fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|"
+    r"ninety|hundred|thousand)\b"
+)
+_BUDGET_REPLY_CUE_RE = re.compile(
+    r"\bbudget\b|\b(?:crores?|cr|lakhs?|lacs?|lac|rupees?|inr|rs)\b|"
+    r"^(?:around|under|below|within|upto|up\s+to|max(?:imum)?)\b"
 )
 _RESET_RE = re.compile(
     r"^\s*(?:please\s+)?(?:start\s+over|reset|new\s+search|clear\s+(?:my\s+)?(?:preferences|filters|search))\b"
@@ -449,8 +540,24 @@ def is_slot_reply(slots, reply) -> bool:
     if requested_home_types(text) or is_reset_request(text):
         return False
     if awaiting == "budget":
-        return parse_budget_inr(text) is not None and not _QUESTION_WORD_RE.search(lowered)
+        supported = parse_budget_inr(text) is not None
+        ambiguous = _is_ambiguous_budget_reply(text)
+        return (supported or ambiguous) and not _QUESTION_WORD_RE.search(lowered)
     return _is_locality_reply(text)
+
+
+def _is_ambiguous_budget_reply(text):
+    """True for an explicit budget-shaped answer the existing parser rejects.
+
+    It is only used after the state says the customer is answering the budget
+    question. Number words are detected, never converted, so a phrase such as
+    "around one fifty" stays ambiguous instead of acquiring a guessed unit.
+    """
+    cleaned = _clean(text, _MAX_REPLY_CHARS).lower()
+    if not cleaned or parse_budget_inr(cleaned) is not None:
+        return False
+    return bool(_BUDGET_REPLY_CUE_RE.search(cleaned)
+                and (re.search(r"\d", cleaned) or _NUMBER_WORD_RE.search(cleaned)))
 
 
 def extract_discovery_slots(text, live_places: Iterable[str] = ()) -> dict:
@@ -508,8 +615,8 @@ def _skipped_note(search):
     count = len(search.get("skipped") or [])
     if not count:
         return ""
-    return (f"\n\nNote: {count} project(s) could not be checked right now because live data was "
-            "temporarily unavailable; this list may be incomplete.")
+    return (f"\n\nNote: {_plural(count, 'project')} could not be checked right now because live data "
+            "was temporarily unavailable; this list may be incomplete.")
 
 
 def _selection(entity, options, original_issue, purpose):
@@ -525,20 +632,29 @@ def _unavailable_draft(slots, entity, original_issue, purpose):
 
 
 def _locality_question(slots, search, items, origin, prefix=""):
-    config = slots.get("config") or []
     options = _display_localities(items)
     slots = {**slots, "awaiting": "locality"}
     slots.pop("locality", None)
     budget_note = _active_budget_note(slots)
+    # The question must precede the bullet list. The browser shows only the text
+    # before the first bullet when the bullets merely restate the quick replies
+    # (src/lib/customerChatContract.ts visibleMessageText), so a question placed
+    # after them is never seen. The bullets stay as the plain-text fallback for
+    # clients that ignore quick_replies, and those clients also need the
+    # wildcard in prose because they cannot see the "Any area" button.
     lines = ([prefix] if prefix else []) + [
-        _catalogue_summary(slots, items, search),
+        _locality_lead(slots, items, search),
         *([budget_note] if budget_note else []),
-        f"Matching {_config_phrase(config)} catalogue listings are in these areas:",
+        f'Which location would you like to explore? You can also say "any area".',
         *[f"- {option}" for option in options],
-        "Which area would you like to explore?",
     ]
     answer = "\n".join(lines) + _skipped_note(search)
+    # "Any area" is offered as a button but is never a real option: it must stay
+    # out of `options` and the pending selection (AGENTS.md), and out of the
+    # bullets, which must keep matching `options` exactly so the frontend's
+    # bullet suppression stays correct.
     quick_replies = [{"label": option, "value": option} for option in options]
+    quick_replies.append({"label": ANY_AREA_LABEL, "value": ANY_AREA_LABEL})
     return _draft("locality_question", answer, slots, search, search["evidence"],
                   options=options, quick_replies=quick_replies, clarification_entity="locality",
                   pending_project_lookup=_selection("locality", options, origin, "discovery"))
@@ -548,23 +664,37 @@ def _no_config_draft(slots, search):
     config = slots.get("config") or []
     slots = {**slots, "awaiting": None}
     slots.pop("locality", None)
-    answer = (f"None of the projects in the latest catalogue list {_config_phrase(config)} right now."
-              if config else "The live catalogue has no projects to show right now.") + _skipped_note(search)
+    coverage = "projects I could check" if search.get("skipped") else "projects in the catalogue data"
+    answer = (f"None of the {coverage} list {_config_phrase(config)}."
+              if config else "The catalogue data has no projects to show.") + _skipped_note(search)
     return _draft("no_config", answer, slots, search, search["evidence"])
 
 
 def _budget_question(slots, search, items):
-    config = slots.get("config") or []
-    locality = slots.get("locality")
-    where = f" in {locality}" if locality and locality != ANY else ""
     answer = (
-        _catalogue_summary(slots, items, search) + "\n"
-        f"What's your approximate budget for a {_config_phrase(config)}{where}? "
-        "Type an approximate budget (for example, INR 1.5 crore), or say 'any budget'."
+        _scoped_lead(slots, items, search) + "\n"
+        "Do you have a budget limit, or should I include all prices?\n"
+        "Feel free to type your budget in the chat (for example, INR 1.5 crore)."
     ) + _skipped_note(search)
     evidence = [chunk for chunk in search["evidence"]
                 if any(chunk.get("project") is item["project"] for item in items)]
+    # One convenience button, and deliberately no clarification_entity or
+    # pending selection: this step is free text, not a selection, so a typed
+    # budget on the next turn must not be read as picking an option.
     return _draft("budget_question", answer, {**slots, "awaiting": "budget"}, search, evidence,
+                  quick_replies=[{"label": ANY_BUDGET_LABEL, "value": "any budget"}],
+                  discovery_prompt="budget")
+
+
+def _budget_clarification(slots, search, items):
+    answer = (
+        "I couldn't safely interpret that budget. Please include an explicit unit, such as crore, lakh, or INR, "
+        'or say "any budget" to browse without a budget filter.'
+    ) + _skipped_note(search)
+    evidence = [chunk for chunk in search["evidence"]
+                if any(chunk.get("project") is item["project"] for item in items)]
+    return _draft("budget_clarification", answer, {**slots, "awaiting": "budget"}, search, evidence,
+                  quick_replies=[{"label": ANY_BUDGET_LABEL, "value": "any budget"}],
                   discovery_prompt="budget")
 
 
@@ -595,13 +725,13 @@ def _results_draft(slots, search, items):
         return f"- {name(item)}: estimated base amount from {_format_inr(item['estimated_base_min_inr'])}"
 
     within = f" within about {_format_inr(budget)}" if budget is not None else ""
-    lines = [_catalogue_summary(slots, items, search), ""]
+    lines = [_results_lead(slots, matches, unpriced, over, search), ""]
     if matches:
         lines += [f"{phrase} projects{where}{within} (estimated base amount):", *map(line, matches[:_MAX_OPTIONS])]
     elif budget is not None:
-        lines.append(f"No current {phrase} projects{where} have an estimated base amount{within}.")
+        lines.append(f"No listed {phrase} projects{where} have an estimated base amount{within}.")
     else:
-        lines.append(f"Current {phrase} projects{where}:")
+        lines.append(f"Listed {phrase} projects{where}:")
     if over:
         lines += ["", "Above your budget:", *map(line, over[:_MAX_OPTIONS])]
     if unpriced:
@@ -670,6 +800,7 @@ def build_discovery_answer(issue, slots=None, pending=None, project_names: Itera
 
     stated = extract_discovery_slots(text)          # config and budget only; locality needs live data
     stated.pop("locality", None)
+    ambiguous_budget = bool(slots.get("awaiting") == "budget" and _is_ambiguous_budget_reply(text))
     working = dict(slots)
     if stated.get("config"):
         working["config"] = stated["config"]
@@ -680,7 +811,21 @@ def build_discovery_answer(issue, slots=None, pending=None, project_names: Itera
     working["origin_issue"] = origin
     config = working.get("config") or []
 
-    search = tools.search_projects(config, ANY)
+    # A locality reply must check the selected area against the current live
+    # catalogue, but typology failures in other areas cannot invalidate the
+    # selected area's evidence. The tool filters live projects by city/locality
+    # before reading typologies. If the area has no current matching records,
+    # use the full search so the existing clarification path can offer current
+    # eligible alternatives.
+    selected_locality = None
+    if (pending_state or (reply and slots.get("awaiting") == "locality")) and not _ANY_AREA_RE.search(text.lower()):
+        selected_locality = _place_candidate(text, reply_mode=True)
+    elif reply and slots.get("awaiting") == "budget" and slots.get("locality") not in (None, "", ANY):
+        selected_locality = slots["locality"]
+    search = tools.search_projects(config, selected_locality or ANY)
+    if (selected_locality and search["status"] in {"ok", "empty"}
+            and not (search.get("data") or {}).get("items")):
+        search = tools.search_projects(config, ANY)
     awaiting_locality_step = working.get("locality") in (None, "")
     if search["status"] not in {"ok", "empty", "partial"} or search["source_status"] not in {"live_api", "snapshot", "failed"}:
         entity, purpose, query = (("locality", "discovery", origin) if awaiting_locality_step
@@ -721,7 +866,7 @@ def build_discovery_answer(issue, slots=None, pending=None, project_names: Itera
     elif candidate:
         echo = _echo(candidate)
         quoted = f"'{echo}'" if echo else "that area"
-        prefix = f"I couldn't find any current {_config_phrase(config)} projects in {quoted}."
+        prefix = f"I couldn't find any listed {_config_phrase(config)} projects in {quoted}."
         draft = _locality_question(working, search, items, origin, prefix)
         draft["discovery_kind"] = "locality_not_found"
     elif working.get("locality") in (None, ""):
@@ -738,10 +883,11 @@ def build_discovery_answer(issue, slots=None, pending=None, project_names: Itera
         locality = working["locality"]
         scoped = items if locality == ANY else [i for i in items if tools.project_in_locality(i["project"], locality)]
         if not scoped:
-            prefix = f"No current {_config_phrase(config)} projects are listed in {locality}."
+            prefix = f"No {_config_phrase(config)} projects are listed in {locality}."
             draft = _locality_question(working, search, items, origin, prefix)
         elif "budget_max_inr" not in working:
-            draft = _budget_question(working, search, scoped)
+            draft = (_budget_clarification(working, search, scoped)
+                     if ambiguous_budget else _budget_question(working, search, scoped))
         else:
             draft = _results_draft(working, search, scoped)
     _log(draft["discovery_kind"], started, draft["discovery_slots"], search, len(draft.get("options") or []))

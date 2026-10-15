@@ -222,16 +222,20 @@ def test_not_discovery_requests(issue):
 @pytest.mark.parametrize("slots,reply,expected", [
     (AWAIT_BUDGET, "1.5 crore", True), (AWAIT_BUDGET, "any budget", True), (AWAIT_BUDGET, "under 90 lakh", True),
     (AWAIT_BUDGET, "around 1.5 crore?", True), (AWAIT_BUDGET, "1 to 1.5 crore", True),
+    (AWAIT_BUDGET, "around one fifty", True),
     (AWAIT_BUDGET, "hi", False), (AWAIT_BUDGET, "what is the price?", False), (AWAIT_BUDGET, "9876543210", False),
     (AWAIT_BUDGET, "1.5", False), (AWAIT_BUDGET, "2 BHK under 1 crore", False),
     (AWAIT_BUDGET, "how much is a 1 crore flat", False), (AWAIT_BUDGET, "Wakad", False),
     (AWAIT_LOCALITY, "Wakad", True), (AWAIT_LOCALITY, "in Wakad", True), (AWAIT_LOCALITY, "Wakad side", True),
     (AWAIT_LOCALITY, "Any area", True), (AWAIT_LOCALITY, "anywhere", True), (AWAIT_LOCALITY, "Kharadi", True),
+    (AWAIT_LOCALITY, "Pune, under 1.5 crore", True), (AWAIT_LOCALITY, "Pune, any budget", True),
     (AWAIT_LOCALITY, "hi", False), (AWAIT_LOCALITY, "what amenities?", False), (AWAIT_LOCALITY, "9876543210", False),
     (AWAIT_LOCALITY, "1.5 crore", False), (AWAIT_LOCALITY, "tell me more", False), (AWAIT_LOCALITY, "yes", False),
     (AWAIT_LOCALITY, "start over", False), (AWAIT_LOCALITY, "Show me 2 BHK", False),
     ({"config": ["3"], "awaiting": None}, "Wakad", False), ({"awaiting": "project"}, "Wakad", False),
-    (None, "1.5 crore", False), ({"awaiting": "budget"}, "x" * 500 + " 1 crore", False),
+    (None, "1.5 crore", False), (None, "Pune, under 1.5 crore", False),
+    ({"config": ["3"], "awaiting": None}, "around one fifty", False),
+    ({"awaiting": "budget"}, "x" * 500 + " 1 crore", False),
 ])
 def test_is_slot_reply(slots, reply, expected):
     assert discovery.is_slot_reply(slots, reply) is expected
@@ -270,19 +274,17 @@ def test_locality_question_lists_every_live_option(cs):
     draft = build("Show me 3 BHK")
     assert draft["discovery_kind"] == "locality_question"
     assert draft["answer"].startswith(
-        "The current catalogue lists 3BHK configurations in 4 projects across "
-        "Hinjewadi, Thane, and Wakad.\n"
-        "This confirms catalogue listings only; current unit availability has not been checked yet."
+        "We have four projects listing 3BHK homes in Hinjewadi, Thane, and Wakad.\n"
+        "These are catalogue listings; I haven't checked current unit availability yet."
     )
     assert draft["options"] == LIVE_3BHK_AREAS
     assert draft["answer"] == "\n".join([
-        "The current catalogue lists 3BHK configurations in 4 projects across Hinjewadi, Thane, and Wakad.",
-        "This confirms catalogue listings only; current unit availability has not been checked yet.",
-        "Matching 3BHK catalogue listings are in these areas:",
+        "We have four projects listing 3BHK homes in Hinjewadi, Thane, and Wakad.",
+        "These are catalogue listings; I haven't checked current unit availability yet.",
+        'Which location would you like to explore? You can also say "any area".',
         *[f"- {area}" for area in LIVE_3BHK_AREAS],
-        "Which area would you like to explore?",
     ])
-    assert _labels(draft) == LIVE_3BHK_AREAS
+    assert _labels(draft) == LIVE_3BHK_AREAS + ["Any area"]
     pending = draft["pending_project_lookup"]
     assert pending == {"kind": "selection", "entity": "locality", "options": LIVE_3BHK_AREAS, "scope": {},
                        "original_issue": "Show me 3 BHK", "purpose": "discovery"}
@@ -299,13 +301,13 @@ def test_pending_resume_asks_budget_with_live_evidence(cs):
     draft = build("Show me 3 BHK. Selected locality: Wakad", AWAIT_LOCALITY, pending)
     assert draft["discovery_kind"] == "budget_question"
     assert draft["answer"].startswith(
-        "The current catalogue lists 3BHK configurations in 2 projects in Wakad.\n"
-        "This confirms catalogue listings only; current unit availability has not been checked yet.\n"
-        "What's your approximate budget for a 3BHK in Wakad?"
+        "We have two projects listed with 3BHK configurations in Wakad.\n"
+        "These are catalogue listings; I haven't checked current unit availability yet.\n"
+        "Do you have a budget limit, or should I include all prices?"
     )
     assert draft["discovery_prompt"] == "budget"
-    assert "Type an approximate budget (for example, INR 1.5 crore)" in draft["answer"]
-    assert draft["quick_replies"] == []
+    assert "Feel free to type your budget in the chat (for example, INR 1.5 crore)." in draft["answer"]
+    assert draft["quick_replies"] == [{"label": "Any budget", "value": "any budget"}]
     assert "pending_project_lookup" not in draft
     assert draft["discovery_slots"]["locality"] == "Wakad" and draft["discovery_slots"]["awaiting"] == "budget"
     assert {c["project"]["projectName"] for c in draft["matched_chunks"]} == {"Alpha Heights", "Delta Towers"}
@@ -320,6 +322,20 @@ def test_short_follow_up_and_typed_city(cs, reply, canonical):
     assert draft["discovery_slots"]["locality"] == canonical
 
 
+@pytest.mark.parametrize("reply,budget,label", [
+    ("Pune, under 1.5 crore", 15 * 10**6, "1.5 crore"),
+    ("Pune, any budget", None, "any budget"),
+])
+def test_locality_reply_also_uses_supported_budget(cs, reply, budget, label):
+    draft = build(reply, AWAIT_LOCALITY)
+    assert draft["discovery_kind"] == "results"
+    assert draft["discovery_slots"]["locality"] == "Pune"
+    assert draft["discovery_slots"]["budget_max_inr"] == budget
+    assert draft["discovery_slots"]["budget_label"] == label
+    assert draft["discovery_slots"]["awaiting"] is None
+    assert "Do you have a budget limit" not in draft["answer"]
+
+
 def test_typed_city_not_in_options_is_accepted(cs):
     assert "Pune" not in LIVE_3BHK_AREAS
     draft = build("Pune", AWAIT_LOCALITY)
@@ -332,7 +348,7 @@ def test_any_area_skips_the_locality_filter(cs, reply):
     draft = build(reply, AWAIT_LOCALITY)
     assert draft["discovery_kind"] == "budget_question"
     assert draft["discovery_slots"]["locality"] == "any"
-    assert "What's your approximate budget for a 3BHK?" in draft["answer"]
+    assert "Do you have a budget limit, or should I include all prices?" in draft["answer"]
     results = build("1.5 crore", draft["discovery_slots"])
     assert results["options"] == ["Alpha Heights", "Gamma Park"]
     assert "Beta Residency" in results["answer"] and "Delta Towers" in results["answer"]
@@ -369,6 +385,16 @@ def test_any_budget_lists_every_priced_project(cs):
     assert draft["discovery_slots"]["budget_label"] == "any budget"
 
 
+def test_ambiguous_budget_keeps_the_budget_step_without_guessing(cs):
+    draft = build("around one fifty", AWAIT_BUDGET)
+    assert draft["discovery_kind"] == "budget_clarification"
+    assert draft["discovery_slots"] == AWAIT_BUDGET
+    assert "budget_max_inr" not in draft["discovery_slots"]
+    assert "explicit unit" in draft["answer"]
+    assert "crore, lakh, or INR" in draft["answer"]
+    assert draft["quick_replies"] == [{"label": "Any budget", "value": "any budget"}]
+
+
 def test_one_shot_fills_every_slot(cs):
     draft = build("3 BHK in Pune under 1.5 crore")
     assert draft["discovery_kind"] == "results"
@@ -382,8 +408,8 @@ def test_one_shot_any_area_any_budget_skips_both_questions(cs):
     assert draft["discovery_kind"] == "results"
     assert draft["discovery_slots"]["locality"] == "any"
     assert draft["discovery_slots"]["budget_max_inr"] is None
-    assert "Which area" not in draft["answer"] and "approximate budget" not in draft["answer"]
-    assert "current unit availability has not been checked yet" in draft["answer"]
+    assert "Which location" not in draft["answer"] and "Do you have a budget limit" not in draft["answer"]
+    assert discovery.DISCLAIMER in draft["answer"]
     assert discovery.DISCLAIMER in draft["answer"]
 
 
@@ -408,7 +434,7 @@ def test_answer_first_summary_reuses_existing_search_without_extra_reads(cs):
 
 def test_one_shot_with_nothing_in_budget_offers_real_projects(cs):
     draft = build("3 BHK in Thane under 1.5 crore")
-    assert "No current 3BHK projects in Thane have an estimated base amount within about INR 1.50 crore." \
+    assert "No listed 3BHK projects in Thane have an estimated base amount within about INR 1.50 crore." \
         in draft["answer"]
     assert draft["options"] == ["Beta Residency"]
 
@@ -417,15 +443,16 @@ def test_single_live_area_is_selected_automatically(cs):
     draft = build("Show me 2 BHK")
     assert draft["discovery_kind"] == "budget_question"
     assert draft["answer"].startswith(
-        "The current catalogue lists 2BHK configurations in 1 project in Wakad."
+        "We have one project listed with 2BHK configurations in Wakad."
     )
+    assert "I haven't checked current unit availability yet." in draft["answer"]
     assert draft["discovery_slots"]["locality"] == "Wakad"
 
 
 def test_no_project_lists_the_configuration(cs):
     draft = build("Show me 4 BHK")
     assert draft["discovery_kind"] == "no_config"
-    assert draft["answer"] == "None of the projects in the latest catalogue list 4BHK right now."
+    assert draft["answer"] == "None of the projects in the catalogue data list 4BHK."
     assert draft["discovery_slots"]["awaiting"] is None
     assert "pending_project_lookup" not in draft
 
@@ -455,15 +482,14 @@ def test_unknown_locality_is_quoted_not_stored(cs):
     draft = build("Kharadi", AWAIT_LOCALITY)
     assert draft["discovery_kind"] == "locality_not_found"
     assert draft["answer"] == "\n".join([
-        "I couldn't find any current 3BHK projects in 'Kharadi'.",
-        "The current catalogue lists 3BHK configurations in 4 projects across Hinjewadi, Thane, and Wakad.",
-        "This confirms catalogue listings only; current unit availability has not been checked yet.",
-        "Matching 3BHK catalogue listings are in these areas:",
+        "I couldn't find any listed 3BHK projects in 'Kharadi'.",
+        "We have four projects listing 3BHK homes in Hinjewadi, Thane, and Wakad.",
+        "These are catalogue listings; I haven't checked current unit availability yet.",
+        'Which location would you like to explore? You can also say "any area".',
         *[f"- {area}" for area in LIVE_3BHK_AREAS],
-        "Which area would you like to explore?",
     ])
     assert draft["options"] == LIVE_3BHK_AREAS
-    assert _labels(draft) == LIVE_3BHK_AREAS
+    assert _labels(draft) == LIVE_3BHK_AREAS + ["Any area"]
     assert "Kharadi" not in str(draft["discovery_slots"])
     assert "Kharadi" not in str(draft["pending_project_lookup"])
     assert draft["discovery_slots"]["awaiting"] == "locality"
@@ -586,11 +612,25 @@ def test_repeated_failure_at_results_step_keeps_state(cs):
 def test_skipped_projects_are_disclosed_and_never_live(cs):
     cs.fail["/api/cs/projects/4/typologies"] = RuntimeError("CS API request timed out.")
     draft = build("3 BHK in Wakad under 1.5 crore")
-    assert "1 project(s) could not be checked" in draft["answer"]
-    assert draft["answer"].startswith("Among the projects successfully checked, the current catalogue lists")
+    assert "one project could not be checked" in draft["answer"]
+    assert draft["answer"].startswith("Among the projects I could check, we've got")
     assert "Delta Towers" not in draft["answer"]
     assert draft["source_status"] == "failed"
     assert draft["skipped"] == [{"project": "Delta Towers", "error": "CS API request timed out."}]
+
+
+def test_snapshot_discovery_leads_do_not_claim_a_fresh_read(cs, monkeypatch):
+    saved_search = copy.deepcopy(tools.search_projects(["3"], "Wakad"))
+    saved_search["source_status"] = "snapshot"
+    monkeypatch.setattr(tools, "search_projects", lambda *_a, **_kw: copy.deepcopy(saved_search))
+
+    budget = build("Wakad", AWAIT_LOCALITY)
+    results = build("any budget", AWAIT_BUDGET)
+    assert budget["source_status"] == results["source_status"] == "snapshot"
+    assert budget["answer"].startswith("We have two projects listed with 3BHK configurations in Wakad.")
+    assert "currently" not in budget["answer"].lower()
+    assert "current catalogue" not in results["answer"].lower()
+    assert "I haven't checked current unit availability yet." in budget["answer"]
 
 
 @pytest.mark.parametrize("status,source_status", [
@@ -609,12 +649,12 @@ def test_unusable_tool_results_never_produce_live_api(cs, monkeypatch, status, s
 # COPY RULES
 # -----------------------------------
 
-def test_copy_never_says_price_or_floor_plan(cs):
+def test_copy_does_not_claim_unit_prices_or_floor_plans(cs):
     answers = [build("Show me 3 BHK")["answer"], build("Wakad", AWAIT_LOCALITY)["answer"],
                build("1.5 crore", AWAIT_BUDGET)["answer"], build("any budget", AWAIT_BUDGET)["answer"],
                build("3 BHK in Pune under 1.5 crore")["answer"], build("Kharadi", AWAIT_LOCALITY)["answer"]]
     for answer in answers:
-        assert not re.search(r"\bprices?\b", answer, re.IGNORECASE)
+        assert "unit price is" not in answer.lower()
         assert "floor plan" not in answer.lower()
 
 

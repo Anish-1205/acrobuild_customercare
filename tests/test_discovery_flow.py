@@ -205,20 +205,20 @@ def test_locality_question_lists_only_live_options(chat, endpoint):
     c = chat(endpoint)
     payload = c.ask("Show me 3 BHK")
     assert payload["discovery_kind"] == "locality_question"
-    assert payload["answer"].startswith(
-        "The current catalogue lists 3BHK configurations in 4 projects across "
-        "Hinjewadi, Thane, and Wakad.\n"
-        "This confirms catalogue listings only; current unit availability has not been checked yet."
-    )
     assert payload["clarification_entity"] == "locality"
+    # The question precedes the bullets: the browser drops everything from the
+    # first bullet onward when the bullets only restate the quick replies.
     assert payload["answer"] == "\n".join([
-        "The current catalogue lists 3BHK configurations in 4 projects across Hinjewadi, Thane, and Wakad.",
-        "This confirms catalogue listings only; current unit availability has not been checked yet.",
-        "Matching 3BHK catalogue listings are in these areas:",
+        "We have four projects listing 3BHK homes in Hinjewadi, Thane, and Wakad.",
+        "These are catalogue listings; I haven't checked current unit availability yet.",
+        'Which location would you like to explore? You can also say "any area".',
         *[f"- {area}" for area in AREAS_3BHK],
-        "Which area would you like to explore?",
     ])
-    assert _labels(payload) == AREAS_3BHK
+    # "Any area" is a button only: never an option, never in the pending
+    # selection, never a bullet.
+    assert payload["options"] == AREAS_3BHK
+    assert _labels(payload) == AREAS_3BHK + ["Any area"]
+    assert "- Any area" not in payload["answer"]
     pending = get_pending_project_lookup(c.last_bot)
     assert pending["options"] == AREAS_3BHK and "Any area" not in pending["options"]
     assert pending["entity"] == "locality" and pending["purpose"] == "discovery" and pending["source"] == "discovery"
@@ -235,19 +235,20 @@ def test_locality_question_reflects_current_eligible_projects(chat, env, endpoin
     c = chat(endpoint)
     payload = c.ask("Show me 3 BHK")
     assert payload["answer"] == (
-        "The current catalogue lists 3BHK configurations in 2 projects across Baner and Panvel.\n"
-        "This confirms catalogue listings only; current unit availability has not been checked yet.\n"
-        "Matching 3BHK catalogue listings are in these areas:\n"
-        "- Baner\n- Panvel\n"
-        "Which area would you like to explore?"
+        "We have two projects listing 3BHK homes in Baner and Panvel.\n"
+        "These are catalogue listings; I haven't checked current unit availability yet.\n"
+        'Which location would you like to explore? You can also say "any area".\n'
+        "- Baner\n- Panvel"
     )
     assert payload["options"] == ["Baner", "Panvel"]
-    assert _labels(payload) == ["Baner", "Panvel"]
+    assert _labels(payload) == ["Baner", "Panvel", "Any area"]
     assert get_pending_project_lookup(c.last_bot)["options"] == ["Baner", "Panvel"]
     _assert_live(payload)
     budget = c.ask("Baner")
     assert budget["discovery_kind"] == "budget_question"
-    assert "What's your approximate budget for a 3BHK in Baner?" in budget["answer"]
+    assert budget["answer"].startswith(
+        "We have one project listed with 3BHK configurations in Baner.")
+    assert "Do you have a budget limit, or should I include all prices?" in budget["answer"]
     assert c.slots["locality"] == "Baner" and c.slots["awaiting"] == "budget"
 
 
@@ -266,15 +267,25 @@ def test_locality_budget_shortlist_and_project_tap(chat, monkeypatch, endpoint, 
     c.ask("Show me 3 BHK")
     budget = c.ask("Wakad")
     assert budget["discovery_kind"] == "budget_question"
-    assert "What's your approximate budget for a 3BHK in Wakad?" in budget["answer"]
-    assert "Type an approximate budget (for example, INR 1.5 crore)" in budget["answer"]
-    assert budget["quick_replies"] == []
+    # B: the scoped count, its own catalogue-vs-inventory qualifier, the budget
+    # question, and the free-text invitation that a non-UI client needs.
+    assert budget["answer"] == "\n".join([
+        "We have two projects listed with 3BHK configurations in Wakad.",
+        "These are catalogue listings; I haven't checked current unit availability yet.",
+        "Do you have a budget limit, or should I include all prices?",
+        "Feel free to type your budget in the chat (for example, INR 1.5 crore).",
+    ])
+    assert _labels(budget) == ["Any budget"]
+    # Free text, not a selection: a typed budget next turn must not look like
+    # an option pick.
+    assert budget["clarification_entity"] is None
     assert c.slots["locality"] == "Wakad" and c.slots["awaiting"] == "budget"
     assert get_pending_project_lookup(c.last_bot) is None
     _assert_live(budget)
 
     results = c.ask("1.5 crore")
     assert results["discovery_kind"] == "results"
+    assert results["answer"].startswith("We've got one matching project in Wakad.")
     assert "- Alpha Heights: estimated base amount from INR 1.20 crore" in results["answer"]
     assert discovery.DISCLAIMER in results["answer"]
     assert not re.search(r"\bprices?\b", results["answer"], re.I)
@@ -291,12 +302,68 @@ def test_locality_budget_shortlist_and_project_tap(chat, monkeypatch, endpoint, 
 
 
 @pytest.mark.parametrize("endpoint", ENDPOINTS)
+def test_locality_selection_uses_scoped_live_evidence(chat, env, endpoint):
+    env.projects = [
+        {"id": 1, "projectName": "Alpha Heights", "locality": "Pune", "city": "Pune"},
+        {"id": 2, "projectName": "Beta Residency", "locality": "Thane", "city": "Thane"},
+    ]
+    c = chat(endpoint)
+    first = c.ask("I am looking for a 3BHK")
+    assert first["options"] == ["Pune", "Thane"]
+    assert c.slots["config"] == ["3"] and c.slots["awaiting"] == "locality"
+
+    env.fail["/api/cs/projects/2/typologies"] = RuntimeError("CS API request timed out.")
+    env.calls.clear()
+    selected = c.ask("Pune")
+    assert selected["discovery_kind"] == "budget_question"
+    assert selected["source_status"] == "live_api"
+    assert selected["answer"].startswith(
+        "We have one project listed with 3BHK configurations in Pune.")
+    assert c.slots["config"] == ["3"] and c.slots["locality"] == "Pune"
+    assert c.slots["awaiting"] == "budget"
+    assert "/api/cs/projects/2/typologies" not in env.calls
+    assert all(call["status"] != "failed" for call in selected["data_api_calls"])
+
+    env.calls.clear()
+    results = c.ask("any budget")
+    assert results["discovery_kind"] == "results"
+    assert results["source_status"] == "live_api"
+    assert "/api/cs/projects/2/typologies" not in env.calls
+
+
+@pytest.mark.parametrize("endpoint", ENDPOINTS)
+def test_locality_selection_required_data_failure_keeps_context(chat, env, endpoint):
+    env.projects = [
+        {"id": 1, "projectName": "Alpha Heights", "locality": "Pune", "city": "Pune"},
+        {"id": 2, "projectName": "Beta Residency", "locality": "Thane", "city": "Thane"},
+    ]
+    c = chat(endpoint)
+    c.ask("I am looking for a 3BHK")
+    env.fail["/api/cs/projects/1/typologies"] = RuntimeError("CS API request timed out.")
+    env.calls.clear()
+    failed = c.ask("Pune")
+    assert failed["source_status"] == "failed"
+    assert failed["answer"] == "Live property data is unavailable right now. Please try again shortly."
+    assert "/api/cs/projects/1/typologies" in env.calls
+    assert "/api/cs/projects/2/typologies" not in env.calls
+    assert c.slots["config"] == ["3"]
+
+    del env.fail["/api/cs/projects/1/typologies"]
+    recovered = c.ask("Pune")
+    assert recovered["discovery_kind"] == "budget_question"
+    assert recovered["source_status"] == "live_api"
+    assert c.slots["locality"] == "Pune" and c.slots["awaiting"] == "budget"
+
+
+@pytest.mark.parametrize("endpoint", ENDPOINTS)
 def test_one_shot_query(chat, endpoint):
     c = chat(endpoint)
     payload = c.ask("3 BHK in Thane under 1.5 crore")
     assert payload["discovery_kind"] == "results"
-    assert "No current 3BHK projects in Thane have an estimated base amount within about INR 1.50 crore." \
+    assert "No listed 3BHK projects in Thane have an estimated base amount within about INR 1.50 crore." \
         in payload["answer"]
+    assert payload["answer"].startswith(
+        "We found one project in Thane, but none have an estimated base amount within your budget.")
     assert _labels(payload) == ["Beta Residency"]
     assert c.slots["locality"] == "Thane" and c.slots["budget_max_inr"] == 15 * 10**6
     _assert_live(payload)
@@ -312,6 +379,23 @@ def test_supplied_budget_is_visible_while_locality_is_requested(chat, endpoint):
 
 
 @pytest.mark.parametrize("endpoint", ENDPOINTS)
+@pytest.mark.parametrize("reply,budget", [
+    ("Pune, under 1.5 crore", 15 * 10**6),
+    ("Pune, any budget", None),
+])
+def test_locality_and_budget_reply_skips_the_budget_question(chat, endpoint, reply, budget):
+    c = chat(endpoint)
+    c.ask("I am looking for a 3BHK")
+    payload = c.ask(reply)
+    assert payload["discovery_kind"] == "results"
+    assert c.slots["locality"] == "Pune"
+    assert c.slots["budget_max_inr"] == budget
+    assert c.slots["awaiting"] is None
+    assert "Do you have a budget limit" not in payload["answer"]
+    _assert_live(payload)
+
+
+@pytest.mark.parametrize("endpoint", ENDPOINTS)
 def test_any_budget(chat, endpoint):
     c = chat(endpoint)
     _to_budget_question(c)
@@ -322,13 +406,31 @@ def test_any_budget(chat, endpoint):
 
 
 @pytest.mark.parametrize("endpoint", ENDPOINTS)
+def test_ambiguous_budget_reasks_with_state_intact(chat, endpoint):
+    c = chat(endpoint)
+    _to_budget_question(c)
+    before = dict(c.slots)
+    payload = c.ask("around one fifty")
+    assert payload["discovery_kind"] == "budget_clarification"
+    assert "explicit unit" in payload["answer"]
+    assert c.slots == before
+    results = c.ask("1.5 crore")
+    assert results["discovery_kind"] == "results"
+    assert c.slots["budget_max_inr"] == 15 * 10**6
+
+
+@pytest.mark.parametrize("endpoint", ENDPOINTS)
 @pytest.mark.parametrize("reply", ["Any area", "anywhere"])
 def test_any_area_goes_to_budget_question(chat, endpoint, reply):
     c = chat(endpoint)
     c.ask("Show me 3 BHK")
     payload = c.ask(reply)
     assert payload["discovery_kind"] == "budget_question"
-    assert "What's your approximate budget for a 3BHK?" in payload["answer"]
+    # No " in <area>" clause for the wildcard, and the disclosure still rides along.
+    assert payload["answer"].startswith(
+        "We have four projects listed with 3BHK configurations.\n"
+        "These are catalogue listings; I haven't checked current unit availability yet.")
+    assert "Do you have a budget limit, or should I include all prices?" in payload["answer"]
     assert c.slots["locality"] == "any" and c.slots["awaiting"] == "budget"
     _assert_live(payload)
 
@@ -349,15 +451,14 @@ def test_unknown_locality_is_honest_and_never_stored(chat, endpoint):
     c.ask("Show me 3 BHK")
     payload = c.ask("Kharadi")
     assert payload["discovery_kind"] == "locality_not_found"
-    assert payload["answer"].startswith("I couldn't find any current 3BHK projects in 'Kharadi'.")
+    assert payload["answer"].startswith("I couldn't find any listed 3BHK projects in 'Kharadi'.")
     assert payload["answer"].endswith("\n".join([
-        "The current catalogue lists 3BHK configurations in 4 projects across Hinjewadi, Thane, and Wakad.",
-        "This confirms catalogue listings only; current unit availability has not been checked yet.",
-        "Matching 3BHK catalogue listings are in these areas:",
+        "We have four projects listing 3BHK homes in Hinjewadi, Thane, and Wakad.",
+        "These are catalogue listings; I haven't checked current unit availability yet.",
+        'Which location would you like to explore? You can also say "any area".',
         *[f"- {area}" for area in AREAS_3BHK],
-        "Which area would you like to explore?",
     ]))
-    assert _labels(payload) == AREAS_3BHK
+    assert _labels(payload) == AREAS_3BHK + ["Any area"]
     assert get_pending_project_lookup(c.last_bot)["options"] == AREAS_3BHK
     stored = get_discovery_slots(c.last_bot)
     assert "Kharadi" not in json.dumps(stored) and "locality" not in stored
@@ -564,20 +665,17 @@ def test_localized_locality_question_keeps_names_verbatim(chat, env, monkeypatch
     def translate(**kwargs):
         source = kwargs["user_prompt"].split("ENGLISH MESSAGE:\n", 1)[1]
         return (source
-                .replace("The current catalogue lists", "Current catalogue lo")
-                .replace("projects across", "projects unnayi")
-                .replace("This confirms catalogue listings only; current unit availability has not been checked yet.",
+                .replace("We have", "Maa daggara")
+                .replace("These are catalogue listings; I haven't checked current unit availability yet.",
                          "Idi catalogue listing matrame; current unit availability inka check cheyyaledu.")
-                .replace("Matching", "Match ayye")
-                .replace("catalogue listings are in these areas:", "catalogue listings ee areas lo unnayi:")
-                .replace("Which area would you like to explore?", "Meeru ye area explore cheyyali?"))
+                .replace("Which location would you like to explore?", "Meeru ye area explore cheyyali?"))
 
     monkeypatch.setattr(orchestrator, "generate_qwen_chat_response", translate)
     payload = chat(endpoint).ask("Show me 3 BHK")
-    assert payload["answer"].startswith("Current catalogue lo 3BHK configurations in 4 projects unnayi")
+    assert payload["answer"].startswith("Maa daggara four projects listing 3BHK homes in")
     assert "current unit availability inka check cheyyaledu" in payload["answer"]
     assert bullets in payload["answer"]
-    assert _labels(payload) == AREAS_3BHK
+    assert _labels(payload) == AREAS_3BHK + ["Any area"]
     monkeypatch.setattr(orchestrator, "generate_qwen_chat_response",
                         lambda **_kw: "3BHK kosam edi area?\n- Hinjevadi\n- Thane\n- Vakad")
     rejected = chat(endpoint).ask("Show me 3 BHK")
@@ -591,22 +689,42 @@ def test_romanized_marathi_answer_first_summary_preserves_facts(chat, env, monke
     def translate(**kwargs):
         source = kwargs["user_prompt"].split("ENGLISH MESSAGE:\n", 1)[1]
         return (source
-                .replace("The current catalogue lists", "Current catalogue madhye")
-                .replace("projects across", "projects aahet")
-                .replace("This confirms catalogue listings only; current unit availability has not been checked yet.",
+                .replace("We have", "Amchyakade")
+                .replace("These are catalogue listings; I haven't checked current unit availability yet.",
                          "He fakt catalogue listing aahe; current unit availability ajun check kelele nahi.")
                 .replace("I've kept your budget of up to", "Tumcha budget")
-                .replace("Matching", "Julanare")
-                .replace("catalogue listings are in these areas:", "catalogue listings ya areas madhye aahet:")
-                .replace("Which area would you like to explore?", "Tumhala konta area explore karaycha aahe?"))
+                .replace("Which location would you like to explore?", "Tumhala konta area explore karaycha aahe?"))
 
     monkeypatch.setattr(orchestrator, "generate_qwen_chat_response", translate)
     payload = chat(endpoint).ask("Mala 1.5 crore paryant 3BHK pahije")
-    assert payload["answer"].startswith("Current catalogue madhye 3BHK configurations in 4 projects aahet")
+    assert payload["answer"].startswith("Amchyakade four projects listing 3BHK homes in")
     assert "current unit availability ajun check kelele nahi" in payload["answer"]
     assert "INR 1.50 crore" in payload["answer"]
     assert all(area in payload["answer"] for area in AREAS_3BHK)
-    assert _labels(payload) == AREAS_3BHK
+    assert _labels(payload) == AREAS_3BHK + ["Any area"]
+
+
+@pytest.mark.parametrize("endpoint", ENDPOINTS)
+@pytest.mark.parametrize("language", ["English", "Telugu", "Marathi"])
+def test_wildcard_buttons_continue_the_same_journey_in_supported_languages(
+    chat, env, monkeypatch, endpoint, language
+):
+    env.analysis["value"] = TurnAnalysis("property", language, "latin", "test")
+    if language != "English":
+        monkeypatch.setattr(
+            orchestrator, "generate_qwen_chat_response",
+            lambda **kwargs: kwargs["user_prompt"].split("ENGLISH MESSAGE:\n", 1)[1],
+        )
+    c = chat(endpoint)
+    locality = c.ask("Show me 3 BHK")
+    assert _labels(locality) == AREAS_3BHK + ["Any area"]
+    budget = c.ask("Any area")
+    assert budget["discovery_kind"] == "budget_question"
+    assert _labels(budget) == ["Any budget"]
+    results = c.ask("any budget")
+    assert results["discovery_kind"] == "results"
+    assert c.slots["locality"] == "any"
+    assert "budget_max_inr" in c.slots and c.slots["budget_max_inr"] is None
 
 
 # -----------------------------------
