@@ -124,7 +124,13 @@ compliant.
    the mandatory pricing disclaimer were silently removed from the
    customer-visible chat whenever the shortlist's quick replies were plain
    project-selection buttons (B3). See "Fix verification" below.
-3. **Suspected, unverified, NOT CHANGED** — A "guarantee/book today" inventory
+3. **Confirmed, FIXED (16 October 2026)** — D2: home-type builders ran before the
+   capability-limitation check, so a guarantee/book-today question got a plain
+   availability answer. `build_booking_guarantee_limitation_assist()` now runs
+   before them (`unsupported_capability="booking_guarantee"`); a live probe on
+   both endpoints confirmed the caveat while plain availability questions still
+   return live counts. Original note follows.
+   **Previously suspected, unverified, NOT CHANGED** — A "guarantee/book today" inventory
    question may get a reused grounded-availability answer without an
    explicit no-guarantee caveat (D2). Out of scope for the 13 October fix
    pass by explicit instruction; still needs a larger scenario set to

@@ -71,6 +71,7 @@ from api_context import (
     build_grounded_amenity_search_assist,
     build_grounded_project_amenities_assist,
     build_grounded_project_cost_clarification_assist,
+    build_booking_guarantee_limitation_assist,
     build_complete_cost_sheet_limitation_assist,
     build_grounded_project_location_assist,
     build_grounded_site_visit_document_assist,
@@ -302,6 +303,9 @@ def _grounded_property_shortcut(request, turn, failure_state=None, pending=None,
             (build_project_detail_choice(pending)
              if is_amenity_shortlist_detail_followup(pending, turn.analysis.english or request.issue) else None)
             or build_complete_cost_sheet_limitation_assist(request)
+            # Before home-type builders: listed availability must not read as a
+            # guaranteed or confirmed booking.
+            or build_booking_guarantee_limitation_assist(shortcut_request)
             or _short_flat_cost_choice(turn, request.issue)
             or build_grounded_site_visit_document_assist(shortcut_request)
             # Discovery slot flow (IS §28); None whenever the flag is off.

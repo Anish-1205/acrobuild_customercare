@@ -117,6 +117,27 @@ class TestInvestmentGuarantee:
         assert _family(prompt) == "investment_guarantee"
 
 
+class TestBookingGuarantee:
+    @pytest.mark.parametrize("prompt", [
+        "Can you guarantee a 2 BHK is available to book today?",
+        "Is the 3BHK guaranteed to be available?",
+        "Can you promise I can book a flat today?",
+        "Will a 2 BHK definitely be available next week?",
+        "Is booking assured if I pay today?",
+    ])
+    def test_detects_booking_guarantee_queries(self, prompt):
+        assert _family(prompt) == "booking_guarantee"
+
+    @pytest.mark.parametrize("prompt", [
+        "Is a 2 BHK available to book?",
+        "Which units are available for booking?",
+        "Can I definitely book a site visit tomorrow?",
+        "How do I book a flat?",
+    ])
+    def test_ordinary_availability_not_intercepted(self, prompt):
+        assert _family(prompt) != "booking_guarantee"
+
+
 # ── Negative / non-regression: supported queries must pass through ─
 
 

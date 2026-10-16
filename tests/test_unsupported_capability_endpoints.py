@@ -123,6 +123,9 @@ LIMITATION_CASES = (
     ("Will this property definitely double in value?", "investment_guarantee"),
     ("Can you guarantee 20% returns?", "investment_guarantee"),
     ("Is appreciation guaranteed?", "investment_guarantee"),
+    ("Can you guarantee a 2 BHK is available to book today?", "booking_guarantee"),
+    ("Is the 3BHK in Vishwajeet Prime guaranteed to be available?", "booking_guarantee"),
+    ("Can you promise I can book a 2 BHK in Vishwajeet Prime today?", "booking_guarantee"),
     ("What offers are available right now for Vishwajeet Prime?", "offers"),
     ("Send me the brochure and floor plan for Vishwajeet Prime.", "documents"),
     ("How much have I paid and what is my outstanding amount?", "customer_finance"),
@@ -150,6 +153,9 @@ def test_complete_limitation_survives_endpoint_postprocessing(support_env, endpo
     elif family == "investment_guarantee":
         assert "cannot guarantee" in answer
         assert "definitely double" not in answer
+    elif family == "booking_guarantee":
+        assert "can't guarantee" in answer and "not a reservation" in answer
+        assert "unit(s) currently listed" not in answer
     elif family == "mortgage_rates":
         assert "mortgage" in answer or "home loan" in answer
         assert "verified" in answer and "rate" in answer

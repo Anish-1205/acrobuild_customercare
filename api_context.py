@@ -1730,6 +1730,30 @@ def build_complete_cost_sheet_limitation_assist(request):
     return _unsupported_capability_response(answer, "complete_cost_sheet")
 
 
+_BOOKING_GUARANTEE_RE = re.compile(
+    r"\b(?:guarantee[ds]?|promise[ds]?|assure[ds]?|for\s+sure|definitely|surely)\b"
+    r".{0,60}?\b(?:availab\w*|book(?:ing|ed|able)?|reserv\w*)\b"
+    r"|\b(?:availab\w*|book(?:ing|ed|able)?|reserv\w*)\b"
+    r".{0,60}?\b(?:guaranteed?|promised|assured|for\s+sure)\b",
+    re.IGNORECASE,
+)
+_SITE_VISIT_RE = re.compile(r"\b(?:site\s*visit|visit|callback|call\s*back)\b", re.IGNORECASE)
+
+
+def build_booking_guarantee_limitation_assist(request):
+    """Never let listed inventory read as a guaranteed or confirmed booking."""
+    issue = str(request.issue or "")
+    if not _BOOKING_GUARANTEE_RE.search(issue) or _SITE_VISIT_RE.search(issue):
+        return None
+    answer = (
+        "I can't guarantee that a unit is available or confirm a booking through this chat. "
+        "Listed availability comes from the current project data and can change at any time; "
+        "it is not a reservation. Only the sales team can confirm and book a specific unit. "
+        "I can show the currently listed availability or arrange a site visit if that would help."
+    )
+    return _unsupported_capability_response(answer, "booking_guarantee")
+
+
 def build_unsupported_capability_assist(request):
     """Intercept customer requests for capabilities whose verified data sources
     do not exist yet.  Returns an honest deterministic limitation response
@@ -1746,6 +1770,10 @@ def build_unsupported_capability_assist(request):
     cost_sheet = build_complete_cost_sheet_limitation_assist(request)
     if cost_sheet is not None:
         return cost_sheet
+
+    booking_guarantee = build_booking_guarantee_limitation_assist(request)
+    if booking_guarantee is not None:
+        return booking_guarantee
 
     cleaned = issue.lower()
 
