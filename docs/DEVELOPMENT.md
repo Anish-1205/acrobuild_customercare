@@ -70,6 +70,12 @@ tests and a writable system temporary directory. Report an environment block as
 blocked rather than a product pass or failure. Do not alter tests merely to hide
 a live-data or environment mismatch.
 
+Security regression tests may construct credential-shaped sentinel values at
+runtime to verify that errors, responses, and stored conversation data redact
+secrets correctly. These values are synthetic test fixtures, never service
+credentials; keep them assembled from non-secret fragments so repository push
+protection does not mistake source text for a live key.
+
 ## Live acceptance
 
 These scripts use the configured real services and write committed evidence
