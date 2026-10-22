@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "AcroBuild runtime architecture",
+    "locale": "en",
+    "output": ".archify/architecture-acrobuild-runtime-20261021-234559/acrobuild-runtime.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Anish-1205/acrobuild_customercare.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "390e23874a8e7a7cce38a5dbc50ed86b2c9f3972"
+    }
+  },
+  "components": [
+    {
+      "id": "client_ui", "type": "frontend", "label": "React browser app", "sublabel": "customer chat and staff UI", "pos": [40, 250], "size": [170, 72],
+      "sources": [{"path": "src/App.tsx", "line": 70, "end_line": 96}, {"path": "src/lib/supportAssistTransport.ts", "line": 14, "end_line": 42}]
+    },
+    {
+      "id": "api_gate", "type": "security", "label": "FastAPI boundary", "sublabel": "limits, origin, staff auth / CSRF", "pos": [320, 250], "size": [160, 72],
+      "sources": [{"path": "api_context.py", "line": 357, "end_line": 376}, {"path": "api_context.py", "line": 409, "end_line": 466}, {"path": "services/request_security_service.py", "line": 38, "end_line": 67}]
+    },
+    {
+      "id": "assist", "type": "backend", "label": "Assist routes", "sublabel": "JSON / NDJSON; state + guard", "pos": [560, 250], "size": [165, 72],
+      "sources": [{"path": "routers/assist.py", "line": 665, "end_line": 734}, {"path": "routers/assist.py", "line": 764, "end_line": 812}, {"path": "routers/assist.py", "line": 901, "end_line": 919}]
+    },
+    {
+      "id": "orchestrator", "type": "backend", "label": "Chat orchestrator", "sublabel": "analyze intent; choose branch", "pos": [805, 250], "size": [170, 72],
+      "sources": [{"path": "graph/main_orchestrator.py", "line": 992, "end_line": 1049}, {"path": "graph/main_orchestrator.py", "line": 1104, "end_line": 1150}]
+    },
+    {
+      "id": "answer_engine", "type": "backend", "label": "Answer engine", "sublabel": "production: compiled backend", "pos": [805, 455], "size": [170, 72],
+      "sources": [{"path": "services/answer_engine_service.py", "line": 80, "end_line": 118}, {"path": "services/ai_agent_service.py", "line": 10, "end_line": 25}]
+    },
+    {
+      "id": "property", "type": "backend", "label": "Property services", "sublabel": "discovery, clarification, CS reads", "pos": [320, 455], "size": [160, 72],
+      "sources": [{"path": "routers/assist.py", "line": 681, "end_line": 714}, {"path": "services/discovery_slot_service.py", "line": 781, "end_line": 802}, {"path": "services/acrobuild_company_service.py", "line": 189, "end_line": 218}]
+    },
+    {
+      "id": "knowledge", "type": "backend", "label": "Knowledge index", "sublabel": "published workspace content", "pos": [1050, 80], "size": [170, 72],
+      "sources": [{"path": "services/knowledge_index_service.py", "line": 9, "end_line": 20}, {"path": "services/knowledge_index_service.py", "line": 557, "end_line": 577}, {"path": "services/knowledge_index_service.py", "line": 1466}]
+    },
+    {
+      "id": "sqlite", "type": "database", "label": "SQLite workspace", "sublabel": "chat, tickets, content, sessions", "pos": [560, 80], "size": [165, 72],
+      "sources": [{"path": "services/database_service.py", "line": 22, "end_line": 67}, {"path": "services/conversation_store_service.py", "line": 265, "end_line": 297}, {"path": "services/database_service.py", "line": 35, "end_line": 51}]
+    },
+    {
+      "id": "cs_api", "type": "external", "label": "AcroBuild CS API", "sublabel": "live property catalogue", "pos": [40, 455], "size": [170, 72],
+      "sources": [{"path": "services/acrobuild_company_service.py", "line": 180, "end_line": 218}]
+    },
+    {
+      "id": "llm", "type": "external", "label": "LLM endpoint", "sublabel": "Sarvam compatible chat API", "pos": [1290, 455], "size": [170, 72],
+      "sources": [{"path": "sarvam_client.py", "line": 73, "end_line": 119}, {"path": "qwen.py", "line": 84, "end_line": 103}]
+    }
+  ],
+  "boundaries": [
+    {"kind": "region", "label": "Server-side code and local data", "wraps": ["api_gate", "assist", "orchestrator", "answer_engine", "property", "knowledge", "sqlite"]}
+  ],
+  "connections": [
+    {"id": "browser_api", "from": "client_ui", "to": "api_gate", "label": "HTTP + session cookie", "variant": "emphasis"},
+    {"id": "api_assist", "from": "api_gate", "to": "assist", "label": "assist routes", "variant": "emphasis"},
+    {"id": "assist_route", "from": "assist", "to": "orchestrator", "label": "unhandled turns", "variant": "emphasis"},
+    {"id": "route_engine", "from": "orchestrator", "to": "answer_engine", "label": "property / RAG"},
+    {"id": "assist_property", "from": "assist", "to": "property", "label": "grounded shortcuts"},
+    {"id": "engine_property", "from": "answer_engine", "to": "property", "label": "property retrieval"},
+    {"id": "property_cs", "from": "property", "to": "cs_api", "label": "company-scoped GET"},
+    {"id": "orchestrator_llm", "from": "orchestrator", "to": "llm", "label": "general chat"},
+    {"id": "engine_llm", "from": "answer_engine", "to": "llm", "label": "generation"},
+    {"id": "engine_knowledge", "from": "answer_engine", "to": "knowledge", "label": "retrieval"},
+    {"id": "knowledge_sqlite", "from": "knowledge", "to": "sqlite", "label": "published records"},
+    {"id": "assist_sqlite", "from": "assist", "to": "sqlite", "label": "load / save turns"}
+  ],
+  "cards": [
+    {"dot": "cyan", "title": "Primary execution", "items": ["The browser prefers NDJSON streaming and falls back to JSON when needed.", "Assist restores server-side history, applies routing and completion, then saves the visible turn with hidden selection state."]},
+    {"dot": "emerald", "title": "Property grounding", "items": ["Property shortcuts and the active answer engine use the CS API through server-side services.", "Live-data status and clarification are checked before a property answer is returned; a model reply alone is not property evidence."]},
+    {"dot": "rose", "title": "Trust boundaries", "items": ["The browser is outside the server boundary. Staff routes additionally require a valid workspace session, role checks and CSRF for cookie mutations.", "CS API and LLM endpoints are separate external dependencies. SQLite is a server-local store, not a browser data source."]},
+    {"dot": "amber", "title": "Scope", "items": ["This is the customer chat runtime overview. Ticket and staff workspace routes share the FastAPI and SQLite layers but are not expanded here.", "The readable answer engine is present for isolated selection; production selects LegacyCompiledAnswerEngine. Semantic search is currently disabled."]}
+  ]
+}
