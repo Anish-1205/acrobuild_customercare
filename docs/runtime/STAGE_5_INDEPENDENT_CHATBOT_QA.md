@@ -300,3 +300,33 @@ access (`WinError 10013`); it is not a clean full-suite acceptance. This is
 offline correction evidence, not a post-fix browser or independent live CS
 status result. C3 customer-facing acceptance remains **UNVERIFIED** after the
 fix; Stage 5 remains **PARTIAL** and Stage 6 **BLOCKED**.
+
+## Customer journey QA continuation (21 October 2026)
+
+This continuation used current source at `390e238`. It made no application
+changes, submitted no customer action, and did not select the readable engine
+for production. The checks below are distinct from the historical observations
+above.
+
+| Journey | Current result | Evidence and limit |
+| --- | --- | --- |
+| B3 shortlist presentation | **PASS (mocked browser UI)** | A local browser received a constructed NDJSON shortlist. It displayed the estimated-base-amount line, exclusions disclaimer, closing prompt, and project button together. This proves presentation for that response shape, not current catalogue pricing. |
+| H1 failed-source reply, then a new question | **PASS (mocked browser UI)** | A constructed failed-source reply showed the `Answer unavailable` state; the next turn completed once. This does not establish actual CS API or Sarvam failure behavior. |
+| H2 interrupted stream, then a new question | **PASS (mocked browser UI)** | A stream containing a delta but no terminal result showed `Response interrupted`; the following turn completed once. The partial text appeared once. This does not establish real-provider cancellation or production transport behavior. |
+| E1 new-area search and F1 ambiguous selection | **UNVERIFIED as complete customer journeys** | Focused synthetic endpoint suites passed, including discovery and clarification regressions, but these exact multi-turn browser paths were not replayed in this continuation. |
+| G1 native-script Hindi and G2 romanized Hindi pricing | **UNVERIFIED as live customer journeys** | Language and discovery regressions passed with constructed evidence. The live CS API was unavailable, so current grounded pricing and localized browser replies could not be assessed. |
+| Current live catalogue and grounded Sarvam probe | **BLOCKED** | The read-only probe first hit sandbox socket denial (`WinError 10013`). With network permission, its request to the configured CS API timed out before a response. It stopped before the Sarvam probe; neither integration passed live acceptance. |
+
+The local Playwright test runner for the mocked discovery journey stalled and
+was stopped without an assertion result. Direct Playwright browser interactions
+with controlled NDJSON responses completed the B3, H1, and H2 UI checks above.
+The browser required access to its user-profile directory outside the
+workspace; the local Vite page was usable after DOM readiness. These checks
+must not be recorded as a passing Playwright test-runner result.
+
+Focused backend runs passed 147, 100, and 150 tests respectively; the last run
+also passed 13 subtests. The focused frontend presentation run passed 9 tests.
+The constructed offline readable-versus-legacy differential script completed;
+its differences remain characterized synthetic evidence, not production
+conversation parity. No full-suite or live journey pass is claimed here.
+Stage 5 remains **PARTIAL** and Stage 6 remains **BLOCKED**.
