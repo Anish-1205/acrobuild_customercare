@@ -8,6 +8,43 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-10-23 18:02 — DeepEval multi-turn eval; three booking-flow fixes it found
+
+**Context:** Added an offline multi-turn evaluation of the chat booking flow and
+handoff gate using DeepEval, and fixed the bugs it surfaced.
+
+**Eval:** `scripts/deepeval_chat_flows.py` (new) drives the real app in-process
+against a throwaway SQLite DB through 7 scripted conversations (booking,
+side question mid-booking, Hinglish booking, question at the confirm step,
+change then cancel, angry customer, asks for a person). Each gets hard rule
+checks (tickets created, nothing booked before Confirm, confirm step reached,
+handoff flagged) plus DeepEval conversational metrics (Knowledge Retention,
+Role Adherence, Conversation Completeness, Turn Relevancy, and a custom
+ConversationalGEval for safe booking/handoff) judged by the configured Sarvam
+endpoint. Telemetry is off; the script bypasses the per-IP chat rate limit
+in-process only. DeepEval is pinned in `requirements/eval.txt` (not installed
+in CI); `.deepeval/` is gitignored.
+
+**Fixes:**
+- Hinglish booking answered "Booked!" in English: the Confirm button sends
+  `confirm:<nonce>`, which the language analysis read as English.
+  `services/reply_language.py: has_no_language_of_its_own` now treats button
+  values and `confirm`/`cancel`/`change` as language-neutral.
+- "on 26/10 at 11" did not fill the time unless the LLM's English rendering
+  happened to add "AM": `flow_service.parse_time` now accepts "at <hour>".
+- With the CS API down, a project named in the opening message was missed and
+  the next answer (the customer's name) was taken as the project:
+  `flow_service.step` now runs the validated LLM extractor once on the opening
+  message when the catalogue lookup found no project.
+
+**Verified:** 695/695 backend tests pass (new tests for all three fixes).
+Final eval run: 7/7 rule checks pass; 31/35 judge metrics pass. The 4 failures
+are judge errors (correct handoffs scored 0.00 for role adherence; a claimed
+re-ask that did not happen). Sarvam judges its own conversations here, so the
+judge scores are indicative only. CS API (10.10.1.23) unreachable during runs.
+
+---
+
 ## 2026-10-23 17:38 — Chat site-visit booking flow, confirm-before-act, early handoff gate
 
 **Context:** The bot answered single questions well but could not complete a

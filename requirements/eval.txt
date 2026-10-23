@@ -1,0 +1,2 @@
+# Offline LLM evaluation (scripts/deepeval_chat_flows.py). Not installed in CI.
+deepeval==4.3.1

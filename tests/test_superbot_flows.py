@@ -58,6 +58,8 @@ def test_parsers():
     assert flow_service.parse_time("3pm") == "15:00"
     assert flow_service.parse_time("11", current=True) == "11:00"
     assert flow_service.parse_time("11") is None  # bare numbers only when time is being asked
+    assert flow_service.parse_time("on 26/10 at 11") == "11:00"
+    assert flow_service.parse_time("visit at 26/10") is None
     assert flow_service.parse_time("9 am") is None  # outside visiting slots
     assert flow_service.parse_phone("Ravi, +91 98765 43210") == "9876543210"
     assert flow_service.parse_phone("12345") is None
@@ -111,6 +113,14 @@ def test_llm_extraction_is_validated():
     assert reply["flow"]["step"] == "time"
 
 
+def test_opening_message_project_found_by_llm_when_catalogue_missing(monkeypatch):
+    monkeypatch.setattr(flow_service, "_projects", lambda: [])
+    generate = lambda **kwargs: json.dumps({"project": "Vishwajeet Empire", "name": "Neha"})  # noqa: E731
+    reply, flow = run(None, "book a site visit at Vishwajeet Empire tomorrow 11am", generate=generate)
+    assert flow["slots"]["project"] == "Vishwajeet Empire" and "name" not in flow["slots"]
+    assert reply["flow"]["step"] == "name"
+
+
 def test_confirmation_is_single_use_and_expires(booked):
     pending = action_registry.propose("book_site_visit", {
         "customer_name": "Ravi", "customer_email": "r@example.com", "customer_phone": "9876543210",
@@ -124,6 +134,13 @@ def test_confirmation_is_single_use_and_expires(booked):
     _, flow = run(flow, old_value)
     reply, flow = run(flow, old_value)  # replayed button after the flow ended starts nothing
     assert reply is None and flow is None and len(booked) == 2
+
+
+def test_button_taps_keep_conversation_language():
+    from services.reply_language import has_no_language_of_its_own
+    assert has_no_language_of_its_own("confirm:Norfvs0Y6XE")
+    assert has_no_language_of_its_own("cancel") and has_no_language_of_its_own("11:00")
+    assert not has_no_language_of_its_own("please cancel my booking")
 
 
 def test_gate():

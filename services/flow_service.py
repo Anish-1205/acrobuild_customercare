@@ -113,6 +113,8 @@ def parse_date(text, today):
 def parse_time(text, current=False):
     lowered = str(text or "").lower().replace(".", "")
     match = re.search(r"\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b", lowered)
+    if not match:  # "on 26/10 at 11" names a time even when we were not asking for one
+        match = re.search(r"\bat\s+(\d{1,2})(?::(\d{2}))?()(?!\s*[/\d])", lowered)
     if not match and current:
         match = re.fullmatch(r"\s*(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*()", lowered)
     if not match:
@@ -323,8 +325,10 @@ def step(flow, message, english="", prefill=None, generate=None, today=None):
 
     asking = flow.get("asking")
     filled = _fill(flow["slots"], texts, asking, today)
-    if not filled and not started and asking and not _looks_like_question(text) and generate is not None:
-        filled = _llm_fill(flow["slots"], text, asking, today, generate)
+    # On the opening message the LLM catches a project the catalogue lookup missed (CS API down, misspelling).
+    needs_llm = (started and not flow["slots"].get("project")) or (not filled and not started and asking)
+    if needs_llm and generate is not None and not _looks_like_question(text):
+        filled = _llm_fill(flow["slots"], text, asking or "project", today, generate) or filled
     if not filled and not started and asking:
         if _looks_like_question(text):
             return None, flow

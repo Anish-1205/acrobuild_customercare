@@ -152,12 +152,15 @@ def looks_confidently_english(text):
 
 _LANGUAGE_NEUTRAL_WORDS = frozenset("""
     ok okay k kk yes no yeah yep nope hmm hm haan ha thanks thank thx ty sure fine done cool great nice
+    confirm cancel change
 """.split())
+# Chat quick-reply buttons send values like "confirm:Ab3x_9" (services/flow_service.py).
+_BUTTON_TOKEN_RE = re.compile(r"\bconfirm:[\w-]+", re.IGNORECASE)
 
 
 def has_no_language_of_its_own(text):
-    """Acks, numbers and emojis ("ok", "3", "👍") should keep the conversation's language."""
-    words = _TOKEN_RE.findall(str(text or "").lower())
+    """Acks, numbers, emojis and button taps ("ok", "3", "👍", "confirm:…") keep the conversation's language."""
+    words = _TOKEN_RE.findall(_BUTTON_TOKEN_RE.sub("confirm", str(text or "")).lower())
     return not detect_script_language(text) and all(word in _LANGUAGE_NEUTRAL_WORDS for word in words)
 
 
