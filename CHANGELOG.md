@@ -8,6 +8,47 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-10-23 17:38 — Chat site-visit booking flow, confirm-before-act, early handoff gate
+
+**Context:** The bot answered single questions well but could not complete a
+task across turns. Typed site-visit requests were intercepted client-side and
+opened a static form; the backend never saw them. `handoff_recommended` was
+computed but ignored by the customer widget, and there was no sentiment check.
+
+**Change — two layers run in `routers/assist.py` after `prepare_turn`, before
+the grounded shortcuts and orchestrator (`_pre_answer`):**
+- `services/guardrail_gate.py` (new): hands off on an explicit request for a
+  person, an `angry` message, or a second `frustrated` message.
+  `services/turn_analysis_service.py` now also returns `sentiment` from the
+  same LLM call, with a keyword fallback (`heuristic_sentiment`).
+- `services/flow_service.py` (new): slot-filling site-visit flow (project,
+  date, time, name, phone, email). Deterministic parsers read the customer's
+  words; the LLM is only a fallback extractor and its output is re-validated
+  by the same parsers. Side questions pass through to the normal pipeline and
+  the reply ends with a prompt to resume the booking. Project list is cached
+  60 s, including failures, so a down CS API costs one timeout per minute.
+- `services/action_registry.py` (new): typed actions behind a single-use,
+  10-minute confirmation nonce. `submit_site_visit` is now shared by
+  `POST /api/site-visits` (`routers/properties.py`) and the chat flow;
+  `SiteVisitRequest` moved here and is re-exported from `api_context.py`.
+- Flow state lives in a new `conversation_state` table (migration 4) via
+  `ConversationSession.get_state/set_state`.
+- Responses gain optional `choices` and `flow`; the widget
+  (`src/pages/CustomerHomePage.tsx`) renders choices as quick-reply buttons,
+  shows "Need more help" whenever `handoff_recommended` is set, and no longer
+  intercepts typed site-visit requests.
+- Both layers default on; `SUPPORT_FLOWS=false` / `SUPPORT_GATE=false` turn
+  them off (`.env.example`).
+
+**Verified:** 693/693 backend tests pass with flags on and off (new
+`tests/test_superbot_flows.py`, including a multi-turn stream-endpoint test);
+59/59 frontend tests, build and lint pass. Browser walkthrough with live
+Sarvam: full chat booking created a ticket, side question resumed the flow,
+frustrated/angry messages handed off, cancel worked. Not verified: live
+project choices (CS API at 10.10.1.23 unreachable from the test machine).
+
+---
+
 ## 2026-09-17 13:33 — Multilingual free chat: any Indian language, plus two live-data bugs
 
 **Context:** Free chat replied in the wrong language or fell back to

@@ -422,12 +422,19 @@ export interface RagEvaluation {
   version: string;
 }
 
+export interface SupportAssistChoice {
+  label: string;
+  value: string;
+}
+
 export interface SupportAssistResponse {
   data_api_calls?: DataApiCallTrace[];
-  agent_mode?: "fallback" | "qwen" | "retrieval";
+  agent_mode?: "fallback" | "flow" | "handoff" | "qwen" | "retrieval";
   answer: string;
   articles: SupportArticleMatch[];
   assist_error?: string;
+  choices?: SupportAssistChoice[];
+  flow?: { name: string; step: string } | null;
   confidence_label?: "high" | "low" | "medium";
   handoff_recommended?: boolean;
   knowledge_documents: KnowledgeDocumentMatch[];

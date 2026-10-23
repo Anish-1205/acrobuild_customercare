@@ -1,7 +1,9 @@
 """Assist HTTP endpoints."""
+import os
 from time import monotonic
 
 from fastapi import APIRouter, Request
+from services import flow_service, guardrail_gate
 from services.conversation_store_service import COOKIE_NAME, ConversationSession
 
 from services.observability import (
@@ -117,12 +119,69 @@ def _grounded_property_shortcut(request, turn):
     return payload
 
 
-def _complete_payload(response_payload, cleaned_issue, turn):
+def _enabled(flag):
+    return os.getenv(flag, "true").strip().lower() not in {"0", "false", "no", "off"}
+
+
+def _flow_payload(reply):
+    payload = {
+        "agent_mode": "handoff" if reply.get("handoff") else "flow",
+        "answer": reply["answer"],
+        "articles": [], "assist_error": "", "confidence_label": "high",
+        "handoff_recommended": bool(reply.get("handoff")), "knowledge_documents": [],
+        "matched_chunks": [], "model": "", "retrieval_mode": "none",
+        # "general" keeps the live-property-data guard off: these are scripted questions, not property claims.
+        "route": "general", "source_label": "Booking assistant", "source_status": "workspace",
+        "support_base_url": get_support_base_url(), "used_llm": False,
+        "choices": reply.get("choices") or [], "flow": reply.get("flow"),
+    }
+    if reply.get("ticket"):
+        payload["ticket"] = reply["ticket"]
+    return payload
+
+
+def _pre_answer(request, turn, cleaned_issue, session):
+    """Handoff gate, then the booking flow, before the normal pipeline runs.
+
+    Returns (payload, resume): payload answers the turn itself; resume is
+    (suffix, choices, flow) to attach to a side-question answer mid-booking.
+    """
+    state = session.get_state()
+    payload = resume = None
+    if _enabled("SUPPORT_GATE"):
+        reason, state = guardrail_gate.check(cleaned_issue, turn.analysis, state)
+        if reason:
+            turn_logger.info("turn branch %s", kv(branch="handoff_gate", reason=reason))
+            payload = _flow_payload({"answer": guardrail_gate.HANDOFF_ANSWER, "handoff": True})
+    if payload is None and _enabled("SUPPORT_FLOWS"):
+        from qwen import generate_qwen_chat_response
+
+        reply, flow = flow_service.step(
+            state.get("flow"), cleaned_issue, turn.analysis.english,
+            prefill={"name": request.customer_name, "email": request.customer_email},
+            generate=generate_qwen_chat_response,
+        )
+        state["flow"] = flow
+        if reply is not None:
+            turn_logger.info("turn branch %s", kv(branch="flow", step=reply["flow"]["step"]))
+            payload = _flow_payload(reply)
+        elif flow:
+            resume = flow_service.resume_prompt(flow)
+    session.set_state({key: value for key, value in state.items() if value})
+    return payload, resume
+
+
+def _complete_payload(response_payload, cleaned_issue, turn, resume=None):
     """Shared post-processing: live-data enforcement, then localization last so any
     replacement text (e.g. the live-data fallback) is in the customer's language.
     The blob-only localize_ai_answer() is not used: it returned garbled boilerplate."""
     data_api_calls = get_current_data_api_logs()
     response_payload = _enforce_live_property_data(response_payload, cleaned_issue, data_api_calls)
+    if resume:
+        # After the live-data guard so the booking question is never mistaken for a property claim.
+        suffix, choices, flow = resume
+        response_payload = {**response_payload, "answer": str(response_payload.get("answer", "")) + suffix,
+                            "choices": choices, "flow": flow}
     response_payload = localize_response(response_payload, turn.analysis)
     response_payload["data_api_calls"] = data_api_calls
     response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
@@ -146,10 +205,12 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
     trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
     try:
         turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
-        response_payload = _grounded_property_shortcut(request, turn)
-        if response_payload is not None:
-            turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
-        else:
+        response_payload, resume = _pre_answer(request, turn, cleaned_issue, session)
+        if response_payload is None:
+            response_payload = _grounded_property_shortcut(request, turn)
+            if response_payload is not None:
+                turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
+        if response_payload is None:
             response_payload = run_support_orchestration(
                 issue=cleaned_issue,
                 conversation_id=request.conversation_id,
@@ -165,7 +226,7 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
                 language_hint=request.language_hint,
                 turn=turn,
             )
-        response_payload = _complete_payload(response_payload, cleaned_issue, turn)
+        response_payload = _complete_payload(response_payload, cleaned_issue, turn, resume)
         _log_turn_result("assist", cleaned_issue, response_payload, started)
         session.append(cleaned_issue, response_payload.get("answer"))
         return response_payload
@@ -224,10 +285,13 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
         trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
         try:
             turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
-            shortcut_payload = _grounded_property_shortcut(request, turn)
+            shortcut_payload, resume = _pre_answer(request, turn, cleaned_issue, session)
+            if shortcut_payload is None:
+                shortcut_payload = _grounded_property_shortcut(request, turn)
+                if shortcut_payload is not None:
+                    turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
             if shortcut_payload is not None:
-                turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
-                response_payload = _complete_payload(shortcut_payload, cleaned_issue, turn)
+                response_payload = _complete_payload(shortcut_payload, cleaned_issue, turn, resume)
                 session.append(cleaned_issue, response_payload.get("answer"))
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
@@ -270,7 +334,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 elif event_type not in {"done", None}:
                     turn_logger.debug("stream event %s", kv(type=event_type, stage=event.get("stage")))
                 if event_type == "done" and isinstance(event.get("response"), dict):
-                    response_payload = _complete_payload(event["response"], cleaned_issue, turn)
+                    response_payload = _complete_payload(event["response"], cleaned_issue, turn, resume)
                     event["response"] = response_payload
                     session.append(cleaned_issue, response_payload.get("answer"))
                 if property_request:

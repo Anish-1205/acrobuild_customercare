@@ -453,17 +453,7 @@ class TicketRequest(BaseModel):
     customer_email: str = ""
 
 
-class SiteVisitRequest(BaseModel):
-    customer_name: str
-    customer_email: str
-    customer_phone: str
-    project_name: str
-    preferred_date: str
-    preferred_time: str
-    wing_name: str = ""
-    typology_name: str = ""
-    unit_number: str = ""
-    notes: str = ""
+from services.action_registry import SiteVisitRequest  # noqa: E402,F401 - re-exported for routers
 
 class RefundRequest(BaseModel):
     order_number: str

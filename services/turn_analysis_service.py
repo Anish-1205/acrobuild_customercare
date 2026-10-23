@@ -26,7 +26,7 @@ _ANALYSIS_HISTORY_MESSAGES = 6
 _ANALYZER_SYSTEM_PROMPT = """You label one turn of Acrobuild's customer-support chat. Acrobuild (GBK Group) is a real-estate developer with residential projects in Thane and Pune.
 
 Read the recent conversation and the customer's latest message. Output ONLY a JSON object, no other text:
-{"intent": "property" or "general", "reply_language": "<language name>", "script": "latin" or "native", "english": "<English version of the latest message>"}
+{"intent": "property" or "general", "reply_language": "<language name>", "script": "latin" or "native", "english": "<English version of the latest message>", "sentiment": "calm" or "frustrated" or "angry"}
 
 intent (judge what the LATEST message asks; earlier topics do not carry over to a new question)
 - "property": the latest message is about Acrobuild/GBK: its projects, flats, homes, shops, prices or rates, availability, project locations, amenities, site visits, bookings, payments, documents, possession or handover, construction updates, maintenance, complaints, support tickets, or asking for a human agent. A short follow-up that continues a property discussion (a number, a project or wing name, "yes", "this one", "how much") is also "property".
@@ -40,7 +40,9 @@ reply_language (the language the assistant must reply in)
 
 script: "native" only if the customer writes that language in its own script (Devanagari, Telugu script, Tamil script, ...) or explicitly asks for that script; otherwise "latin".
 
-english: the latest message translated into plain English, keeping project names, place names and numbers exactly. If it is already English, or is only a number, "yes"/"no", or a name, copy it unchanged."""
+english: the latest message translated into plain English, keeping project names, place names and numbers exactly. If it is already English, or is only a number, "yes"/"no", or a name, copy it unchanged.
+
+sentiment: "angry" for abuse, threats, or accusations of fraud or cheating; "frustrated" for clear annoyance or repeated complaints (delays, no response, "still not fixed"); otherwise "calm"."""
 
 
 @dataclass(frozen=True)
@@ -50,6 +52,7 @@ class TurnAnalysis:
     script: str
     source: str
     english: str = ""
+    sentiment: str = "calm"
 
     @property
     def is_property(self):
@@ -110,6 +113,24 @@ def _parse_analysis(raw):
     return intent, language, script if script in {"latin", "native"} else "latin", english
 
 
+def _parse_sentiment(raw):
+    match = re.search(r'"sentiment"\s*:\s*"(calm|frustrated|angry)"', str(raw or ""), flags=re.IGNORECASE)
+    return match.group(1).lower() if match else "calm"
+
+
+_ANGRY_RE = re.compile(r"\b(frauds?|cheat(?:ed|ing|ers?)?|scam(?:mers?)?|worst|pathetic|useless|legal action|consumer court|police)\b", re.IGNORECASE)
+_FRUSTRATED_RE = re.compile(r"(!{3,}|\b(still not|no response|nobody (?:is )?respond|again and again|fed up|how many times)\b)", re.IGNORECASE)
+
+
+def heuristic_sentiment(issue):
+    text = str(issue or "")
+    letters = re.findall(r"[A-Za-z]", text)
+    shouting = len(letters) >= 12 and sum(ch.isupper() for ch in letters) / len(letters) > 0.8
+    if _ANGRY_RE.search(text):
+        return "angry"
+    return "frustrated" if shouting or _FRUSTRATED_RE.search(text) else "calm"
+
+
 def heuristic_turn_analysis(issue, conversation_messages=None, language_hint=""):
     from graph.haystack_conversation_pipeline import is_property_support_message, matches_live_company_context
 
@@ -123,6 +144,7 @@ def heuristic_turn_analysis(issue, conversation_messages=None, language_hint="")
         reply_language=language,
         script=script or "latin",
         source="heuristic",
+        sentiment=heuristic_sentiment(issue),
     )
 
 
@@ -161,10 +183,13 @@ def analyze_turn(issue, conversation_messages=None, language_hint=""):
                 guess_romanized_language(issue) if language == ENGLISH else ""
             ) or language
         script = _resolve_script(issue, conversation_messages, language, script, language_hint)
-        analysis = TurnAnalysis(intent=intent, reply_language=language, script=script, source="llm", english=english)
+        # Keywords catch what a small model calls "calm"; the stronger label wins.
+        sentiment = max(_parse_sentiment(raw), heuristic_sentiment(issue), key=("calm", "frustrated", "angry").index)
+        analysis = TurnAnalysis(intent=intent, reply_language=language, script=script, source="llm",
+                                english=english, sentiment=sentiment)
     logger.info(
         "turn analysis %s",
         kv(source=analysis.source, intent=analysis.intent, language=analysis.reply_language,
-           script=analysis.script, issue=preview(issue, 80)),
+           script=analysis.script, sentiment=analysis.sentiment, issue=preview(issue, 80)),
     )
     return analysis

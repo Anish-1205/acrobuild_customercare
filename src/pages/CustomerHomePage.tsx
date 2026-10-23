@@ -23,6 +23,7 @@ import type {
   PropertyProject,
   PropertyTypology,
   PropertyWing,
+  SupportAssistChoice,
   SupportAssistResponse,
   SupportConversationMessage,
   SupportArticleRecord,
@@ -86,8 +87,10 @@ type HelpCenterCategory = {
 };
 
 type ChatMessage = {
+  choices?: SupportAssistChoice[];
   contextIssue?: string;
   feedbackState?: "negative" | "positive";
+  handoffRecommended?: boolean;
   id: number;
   isAutomated?: boolean;
   isComplete?: boolean;
@@ -1091,11 +1094,6 @@ function getNamedProjectSelection(messages: ChatMessage[], value: string) {
   }
   return "";
 }
-function isSiteVisitBookingRequest(value: string) {
-  const normalizedValue = value.trim().toLowerCase();
-  return normalizedValue.includes("visit") && ["book", "schedule", "arrange", "request"]
-    .some((word) => normalizedValue.includes(word));
-}
 function isVoiceTicketRequest(value: string) {
   const normalizedValue = value.trim().toLowerCase();
   const mentionsTicket = normalizedValue.includes("ticket");
@@ -1645,7 +1643,9 @@ export function CustomerHomePage() {
 
           setChatMessages((current) =>
             finalizeBotMessage(current, botMessageId, trimmedIssue, {
+              choices: assistResponse.choices,
               feedbackState: undefined,
+              handoffRecommended: assistResponse.handoff_recommended,
               isAutomated: true,
               relatedArticles: [],
               showHelpfulPrompt: false,
@@ -1687,7 +1687,9 @@ export function CustomerHomePage() {
         applyReplyLanguage(assistResponse);
         setChatMessages((current) =>
           finalizeBotMessage(current, botMessageId, trimmedIssue, {
+            choices: assistResponse.choices,
             feedbackState: undefined,
+            handoffRecommended: assistResponse.handoff_recommended,
             isAutomated: true,
             relatedArticles: [],
             showHelpfulPrompt: false,
@@ -3526,7 +3528,22 @@ export function CustomerHomePage() {
                                 </div>
                               ) : null}
 
-                              {message.sender === "bot" && message.feedbackState === "negative" && !message.ticketResult ? (
+                              {message.choices?.length && !isTypingReply && message.id === chatMessages[chatMessages.length - 1]?.id ? (
+                                <div className="store-chat-guided-grid">
+                                  {message.choices.map((choice) => (
+                                    <button
+                                      className="store-chat-guided-button"
+                                      key={choice.value}
+                                      onClick={() => void queueBotResponse(choice.value, undefined, false, choice.label)}
+                                      type="button"
+                                    >
+                                      <span className="store-chat-guided-label">{choice.label}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
+
+                              {message.sender === "bot" && (message.feedbackState === "negative" || message.handoffRecommended) && !message.ticketResult ? (
                                 <div className="store-chat-help-actions single">
                                   <button
                                     className="store-chat-help-button dark"
@@ -3802,12 +3819,6 @@ export function CustomerHomePage() {
                     void startProjectsFlow(projectRequest, location);
                     return;
                   }
-                  if (isSiteVisitBookingRequest(chatDraft)) {
-                    setChatDraft("");
-                    void openSiteVisitBooking();
-                    return;
-                  }
-
                   if (handleHelpfulReviewFromText(chatDraft)) {
                     return;
                   }
