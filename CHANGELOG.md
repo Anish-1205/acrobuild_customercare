@@ -8,6 +8,22 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-10-23 18:20 — Dependency audit: bump pypdf, triage new python-jose advisory
+
+**Context:** CI's `pip-audit` step started failing on new advisories (not code
+changes): 14 in `pypdf` 6.18.0 and PYSEC-2026-4298 in `python-jose` 3.5.0.
+
+**Change:** `requirements/core.txt` pins `pypdf==6.21.1` (lowest version fixing
+all 14). PYSEC-2026-4298 has no fix and is not reachable (requires a public key
+and unrestricted `algorithms`; auth uses an HS256 secret and pins
+`algorithms=[ALGORITHM]`), so it is ignored in `.github/workflows/verify.yml`
+with the reasoning in `requirements/SECURITY_ADVISORIES.md`.
+
+**Verified:** CI's exact `pip-audit` command passes locally; 695/695 backend
+tests pass on pypdf 6.21.1.
+
+---
+
 ## 2026-10-23 18:02 — DeepEval multi-turn eval; three booking-flow fixes it found
 
 **Context:** Added an offline multi-turn evaluation of the chat booking flow and
