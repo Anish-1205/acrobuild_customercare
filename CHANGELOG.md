@@ -8,6 +8,27 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-10-29 16:19 — Persistent project bar in the chat widget
+
+**Context:** A project's next-step buttons (Explore homes, Location, Prices,
+Amenities, Offers, Payment plan, Book a site visit) only appeared under the
+reply that produced them, so they vanished after any other message.
+
+**Change:** `services/choice_service.single_project_choices` tags each topic
+button with `topic` (always including the "explore" entry, which names the
+project). The widget (`src/pages/CustomerHomePage.tsx`) keeps that project in
+focus — also when a project is opened in the explorer — and renders its topics
+plus "All projects" as one scrolling row of chips above the message box
+(`.store-chat-project-bar` in `src/styles.css`). Replies no longer repeat those
+topics inline; their other buttons (e.g. "Ask our team") still show. Starting a
+new chat clears the focus.
+
+**Verified:** 705/705 backend and 59/59 frontend tests, tsc, build. In the
+browser: the bar appeared after an NX question, stayed through an unrelated
+question, and its Prices chip returned NX's live price range.
+
+---
+
 ## 2026-10-29 15:55 — CS API: company-scoped paths, full endpoint coverage, button-first chat journeys
 
 **Context:** Every CS API call returned 404, so the bot had no live property data.

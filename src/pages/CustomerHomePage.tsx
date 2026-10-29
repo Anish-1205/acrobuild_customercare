@@ -86,6 +86,17 @@ type HelpCenterCategory = {
   title: string;
 };
 
+// Next steps for the project in focus; messages mirror PROJECT_TOPICS in services/choice_service.py.
+const PROJECT_BAR_TOPICS: Array<{ label: string; message?: (name: string) => string }> = [
+  { label: "Explore homes" },
+  { label: "Location", message: (name) => `Where is ${name} located?` },
+  { label: "Prices", message: (name) => `What are the prices at ${name}?` },
+  { label: "Amenities", message: (name) => `What amenities does ${name} have?` },
+  { label: "Offers", message: (name) => `What offers are available at ${name}?` },
+  { label: "Payment plan", message: (name) => `What is the payment plan at ${name}?` },
+  { label: "Book a site visit", message: (name) => `Book a site visit at ${name}` }
+];
+
 type ChatMessage = {
   choices?: SupportAssistChoice[];
   contextIssue?: string;
@@ -1139,6 +1150,7 @@ export function CustomerHomePage() {
   const [storefrontError, setStorefrontError] = useState("");
   const [activeFollowUpIssue, setActiveFollowUpIssue] = useState("");
   const [propertyFlow, setPropertyFlow] = useState<PropertyFlowState | null>(null);
+  const [focusProject, setFocusProject] = useState("");
   const [chatLanguage, setChatLanguage] = useState<ChatLanguage>("en");
   const chatLanguageRef = useRef<ChatLanguage>("en");
   const [isSiteVisitFormVisible, setIsSiteVisitFormVisible] = useState(false);
@@ -1353,6 +1365,12 @@ export function CustomerHomePage() {
     });
   }, [chatMessages, isChatOpen, isTypingReply]);
 
+  function focusFromChoices(choices?: SupportAssistChoice[]) {
+    // A reply about one project carries its "explore" topic; that project becomes the bar's focus.
+    const explore = choices?.find((choice) => choice.topic === "explore");
+    if (explore) setFocusProject(explore.value);
+  }
+
   function resetChatHome() {
     setChatMessages(createDefaultChatMessages());
     setChatDraft("");
@@ -1361,6 +1379,7 @@ export function CustomerHomePage() {
     setStorefrontError("");
     setIsTypingReply(false);
     setPropertyFlow(null);
+    setFocusProject("");
     setIsSiteVisitFormVisible(false);
   }
 
@@ -1642,6 +1661,7 @@ export function CustomerHomePage() {
         onDone: (assistResponse) => {
           setIsTypingReply(false);
           applyReplyLanguage(assistResponse);
+          focusFromChoices(assistResponse.choices);
 
           setChatMessages((current) =>
             finalizeBotMessage(current, botMessageId, trimmedIssue, {
@@ -1688,6 +1708,7 @@ export function CustomerHomePage() {
 
         setIsTypingReply(false);
         applyReplyLanguage(assistResponse);
+        focusFromChoices(assistResponse.choices);
         setChatMessages((current) =>
           finalizeBotMessage(current, botMessageId, trimmedIssue, {
             choices: assistResponse.choices,
@@ -1839,6 +1860,7 @@ export function CustomerHomePage() {
   ) {
     const t = FLOW_TEXT[chatLanguageRef.current];
     const contextIssue = `Project ${project.projectName}`;
+    setFocusProject(project.projectName);
     const botMessageId = beginPropertyFlowStep(customerLabel, contextIssue);
     try {
       const response = await getPropertyWings(project.id);
@@ -3531,9 +3553,9 @@ export function CustomerHomePage() {
                                 </div>
                               ) : null}
 
-                              {message.choices?.length && !isTypingReply && message.id === chatMessages[chatMessages.length - 1]?.id ? (
+                              {message.choices?.some((choice) => !choice.topic) && !isTypingReply && message.id === chatMessages[chatMessages.length - 1]?.id ? (
                                 <div className="store-chat-guided-grid">
-                                  {message.choices.map((choice) => (
+                                  {message.choices.filter((choice) => !choice.topic).map((choice) => (
                                     <button
                                       className="store-chat-guided-button"
                                       key={`${choice.action ?? "send"}:${choice.label}:${choice.value}`}
@@ -3841,6 +3863,38 @@ export function CustomerHomePage() {
                   );
                 }}
               >
+                {focusProject && !isSiteVisitFormVisible ? (
+                  <div aria-label={`Quick actions for ${focusProject}`} className="store-chat-project-bar" role="group">
+                    <span className="store-chat-project-bar-name">{focusProject}</span>
+                    <div className="store-chat-project-bar-chips">
+                      {PROJECT_BAR_TOPICS.map((topic) => (
+                        <button
+                          className="store-chat-chip"
+                          disabled={isTypingReply}
+                          key={topic.label}
+                          onClick={() => {
+                            if (topic.message) {
+                              void queueBotResponse(topic.message(focusProject), undefined, false, topic.label, true);
+                            } else {
+                              void selectNumberedProject(focusProject, focusProject);
+                            }
+                          }}
+                          type="button"
+                        >
+                          {topic.label}
+                        </button>
+                      ))}
+                      <button
+                        className="store-chat-chip ghost"
+                        disabled={isTypingReply}
+                        onClick={() => void startProjectsFlow()}
+                        type="button"
+                      >
+                        All projects
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="store-chat-compose-inline">
                   <input
                     className="store-chat-message-input"

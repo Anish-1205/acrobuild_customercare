@@ -259,7 +259,7 @@ def test_choices_for_answers():
     assert "Location" not in [c["label"] for c in after_location]
     address = choices_for_answer({"route": "property", "answer": "Vishwajeet Empire NX: Vishwajeet Empire, Pale Village"},
                                  NAMES, question="Where is Vishwajeet Empire NX located?")
-    assert address[0] == {"label": "Explore homes", "value": "Vishwajeet Empire NX", "action": "project"}
+    assert address[0] == {"label": "Explore homes", "value": "Vishwajeet Empire NX", "action": "project", "topic": "explore"}
     ask = choices_for_answer({"route": "property", "answer": "Which of our 10 projects would you like?"}, NAMES)
     assert [c["label"] for c in ask] == NAMES
     assert choices_for_answer({"route": "general", "answer": "Vishwajeet Prime"}, NAMES) == []

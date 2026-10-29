@@ -31,12 +31,14 @@ PROJECT_TOPICS = (
 
 
 def single_project_choices(name, skip="", question=""):
-    """Next steps for one project, leaving out the topic just answered (by key, or spotted in the question)."""
+    """Next steps for one project. The "explore" entry is always included: it names the project the widget
+    keeps in focus. Other topics skip the one just answered (by key, or spotted in the question)."""
     choices = []
     for key, label, value, asked in PROJECT_TOPICS:
-        if key == skip or (question and key != "explore" and asked.search(question)):
+        if key != "explore" and (key == skip or (question and asked.search(question))):
             continue
-        choice = {"label": label, "value": value.format(name=name)}
+        # `topic` lets the widget keep these in its persistent project bar instead of under one reply.
+        choice = {"label": label, "value": value.format(name=name), "topic": key}
         if key == "explore":
             choice["action"] = "project"
         choices.append(choice)

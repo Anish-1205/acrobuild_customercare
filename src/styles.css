@@ -5510,9 +5510,9 @@ code {
   line-height: 1.55;
 }
 
-.store-chat-message.customer {
-  box-sizing: border-box;
-  padding-right: 0.32rem;
+.store-chat-message.customer {
+  box-sizing: border-box;
+  padding-right: 0.32rem;
 }
 .store-chat-message.customer .store-chat-message-stack {
   width: fit-content;
@@ -5691,6 +5691,14 @@ code {
   padding: 0.8rem 0.75rem 0.9rem;
   background: #fff;
 }
+.store-chat-project-bar { display: grid; gap: 0.35rem; margin: -0.2rem 0 0.6rem; }
+.store-chat-project-bar-name { color: #5b6b65; font-size: 0.66rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.store-chat-project-bar-chips { display: flex; gap: 0.4rem; overflow-x: auto; padding-bottom: 0.15rem; scrollbar-width: thin; }
+.store-chat-chip { flex: 0 0 auto; padding: 0.42rem 0.7rem; border: 1px solid #dce6e0; border-radius: 999px; background: #fff; color: #19342c; cursor: pointer; font: inherit; font-size: 0.72rem; font-weight: 800; white-space: nowrap; transition: border-color 150ms ease, background 150ms ease; }
+.store-chat-chip:hover:not(:disabled) { border-color: #f4a895; background: #fffdfc; }
+.store-chat-chip:focus-visible { outline: 2px solid #47a688; outline-offset: 1px; }
+.store-chat-chip:disabled { cursor: default; opacity: 0.55; }
+.store-chat-chip.ghost { border-style: dashed; color: #5b6b65; }
 
 .store-chat-compose-inline {
   display: grid;

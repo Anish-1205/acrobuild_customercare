@@ -426,6 +426,8 @@ export interface SupportAssistChoice {
   /** "project" opens the guided project explorer for `value`; "handoff" opens the contact form. */
   action?: "handoff" | "project";
   label: string;
+  /** Set on a project's next-step topics; the widget shows those in its persistent project bar. */
+  topic?: string;
   value: string;
 }
 
