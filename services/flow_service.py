@@ -39,7 +39,8 @@ _NAME_PREFIX_RE = re.compile(r"^(?:my name is|my name's|name is|i am|i'm|this is
 
 
 def is_booking_request(text):
-    lowered = str(text or "").lower()
+    from services.text_fuzz import correct_words
+    lowered = correct_words(str(text or "").lower(), {"visit", "book", "booking", "schedule", "arrange"})
     return "visit" in lowered and bool(_BOOKING_VERB_RE.search(lowered))
 
 
@@ -51,6 +52,33 @@ def _looks_like_question(text):
 
 _PROJECTS_TTL_SECONDS = 60
 _projects_cache = {"at": 0.0, "items": []}
+
+
+def _sellable_projects():
+    """Projects with homes, the same list the widget's explorer shows (see get_sellable_projects)."""
+    from services.acrobuild_company_service import get_sellable_projects
+    if not _projects():
+        return []  # the CS API is down (remembered for a minute): don't spend another timeout finding out
+    try:
+        return get_sellable_projects()
+    except Exception as error:  # CS API down must not break the booking flow
+        logger.warning("flow projects unavailable %s", kv(error=error))
+        return []
+
+
+_WING_RE = re.compile(r"\bwing\s+([^,;]+?)(?=\s*(?:,|;|$|\bflat\b))", re.IGNORECASE)
+_FLAT_RE = re.compile(r"\bflat\s+(?:no\.?\s*)?([A-Za-z0-9-]+)", re.IGNORECASE)
+
+
+def _explorer_extras(text):
+    """Wing and flat chosen in the widget's explorer, which starts the booking with
+    "Book a site visit at <project>, wing <wing>, flat <unit>"."""
+    extras = {}
+    if match := _WING_RE.search(text):
+        extras["wing"] = " ".join(match.group(1).split())
+    if match := _FLAT_RE.search(text):
+        extras["flat"] = match.group(1)
+    return extras
 
 
 def _projects():
@@ -79,7 +107,9 @@ def parse_project(text, current=False):
 
 
 def parse_date(text, today):
-    lowered = str(text or "").lower()
+    from services.text_fuzz import correct_words
+    # "tommorow", "sunady", "wensday" -> the words below; digits and "26/10" are untouched.
+    lowered = correct_words(str(text or "").lower(), {"today", "tomorrow", *WEEKDAYS}, cutoff=0.75)
     found = None
     if re.search(r"\bday after tomorrow\b", lowered):
         found = today + timedelta(days=2)
@@ -215,7 +245,7 @@ def _date_label(value):
 
 def _choices(slot, today):
     if slot == "project":
-        names = [str(p.get("projectName", "")).strip() for p in _projects() if isinstance(p, dict)]
+        names = [str(p.get("projectName", "")).strip() for p in _sellable_projects() if isinstance(p, dict)]
         return [{"label": name, "value": name} for name in names if name] + [CANCEL_CHOICE]
     if slot == "date":
         days = [today + timedelta(days=offset) for offset in range(1, 5)]
@@ -236,10 +266,11 @@ def _ask(flow, today, prefix=""):
 
 
 def _confirmation(flow):
-    slots, nonce = flow["slots"], flow["pending"]["nonce"]
+    slots, nonce, extras = flow["slots"], flow["pending"]["nonce"], flow.get("extras") or {}
+    home = "".join(f"\n• {label}: {extras[key]}" for key, label in (("wing", "Wing"), ("flat", "Flat")) if extras.get(key))
     answer = (
         "Please confirm your site visit:\n"
-        f"• Project: {slots['project']}\n• Date: {_date_label(slots['date'])}\n• Time: {slots['time']}\n"
+        f"• Project: {slots['project']}{home}\n• Date: {_date_label(slots['date'])}\n• Time: {slots['time']}\n"
         f"• Name: {slots['name']}\n• Phone: {slots['phone']}\n• Email: {slots['email']}"
     )
     choices = [{"label": "Confirm", "value": f"confirm:{nonce}"}, {"label": "Change", "value": "change"}, CANCEL_CHOICE]
@@ -247,10 +278,11 @@ def _confirmation(flow):
 
 
 def _propose(flow):
-    slots = flow["slots"]
+    slots, extras = flow["slots"], flow.get("extras") or {}
     flow["pending"] = action_registry.propose("book_site_visit", {
         "customer_name": slots["name"], "customer_email": slots["email"], "customer_phone": slots["phone"],
         "project_name": slots["project"], "preferred_date": slots["date"], "preferred_time": slots["time"],
+        "wing_name": extras.get("wing", ""), "unit_number": extras.get("flat", ""),
     })
     flow["asking"] = None
     return _confirmation(flow)
@@ -303,7 +335,7 @@ def step(flow, message, english="", prefill=None, generate=None, today=None):
     if not flow:
         if not any(is_booking_request(candidate) for candidate in texts):
             return None, None
-        flow = {"name": "site_visit", "slots": {}, "asking": None, "misses": 0}
+        flow = {"name": "site_visit", "slots": {}, "asking": None, "misses": 0, "extras": _explorer_extras(text)}
         for slot, value in (prefill or {}).items():
             parsed = _parse(slot, value, True, today) if value else None
             if parsed:

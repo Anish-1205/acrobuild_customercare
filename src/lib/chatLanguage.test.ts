@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FLOW_TEXT, chatLanguageFromReply, detectChatLanguage, extractLocationHint, isProjectBrowseRequest } from "./chatLanguage";
+import { CHOICE_LABELS, FLOW_TEXT, choiceLabel, chatLanguageFromReply, detectChatLanguage, extractLocationHint, isProjectBrowseRequest } from "./chatLanguage";
 
 describe("detectChatLanguage", () => {
   it.each([
@@ -75,7 +75,11 @@ describe("isProjectBrowseRequest", () => {
     "what is the price of flats",
     "telugu lo discuss chedham",
     "what is the capital of australia?",
-    "what is the location of vishwajeet prime"
+    "what is the location of vishwajeet prime",
+    "which projects have swimming pool",
+    "show me projects with parking",
+    "konse projects mein gym hai",
+    "flats with clubhouse in thane"
   ])("does not open the menu for %s", (text) => {
     expect(isProjectBrowseRequest(text)).toBe(false);
   });
@@ -119,3 +123,11 @@ it("has every flow string for every language", () => {
     expect(Object.keys(text).sort()).toEqual(englishKeys);
   }
 });
+
+it("translates fixed button labels and leaves names alone", () => {
+  for (const labels of Object.values(CHOICE_LABELS)) expect(labels).toHaveLength(CHOICE_LABELS.en.length);
+  expect(choiceLabel("Prices", "hi")).toBe("Keemat");
+  expect(choiceLabel("Vishwajeet Prime", "hi")).toBe("Vishwajeet Prime");
+  expect(choiceLabel("Prices", "en")).toBe("Prices");
+});
+

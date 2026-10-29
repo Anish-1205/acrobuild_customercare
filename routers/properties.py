@@ -4,7 +4,7 @@ from api_context import (
     HTTPException,
     SiteVisitRequest,
     _cs_api_response,
-    get_company_projects,
+    get_sellable_projects,
     get_project_wings,
     get_wing_inventory,
     get_wing_typologies,
@@ -15,7 +15,8 @@ router = APIRouter(tags=["properties"])
 
 @router.get("/api/property-flow/projects")
 def property_flow_projects():
-    return _cs_api_response(get_company_projects, "Browse live projects")
+    # The explorer lists the same projects the chat offers: only ones with homes (no empty shells).
+    return _cs_api_response(get_sellable_projects, "Browse live projects")
 
 @router.get("/api/property-flow/projects/{project_id}/wings")
 def property_flow_wings(project_id: int):

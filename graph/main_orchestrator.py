@@ -28,6 +28,7 @@ from services.reply_language import (
     heuristic_reply_language,
 )
 from services.turn_analysis_service import TurnAnalysis, analyze_turn
+from services.vocabulary import amenities_named, canonicalize
 
 logger = get_logger("orchestrator")
 
@@ -77,11 +78,34 @@ _HARD_PROPERTY_SIGNAL_RE = re.compile(
 )
 
 
+# Rules first, LLM second: words that make a turn a property question whatever the analyzer says.
+# (Canonical vocabulary words; see services/vocabulary.py.)
+_PROPERTY_WORDS_RE = re.compile(
+    r"\b(amenities|price|wing|flat|flats|size|possession|offers|payment plan|site visit|bhk|rk|lakh|lakhs|crore|"
+    r"sq ?ft|sqft|carpet|ready to move|property|properties|projects?|homes?|apartments?|booking|rera|"
+    r"swimming|pool|gym|parking|clubhouse|garden|lift)\b", re.IGNORECASE)
+
+
 def _has_hard_property_signal(issue, resolved_issue):
     if resolved_issue != issue or _HARD_PROPERTY_SIGNAL_RE.search(resolved_issue or ""):
         return True
     cleaned = str(resolved_issue or "").lower()
-    return any(name and name.lower() in cleaned for name in get_live_project_names())
+    if _PROPERTY_WORDS_RE.search(cleaned):
+        return True
+    from services.acrobuild_company_service import resolve_project_from_text
+    try:
+        projects = [{"id": i, "projectName": name} for i, name in enumerate(get_live_project_names())]
+        return resolve_project_from_text(projects, cleaned) is not None  # also misspelt names
+    except Exception:  # the catalogue is optional here
+        return any(name and name.lower() in cleaned for name in get_live_project_names())
+
+
+def _faithful_rewrite(original, rewrite):
+    """Whether the analyzer's English rendering kept every number the customer typed: a rewrite that drops
+    or changes "2", "50" or "26/10" would route the turn on facts the customer never gave."""
+    digits = {d.replace(",", "") for d in re.findall(r"\d[\d,]*", str(original or ""))}
+    kept = {d.replace(",", "") for d in re.findall(r"\d[\d,]*", str(rewrite or ""))}
+    return digits <= kept and len(str(rewrite or "")) <= max(3 * len(str(original or "")), 60)
 
 
 @dataclass(frozen=True)
@@ -92,15 +116,40 @@ class TurnContext:
     property_issue: str
 
 
-def prepare_turn(issue, conversation_id="", conversation_messages=None, language_hint=""):
+def _project_names_for_turn():
+    try:
+        from services.acrobuild_company_service import get_company_projects, is_cs_api_configured
+        if not is_cs_api_configured():
+            return []
+        return [str(p.get("projectName") or "") for p in get_company_projects() if isinstance(p, dict)]
+    except Exception:  # without the catalogue, synonyms still normalise; only name protection is lost
+        return []
+
+
+def prepare_turn(issue, conversation_id="", conversation_messages=None, language_hint="", analysis=None):
     """Analyze the customer's own words once, then run the English-only contextual
     resolver on the English rendering (it misreads romanized Indian languages). The
-    router's grounded shortcuts and the orchestrator share this one LLM analysis."""
+    router's grounded shortcuts and the orchestrator share this one LLM analysis.
+    `analysis` skips the LLM call when the caller already knows it (a button tap)."""
     merged = _merge_conversation(conversation_id, conversation_messages, issue)
-    analysis = analyze_turn(issue, _prior_messages(merged, issue), language_hint)
+    analysis = analysis or analyze_turn(issue, _prior_messages(merged, issue), language_hint)
     english_issue = issue
-    if analysis.english and analysis.reply_language != ENGLISH:
-        english_issue = analysis.english
+    if analysis.english and (analysis.reply_language != ENGLISH or analysis.english != issue):
+        # Also for English: the analyzer's rendering fixes typos and number words ("flt in puna undr 50 lac").
+        # An English message whose rewrite lost a number keeps the customer's own words instead.
+        if analysis.reply_language != ENGLISH or _faithful_rewrite(issue, analysis.english):
+            english_issue = analysis.english
+        else:
+            logger.info("rewrite rejected %s", kv(raw=preview(issue, 120), rewrite=preview(analysis.english, 120)))
+    # An amenity the customer named in their own words ("tarantal" = swimming pool) beats the rewrite's guess
+    # ("terrace"): a wrong amenity lists the wrong homes, so the customer's words are used instead.
+    named = amenities_named(issue)
+    if named and english_issue != issue and amenities_named(english_issue) - named:
+        logger.info("rewrite rejected %s", kv(raw=preview(issue, 120), rewrite=preview(english_issue, 120)))
+        english_issue = issue
+    # Synonyms -> one canonical word ("features" -> "amenities", "block" -> "wing", "cost" -> "price"), so
+    # every answer below only has to understand one word per idea. Project names are left as they are.
+    english_issue = canonicalize(english_issue, protected=_project_names_for_turn())
     resolved_issue = resolve_contextual_support_issue(english_issue, merged)
     if resolved_issue != english_issue:
         logger.info("issue resolved from context %s", kv(raw=preview(issue, 120), resolved=preview(resolved_issue, 120)))
@@ -285,6 +334,35 @@ def _needs_localization(answer, analysis):
 
 
 _NUMBER_RE = re.compile(r"\d[\d,]*(?:\.\d+)?")
+# Facts a translation must not touch: URLs, emails, money, and numbers with their unit.
+_FACT_RE = re.compile(
+    r"https?://\S+|[\w.+-]+@[\w-]+\.[\w.]+|"
+    r"(?:₹|INR|Rs\.?)\s*\d[\d,]*(?:\.\d+)?(?:\s*(?:lakhs?|crores?|L|Cr)\b)?|"
+    r"\d[\d,]*(?:\.\d+)?(?:\s*(?:sq\.?\s?ft\.?|sq\.?\s?m\b|BHK\b|lakhs?\b|crores?\b|%))?", re.IGNORECASE)
+
+
+def _mask_facts(answer):
+    """Placeholder masking: swap names, numbers, money, URLs and emails for [[n]] tokens before
+    translation, so the model can't reformat "₹45,00,000" or transliterate a project name."""
+    facts = []
+
+    def keep(match):
+        facts.append(match.group(0))
+        return f"[[{len(facts)}]]"
+
+    try:
+        names = sorted((n for n in get_live_project_names() if n and len(n) > 2), key=len, reverse=True)
+    except Exception:  # without the catalogue, names are left to the prompt's "keep names" rule
+        names = []
+    pattern = "|".join([re.escape(n) for n in names] + [_FACT_RE.pattern])
+    return re.sub(pattern, keep, answer, flags=re.IGNORECASE), facts
+
+
+def _unmask_facts(text, facts):
+    """The translation with every fact restored, or "" if the model dropped or invented a token."""
+    if sorted(re.findall(r"\[\[(\d+)\]\]", text)) != sorted(str(i) for i in range(1, len(facts) + 1)):
+        return ""
+    return re.sub(r"\[\[(\d+)\]\]", lambda m: facts[int(m.group(1)) - 1], text)
 
 
 def _localize_answer(answer, analysis):
@@ -292,6 +370,7 @@ def _localize_answer(answer, analysis):
     customer's language, keeping every fact. Falls back to the original on any doubt."""
     if not _needs_localization(answer, analysis):
         return answer
+    masked, facts = _mask_facts(answer)
     target = (
         f"{analysis.reply_language}, written in {analysis.reply_language} script"
         if analysis.script == "native"
@@ -306,11 +385,11 @@ def _localize_answer(answer, analysis):
             localized = str(generate_qwen_chat_response(
                 system_prompt="You are a professional translator for an Indian real-estate company's chat support.",
                 user_prompt=(
-                    f"Translate the English support message below into {target}. Keep project names, place names, "
-                    "numbers, prices, INR amounts, RERA numbers, dates, URLs, email addresses and real-estate terms "
-                    "(BHK, wing, floor, site visit, carpet area, sq. ft.) exactly as they are. Keep the same line "
-                    "breaks and bullets. Do not add or remove information. Output only the translation.\n\n"
-                    f"ENGLISH MESSAGE:\n{answer}"
+                    f"Translate the English support message below into {target}. Copy every placeholder such as "
+                    "[[1]] exactly once, unchanged. Keep project names, place names, numbers, dates and "
+                    "real-estate terms (BHK, wing, floor, site visit, carpet area, sq. ft.) as they are. Keep the "
+                    "same line breaks and bullets. Do not add or remove information. Output only the translation."
+                    f"\n\nENGLISH MESSAGE:\n{masked}"
                 ),
                 conversation_messages=[],
                 temperature=0 if attempt == 1 else 0.3,
@@ -318,8 +397,10 @@ def _localize_answer(answer, analysis):
         except Exception as error:
             logger.warning("answer localization failed %s", kv(error=error, language=analysis.reply_language))
             return answer
+        if "[[" in localized:
+            localized = _unmask_facts(localized, facts)
         localized_numbers = {number.replace(",", "") for number in _NUMBER_RE.findall(localized)}
-        if localized and localized != answer and source_numbers <= localized_numbers:
+        if localized and localized not in (answer, masked) and source_numbers <= localized_numbers:
             return localized
         logger.warning(
             "answer localization rejected %s",

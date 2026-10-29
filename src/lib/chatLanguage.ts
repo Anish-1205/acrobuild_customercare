@@ -114,9 +114,19 @@ export function chatLanguageFromReply(
   return REPLY_LANGUAGE_CODES[name] ?? previous;
 }
 
+const AMENITY_OR_CRITERION_RE = new RegExp(
+  "\\b(?:with|having|where|jisme|jismein|jahan|wala|wale|wali|unna|irukkura|ready|possession|" +
+    "amenit\\w*|features?|facilit\\w*|suvidha\\w*|pool|swim\\w*|gym\\w*|fitness|parking|garden|park|club\\s*house|" +
+    "clubhouse|lift|elevator|security|cctv|power|backup|water|play\\s*area|kids|jogging|track|temple|school|" +
+    "hospital|metro|station|sea|view|facing|vastu|balcony|terrace|furnished|rera|offer\\w*|discount\\w*|" +
+    "loan|emi|payment|tarantal|bagicha|suraksha|bijli|pani|paani|gaadi|lawn|garage|wifi|generator)\\b|सुविधा|स्विमिंग|पार्किंग|జిమ్|స్విమ్మింగ్|పార్కింగ్"
+);
+
 export function isProjectBrowseRequest(value: string, knownProjectNames: string[] = []) {
   const normalizedValue = value.trim().toLowerCase().replace(/[.!?]+$/g, "").trim();
   if (/^(projects?|प्रोजेक्ट्?स?|ప్రాజెక్ట్‌?లు?)$/.test(normalizedValue)) return true;
+  // A criterion ("with a swimming pool", "jisme gym ho") is a search the backend answers, not the explorer list.
+  if (AMENITY_OR_CRITERION_RE.test(normalizedValue)) return false;
   if (/\b(?:browse|show|list)(?: me)?(?: all)?(?: the)? projects\b/.test(normalizedValue)) return true;
   if (knownProjectNames.some((name) => name && normalizedValue.includes(name.trim().toLowerCase()))) return false;
 
@@ -443,3 +453,44 @@ export const FLOW_TEXT: Record<ChatLanguage, FlowText> = {
     stepFailed: "Eh step load nahi hoya. Dubara try karo."
   }
 };
+
+// Fixed button labels the backend and the project bar use, per language. Only the label is translated:
+// a button's value stays English because the backend reads it. Dynamic labels (project names, dates,
+// times) are shown as they are.
+const CHOICE_LABEL_KEYS = [
+  "Wings & flats", "Location", "Prices", "Amenities", "Offers", "Payment plan", "Book a site visit",
+  "Ask our team", "Talk to our team", "All projects", "Confirm", "Change", "Cancel booking"
+] as const;
+
+export const CHOICE_LABELS: Record<ChatLanguage, readonly string[]> = {
+  en: CHOICE_LABEL_KEYS,
+  hi: ["Wings aur flats", "Location", "Keemat", "Suvidhayein", "Offers", "Payment plan", "Site visit book karein",
+    "Team se poochhein", "Team se baat karein", "Sabhi projects", "Confirm karein", "Badlein", "Booking cancel karein"],
+  "hi-deva": ["विंग और फ्लैट", "लोकेशन", "कीमत", "सुविधाएँ", "ऑफ़र", "पेमेंट प्लान", "साइट विज़िट बुक करें",
+    "टीम से पूछें", "टीम से बात करें", "सभी प्रोजेक्ट", "कन्फ़र्म करें", "बदलें", "बुकिंग रद्द करें"],
+  te: ["Wings & flats", "Location", "Dharalu", "Saukaryalu", "Offers", "Payment plan", "Site visit book cheyandi",
+    "Team ni adagandi", "Team tho matladandi", "Anni projects", "Confirm cheyandi", "Marchandi", "Booking cancel cheyandi"],
+  "te-telu": ["వింగ్స్ & ఫ్లాట్స్", "లొకేషన్", "ధరలు", "సౌకర్యాలు", "ఆఫర్లు", "పేమెంట్ ప్లాన్", "సైట్ విజిట్ బుక్ చేయండి",
+    "టీమ్‌ని అడగండి", "టీమ్‌తో మాట్లాడండి", "అన్ని ప్రాజెక్ట్‌లు", "నిర్ధారించండి", "మార్చండి", "బుకింగ్ రద్దు చేయండి"],
+  ta: ["Wings & flats", "Location", "Vilai", "Vasathigal", "Offers", "Payment plan", "Site visit book pannunga",
+    "Team kitta kelunga", "Team kitta pesunga", "Ella projects", "Confirm pannunga", "Maathunga", "Booking cancel pannunga"],
+  kn: ["Wings & flats", "Location", "Bele", "Saulabhyagalu", "Offers", "Payment plan", "Site visit book maadi",
+    "Team na keli", "Team jothe maatadi", "Ella projects", "Confirm maadi", "Badalisi", "Booking cancel maadi"],
+  ml: ["Wings & flats", "Location", "Vila", "Saukaryangal", "Offers", "Payment plan", "Site visit book cheyyuka",
+    "Team-inodu chodikkuka", "Team-inodu samsarikkuka", "Ella projects", "Confirm cheyyuka", "Maattuka",
+    "Booking cancel cheyyuka"],
+  mr: ["Wings ani flats", "Location", "Kimat", "Suvidha", "Offers", "Payment plan", "Site visit book kara",
+    "Team la vichara", "Team shi bola", "Sagle projects", "Confirm kara", "Badla", "Booking cancel kara"],
+  bn: ["Wings & flats", "Location", "Dam", "Suvidha", "Offers", "Payment plan", "Site visit book korun",
+    "Team ke jiggesh korun", "Team er sathe kotha bolun", "Sob projects", "Confirm korun", "Bodlan",
+    "Booking cancel korun"],
+  gu: ["Wings ane flats", "Location", "Kimat", "Suvidhao", "Offers", "Payment plan", "Site visit book karo",
+    "Team ne puchho", "Team sathe vaat karo", "Badha projects", "Confirm karo", "Badlo", "Booking cancel karo"],
+  pa: ["Wings te flats", "Location", "Keemat", "Suvidhavan", "Offers", "Payment plan", "Site visit book karo",
+    "Team nu puchho", "Team naal gall karo", "Saare projects", "Confirm karo", "Badlo", "Booking cancel karo"]
+};
+
+export function choiceLabel(label: string, language: ChatLanguage): string {
+  const index = (CHOICE_LABEL_KEYS as readonly string[]).indexOf(label);
+  return index < 0 ? label : CHOICE_LABELS[language][index] ?? label;
+}

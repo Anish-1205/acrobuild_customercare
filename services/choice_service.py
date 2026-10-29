@@ -19,7 +19,7 @@ def project_choices(names):
 
 # Next-step topics for one project; the regex spots the topic the customer just asked about.
 PROJECT_TOPICS = (
-    ("explore", "Explore homes", "{name}", re.compile(r"\b(homes?|flats?|units?|inventory|availab)", re.I)),
+    ("explore", "Wings & flats", "{name}", re.compile(r"\b(homes?|flats?|units?|inventory|availab)", re.I)),
     ("location", "Location", "Where is {name} located?", re.compile(r"\b(where|locat|address|kuthe|kahan)", re.I)),
     ("prices", "Prices", "What are the prices at {name}?", re.compile(r"\b(price|pricing|rate|cost|kimat)", re.I)),
     ("amenities", "Amenities", "What amenities does {name} have?", re.compile(r"\b(amenit|facilit)", re.I)),
@@ -74,4 +74,8 @@ def choices_for_answer(payload, project_names, question=""):
         return single_project_choices(named[0], question=question)
     if QUESTION_PROJECT_RE.search(answer):
         return project_choices(project_names)
-    return []
+    # A free-text property answer with nothing to tap is a dead end: offer the projects and a person.
+    return project_choices(project_names[:6]) + [ASK_TEAM]
+
+
+ASK_TEAM = {"label": "Ask our team", "value": "", "action": "handoff"}

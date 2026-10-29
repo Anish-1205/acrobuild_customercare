@@ -15,6 +15,7 @@ PROJECTS = [{"projectName": "Vishwajeet Empire"}, {"projectName": "Vishwajeet Em
 @pytest.fixture(autouse=True)
 def fake_projects(monkeypatch):
     monkeypatch.setattr(flow_service, "_projects", lambda: PROJECTS)
+    monkeypatch.setattr(flow_service, "_sellable_projects", lambda: PROJECTS)
 
 
 @pytest.fixture
@@ -149,10 +150,10 @@ def test_gate():
     angry = TurnAnalysis("general", "English", "latin", "test", sentiment="angry")
     assert guardrail_gate.check("what are the amenities", calm, {})[0] is None
     assert guardrail_gate.check("let me talk to a person", calm, {})[0] == "human_requested"
-    assert guardrail_gate.check("whatever", angry, {})[0] == "angry"
-    reason, state = guardrail_gate.check("still not fixed", frustrated, {})
-    assert reason is None
-    assert guardrail_gate.check("still not fixed", frustrated, state)[0] == "frustrated"
+    # Upset customers still get their answer (softened in the router), not a bare handoff.
+    assert guardrail_gate.check("what is the price, useless bot", angry, {})[0] is None
+    assert guardrail_gate.is_upset(angry) and guardrail_gate.is_upset(frustrated)
+    assert not guardrail_gate.is_upset(calm)
     assert heuristic_sentiment("You people are frauds") == "angry"
     assert heuristic_sentiment("When is possession?") == "calm"
     assert heuristic_sentiment("STILL NO UPDATE ON MY FLAT") == "frustrated"
@@ -210,7 +211,10 @@ def test_stream_endpoint_runs_booking_and_handoff(workspace, monkeypatch, booked
     assert done["ticket"] == {"ticket_id": "T1"} and len(booked) == 1
 
     sentiment["value"] = "angry"
-    handoff = send("this is unacceptable")
+    softened = send("this is unacceptable")  # still answered, with an apology and the team offered
+    assert softened["handoff_recommended"] and softened["answer"].startswith("I'm sorry")
+    assert "covered parking" in softened["answer"]
+    handoff = send("let me talk to a person")
     assert handoff["handoff_recommended"] and handoff["agent_mode"] == "handoff"
 
 
@@ -251,7 +255,7 @@ def test_choices_for_answers():
     listing = choices_for_answer({"route": "property", "answer": "1. Vishwajeet Empire\n2. Vishwajeet Prime"}, NAMES)
     assert [(c["label"], c["action"]) for c in listing] == [("Vishwajeet Empire", "project"), ("Vishwajeet Prime", "project")]
     single = choices_for_answer({"route": "property", "answer": "Vishwajeet Prime is in Thane."}, NAMES)
-    assert [c["label"] for c in single] == ["Explore homes", "Location", "Prices", "Amenities", "Offers",
+    assert [c["label"] for c in single] == ["Wings & flats", "Location", "Prices", "Amenities", "Offers",
                                             "Payment plan", "Book a site visit"]
     assert single[-1]["value"] == "Book a site visit at Vishwajeet Prime"
     after_location = choices_for_answer({"route": "property", "answer": "Vishwajeet Prime is in Thane."}, NAMES,
@@ -259,7 +263,7 @@ def test_choices_for_answers():
     assert "Location" not in [c["label"] for c in after_location]
     address = choices_for_answer({"route": "property", "answer": "Vishwajeet Empire NX: Vishwajeet Empire, Pale Village"},
                                  NAMES, question="Where is Vishwajeet Empire NX located?")
-    assert address[0] == {"label": "Explore homes", "value": "Vishwajeet Empire NX", "action": "project", "topic": "explore"}
+    assert address[0] == {"label": "Wings & flats", "value": "Vishwajeet Empire NX", "action": "project", "topic": "explore"}
     ask = choices_for_answer({"route": "property", "answer": "Which of our 10 projects would you like?"}, NAMES)
     assert [c["label"] for c in ask] == NAMES
     assert choices_for_answer({"route": "general", "answer": "Vishwajeet Prime"}, NAMES) == []
@@ -283,16 +287,22 @@ def live_amenities(monkeypatch):
     import api_context
     monkeypatch.setattr(api_context, "get_company_projects", lambda: AMENITY_PROJECTS)
     monkeypatch.setattr(api_context, "get_project_amenities", lambda pid: CATALOGUE[pid])
+    # Every project has one wing with a 2BHK on sale, so amenity searches have homes to list.
+    monkeypatch.setattr(api_context, "_project_listing", lambda project: (
+        [{"id": project["id"], "name": "A", "totalFloors": 12}],
+        {project["id"]: [{"id": project["id"], "typologyType": "2BHK", "saleableArea": 1000,
+                          "minBasePrice": 4000, "maxBasePrice": 5000}]},
+        {(project["id"], project["id"]): 4}))
     return api_context
 
 
 def test_amenity_matching_uses_real_names():
     from api_context import requested_amenities
-    names = {"Swimming Pool", "Baby Swimming Area", "Pool & Billards", "Gym", "Children's Playing Area", "Parking",
+    names = {"Swimming Pool", "Baby Swimming Area", "Pool & Billiards", "Gym", "Children's Playing Area", "Parking",
              "Visitor Parking", "Lift", "Power Backup Lift"}
     assert requested_amenities("I want a swimming pool", names) == ["Swimming Pool"]
     assert requested_amenities("is there a pool?", names) == ["Swimming Pool"]
-    assert requested_amenities("pool and billiards room", names) == ["Pool & Billards"]
+    assert requested_amenities("pool and billiards room", names) == ["Pool & Billiards"]
     assert requested_amenities("kids play area", names) == ["Children's Playing Area"]
     assert requested_amenities("parking and lift", names) == ["Lift", "Parking"]
     assert requested_amenities("what is the security deposit?", names) == []
@@ -302,6 +312,12 @@ def test_amenity_filter_and_project_answers(live_amenities):
     api = live_amenities
     pool = api.build_grounded_project_amenities_assist(_request("I want a swimming pool"))
     assert pool["choices"] == [{"label": "Vishwajeet Prime", "value": "Vishwajeet Prime", "action": "project"}]
+    assert pool["answer"].startswith("Here are homes with Swimming Pool:\n- Vishwajeet Prime")
+    parking = api.build_grounded_project_amenities_assist(_request("2bhk with gym under 45 lakh"))
+    assert [c["label"] for c in parking["choices"]] == ["Vishwajeet Heights"]
+    assert parking["answer"].startswith("Here are 2BHK homes under ₹45 lakh with Gym:")
+    details = api.build_grounded_project_details_assist(_request("how many wing and 2bhk size in Vishwajeet Prime"))
+    assert "Wings: A (12 floors" in details["answer"] and "- 2BHK, 1,000 sq ft, approx. ₹40 lakh - ₹50 lakh" in details["answer"]
     no = api.build_grounded_project_amenities_assist(_request("does Vishwajeet Heights have a swimming pool?"))
     assert "doesn't list Swimming Pool" in no["answer"] and "Vishwajeet Prime" in no["answer"]
     listing = api.build_grounded_project_amenities_assist(_request("amenities", history=["tell me about Vishwajeet Prime"]))
@@ -326,7 +342,10 @@ def test_offers_and_payment_plans(monkeypatch):
     assert "- Stamp Duty Free\n- Rate Discount (for Loan buyers)" in offers["answer"]
     assert "Offers" not in [c["label"] for c in offers["choices"]]
     plan = api.build_grounded_project_payment_plan_assist(_request("payment plan for Vishwajeet Prime"))
-    assert "booking amount INR 51,000" in plan["answer"] and "...and 2 more stages" in plan["answer"]
+    assert plan["answer"] == ("Payment plans at Vishwajeet Prime:\n- Prime Schedule (Construction Linked): "
+                              "booking amount INR 51,000, then 7 stages linked to construction")
+    full = api.build_grounded_project_payment_plan_assist(_request(plan["choices"][0]["value"]))
+    assert "- 7% on slab 7" in full["answer"]
     assert "Freestyle" not in plan["answer"]
     assert api.build_grounded_project_offers_assist(_request("what is the price?")) is None
 
@@ -410,6 +429,27 @@ def test_live_guard_ignores_failures_recovered_in_the_same_turn():
     assert "unavailable" in _enforce_live_property_data(dict(draft), "where is NX", still_failing)["answer"]
 
 
+def test_misclassified_general_turn_still_reaches_search(monkeypatch):
+    import routers.assist as assist
+    from graph.main_orchestrator import TurnContext
+    calls = []
+    monkeypatch.setattr(assist, "build_grounded_company_contact_assist", lambda r: calls.append("contact"))
+    monkeypatch.setattr(assist, "build_grounded_project_amenities_assist", lambda r: calls.append("amenities"))
+    monkeypatch.setattr(assist, "build_grounded_home_finder_assist",
+                        lambda r: {"answer": "We don't have projects in Mumbai", "choices": []})
+    request = type("R", (), {"issue": "property in mumbai", "model_dump": lambda self: {}})()
+    turn = TurnContext([], "property in mumbai", TurnAnalysis("general", "English", "latin", "test"), "property in mumbai")
+    payload = assist._grounded_property_shortcut(request, turn)
+    assert calls == ["contact", "amenities"] and payload["route"] == "property"
+
+
+def test_finder_skips_the_cs_api_for_chit_chat(monkeypatch):
+    import api_context
+    monkeypatch.setattr(api_context, "get_company_projects", lambda: (_ for _ in ()).throw(AssertionError("API called")))
+    from api_context import SupportAssistRequest
+    assert api_context.build_grounded_home_finder_assist(SupportAssistRequest(issue="hi, how are you?")) is None
+
+
 def test_shortcut_failure_falls_through(monkeypatch):
     import routers.assist as assist
     from graph.main_orchestrator import TurnContext
@@ -423,3 +463,69 @@ def test_shortcut_failure_falls_through(monkeypatch):
                  "build_grounded_project_offers_assist", "build_grounded_project_amenities_assist"):
         monkeypatch.setattr(assist, name, lambda request: None)
     assert assist._grounded_property_shortcut(request, turn) is None
+
+
+def test_search_with_best_amenities_ranks_projects(live_amenities):
+    api = live_amenities
+    ranked = api.build_grounded_project_amenities_assist(_request("show me a 2bhk with best amenities"))
+    lines = [line for line in ranked["answer"].splitlines() if line.startswith("- ")]
+    # Heights and Prime list 2 amenities, Town 1: the best-equipped come first, with what they offer.
+    assert lines[-1].startswith("- Vishwajeet Town") and "1 amenities" in lines[-1]
+    assert "2 amenities incl. Swimming Pool, Lift" in ranked["answer"]
+    assert "best amenities first" in ranked["answer"]
+    # Without a search or "best", a bare amenities question still asks which project.
+    ask = api.build_grounded_project_amenities_assist(_request("what amenities do you have"))
+    assert ask["answer"] == "Which project's amenities would you like to see?"
+
+
+def test_several_requests_in_one_message_are_each_answered(monkeypatch):
+    import routers.assist as assist
+    from graph.main_orchestrator import TurnContext
+    monkeypatch.setattr(assist, "get_company_projects", lambda: AMENITY_PROJECTS)
+    asked = []
+
+    def single(request, turn):
+        asked.append(turn.property_issue)
+        if "offers" in turn.property_issue:
+            return None
+        return {"answer": f"Answer to {turn.property_issue}\n\nPrices are estimates.", "route": "property",
+                "choices": [{"label": "Book a site visit", "value": "Book"}], "matched_chunks": [{"id": len(asked)}]}
+    monkeypatch.setattr(assist, "_single_shortcut", single)
+    text = "price of prime and amenities of heights? any offers"
+    turn = TurnContext([], text, TurnAnalysis("general", "English", "latin", "test"), text)
+    payload = assist._grounded_property_shortcut(_request(text), turn)
+    assert asked == ["price of prime", "amenities of heights", "any offers of Vishwajeet Heights"]
+    assert payload["answer"].count("Prices are estimates.") == 1
+    assert "Answer to price of prime" in payload["answer"] and "Answer to amenities of heights" in payload["answer"]
+    assert '"any offers of Vishwajeet Heights"' in payload["answer"]
+    assert [c["label"] for c in payload["choices"]] == ["Book a site visit", "Ask our team"]
+    assert len(payload["matched_chunks"]) == 2
+
+
+def test_answers_carry_only_what_was_asked(monkeypatch, live_amenities):
+    api = live_amenities
+    monkeypatch.setattr(api, "get_project_offers", lambda pid: [{"name": f"Offer {i}", "applies_to": []} for i in range(9)])
+    offers = api.build_grounded_project_offers_assist(_request("any offers at Vishwajeet Prime?"))
+    assert offers["answer"].count("\n- ") == 3 and "...and 6 more." in offers["answer"]
+    assert offers["choices"][0] == {"label": "All 9 offers", "value": "Show all offers at Vishwajeet Prime"}
+    full = api.build_grounded_project_offers_assist(_request(offers["choices"][0]["value"]))
+    assert "Offer 8" in full["answer"] and "more." not in full["answer"]
+
+    price = api.build_grounded_project_details_assist(_request("price of Vishwajeet Prime"))
+    assert price["answer"].startswith("Vishwajeet Prime prices:\n- 2BHK, approx. ₹40 lakh - ₹50 lakh")
+    assert "sq ft" not in price["answer"] and "Wings" not in price["answer"]
+    wings = api.build_grounded_project_details_assist(_request("how many wings in Vishwajeet Prime"))
+    assert wings["answer"] == "Vishwajeet Prime wings:\n- A (12 floors, 4 flats listed)"
+    assert "₹" not in wings["answer"]
+
+
+def test_long_amenity_lists_show_highlights_first(monkeypatch, live_amenities):
+    api = live_amenities
+    many = ["Gym", "Swimming Pool", "Lift", "Park", "Parking", "Carrom", "Badminton", "Terrace", "Internet", "Gas Pipe"]
+    monkeypatch.setattr(api, "get_project_amenities", lambda pid: [{"name": n, "type": "Amenities"} for n in many])
+    short = api.build_grounded_project_amenities_assist(_request("what amenities does Vishwajeet Prime have?"))
+    assert short["answer"] == ("Vishwajeet Prime has 10 amenities, including Swimming Pool, Gym, Park, Parking, "
+                               "Lift, Carrom.")
+    assert short["choices"][0]["label"] == "All 10 amenities"
+    full = api.build_grounded_project_amenities_assist(_request(short["choices"][0]["value"]))
+    assert "Gas Pipe" in full["answer"]
