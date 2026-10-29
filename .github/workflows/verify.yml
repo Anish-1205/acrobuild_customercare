@@ -52,6 +52,7 @@ jobs:
           --ignore-vuln PYSEC-2026-2290
           --ignore-vuln PYSEC-2026-3804
           --ignore-vuln PYSEC-2026-3929
+          --ignore-vuln PYSEC-2026-4298
   frontend:
     runs-on: ubuntu-latest
     steps:

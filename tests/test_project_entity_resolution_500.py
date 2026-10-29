@@ -70,7 +70,7 @@ class ProjectEntityResolution500Tests(unittest.TestCase):
                 return {}
             if path == "/api/cs/projects":
                 return PROJECTS
-            if path == "/api/cs/projects/56/wings" or path == "/api/cs/projects/56/typologies":
+            if path in ("/api/cs/projects/56/wings", "/api/cs/projects/56/typologies", "/api/cs/projects/56/amenities"):
                 return []
             self.fail(f"Unexpected project detail request: {path}")
         cached_request.side_effect = response

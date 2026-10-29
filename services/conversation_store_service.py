@@ -1,5 +1,6 @@
 """Cookie-scoped, bounded conversation history shared across backend workers."""
 import hashlib
+import json
 import os
 import re
 import secrets
@@ -46,6 +47,30 @@ class ConversationSession:
             conn.execute("DELETE FROM conversation_turns WHERE session_hash=? AND conversation_id=? AND position<=?", (self.owner, self.conversation_id, position + 2 - MAX_MESSAGES))
             conn.execute("UPDATE conversation_turns SET expires_at=? WHERE session_hash=? AND conversation_id=?", (expiry, self.owner, self.conversation_id))
 
+    def get_state(self):
+        """Small per-conversation JSON state (active booking flow, frustration count)."""
+        if not self.conversation_id:
+            return {}
+        with closing(open_database_connection()) as conn, conn:
+            conn.execute("DELETE FROM conversation_state WHERE expires_at<=?", (time.time(),))
+            row = conn.execute("SELECT state FROM conversation_state WHERE session_hash=? AND conversation_id=?",
+                               (self.owner, self.conversation_id)).fetchone()
+        try:
+            return json.loads(row[0]) if row else {}
+        except ValueError:
+            return {}
+
+    def set_state(self, state):
+        if not self.conversation_id:
+            return
+        with closing(open_database_connection()) as conn, conn:
+            if state:
+                conn.execute("INSERT OR REPLACE INTO conversation_state VALUES(?,?,?,?)",
+                             (self.owner, self.conversation_id, json.dumps(state), time.time() + RETENTION_SECONDS))
+            else:
+                conn.execute("DELETE FROM conversation_state WHERE session_hash=? AND conversation_id=?", (self.owner, self.conversation_id))
+
     def clear(self):
         with closing(open_database_connection()) as conn, conn:
             conn.execute("DELETE FROM conversation_turns WHERE session_hash=? AND conversation_id=?", (self.owner, self.conversation_id))
+            conn.execute("DELETE FROM conversation_state WHERE session_hash=? AND conversation_id=?", (self.owner, self.conversation_id))

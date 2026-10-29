@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useRole } from "../contexts/RoleContext";
 import {
-  createSiteVisit,
   createSupportTicket,
   generateIndicVoiceAudio,
   getAdminArticles,
@@ -23,6 +22,7 @@ import type {
   PropertyProject,
   PropertyTypology,
   PropertyWing,
+  SupportAssistChoice,
   SupportAssistResponse,
   SupportConversationMessage,
   SupportArticleRecord,
@@ -59,15 +59,6 @@ type PropertyFlowState = {
   wings: PropertyWing[];
 };
 
-type SiteVisitFormState = {
-  customer_email: string;
-  customer_name: string;
-  customer_phone: string;
-  notes: string;
-  preferred_date: string;
-  preferred_time: string;
-  project_name: string;
-};
 type HelpCenterAction = {
   description: string;
   href: string;
@@ -85,9 +76,22 @@ type HelpCenterCategory = {
   title: string;
 };
 
+// Next steps for the project in focus; messages mirror PROJECT_TOPICS in services/choice_service.py.
+const PROJECT_BAR_TOPICS: Array<{ label: string; message?: (name: string) => string }> = [
+  { label: "Wings & flats" },
+  { label: "Location", message: (name) => `Where is ${name} located?` },
+  { label: "Prices", message: (name) => `What are the prices at ${name}?` },
+  { label: "Amenities", message: (name) => `What amenities does ${name} have?` },
+  { label: "Offers", message: (name) => `What offers are available at ${name}?` },
+  { label: "Payment plan", message: (name) => `What is the payment plan at ${name}?` },
+  { label: "Book a site visit", message: (name) => `Book a site visit at ${name}` }
+];
+
 type ChatMessage = {
+  choices?: SupportAssistChoice[];
   contextIssue?: string;
   feedbackState?: "negative" | "positive";
+  handoffRecommended?: boolean;
   id: number;
   isAutomated?: boolean;
   isComplete?: boolean;
@@ -113,7 +117,8 @@ function createDefaultChatMessages(): ChatMessage[] {
 
 import { MessageLauncherIcon, PaperPlaneIcon, MicrophoneIcon, ThumbsUpIcon, ThumbsDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, GridViewIcon, ListViewIcon, MailIcon, PhoneIcon, TrackOrderIcon, CancelOrderIcon, ReportIssueIcon } from "../components/chat/ChatIcons";
 import { type BrowserSpeechRecognition, type SpeechRecognitionConstructor, VOICE_LANGUAGES, type VoiceLanguageCode, detectSpeechLanguage } from "../lib/voiceLanguage";
-import { FLOW_TEXT, type ChatLanguage, chatLanguageFromReply, detectChatLanguage, extractLocationHint, isProjectBrowseRequest } from "../lib/chatLanguage";
+import { ChatErrorBoundary } from "../components/chat/ChatErrorBoundary";
+import { FLOW_TEXT, choiceLabel, type ChatLanguage, chatLanguageFromReply, detectChatLanguage, extractLocationHint, isProjectBrowseRequest } from "../lib/chatLanguage";
 
 const helpCenterArticlesPath = "/home";
 const helpCenterHomePath = "/home";
@@ -1091,11 +1096,6 @@ function getNamedProjectSelection(messages: ChatMessage[], value: string) {
   }
   return "";
 }
-function isSiteVisitBookingRequest(value: string) {
-  const normalizedValue = value.trim().toLowerCase();
-  return normalizedValue.includes("visit") && ["book", "schedule", "arrange", "request"]
-    .some((word) => normalizedValue.includes(word));
-}
 function isVoiceTicketRequest(value: string) {
   const normalizedValue = value.trim().toLowerCase();
   const mentionsTicket = normalizedValue.includes("ticket");
@@ -1141,20 +1141,9 @@ export function CustomerHomePage() {
   const [storefrontError, setStorefrontError] = useState("");
   const [activeFollowUpIssue, setActiveFollowUpIssue] = useState("");
   const [propertyFlow, setPropertyFlow] = useState<PropertyFlowState | null>(null);
+  const [focusProject, setFocusProject] = useState("");
   const [chatLanguage, setChatLanguage] = useState<ChatLanguage>("en");
   const chatLanguageRef = useRef<ChatLanguage>("en");
-  const [isSiteVisitFormVisible, setIsSiteVisitFormVisible] = useState(false);
-  const [isSubmittingSiteVisit, setIsSubmittingSiteVisit] = useState(false);
-  const [siteVisitProjects, setSiteVisitProjects] = useState<PropertyProject[]>([]);
-  const [siteVisitForm, setSiteVisitForm] = useState<SiteVisitFormState>({
-    customer_email: "",
-    customer_name: "",
-    customer_phone: "",
-    notes: "",
-    preferred_date: "",
-    preferred_time: "",
-    project_name: ""
-  });
   const chatBodyRef = useRef<HTMLDivElement | null>(null);
   const conversationIdRef = useRef<string>(
     typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -1355,6 +1344,12 @@ export function CustomerHomePage() {
     });
   }, [chatMessages, isChatOpen, isTypingReply]);
 
+  function focusFromChoices(choices?: SupportAssistChoice[]) {
+    // A reply about one project carries its "explore" topic; that project becomes the bar's focus.
+    const explore = choices?.find((choice) => choice.topic === "explore");
+    if (explore) setFocusProject(explore.value);
+  }
+
   function resetChatHome() {
     setChatMessages(createDefaultChatMessages());
     setChatDraft("");
@@ -1363,14 +1358,14 @@ export function CustomerHomePage() {
     setStorefrontError("");
     setIsTypingReply(false);
     setPropertyFlow(null);
-    setIsSiteVisitFormVisible(false);
+    setFocusProject("");
   }
 
   function openFollowUpForm(issue: string) {
     setActiveFollowUpIssue(issue.trim());
     setIsFollowUpFormVisible(true);
     setStorefrontError("");
-    setChatDraft("");
+    setChatDraft(issue.trim());
     window.setTimeout(() => {
       if (chatEmail.trim()) {
         chatComposeRef.current?.focus();
@@ -1543,7 +1538,8 @@ export function CustomerHomePage() {
     issue: string,
     primaryArticleId: number | undefined,
     shouldResetConversation: boolean,
-    customerMessageText = issue
+    customerMessageText = issue,
+    fromChoice = false
   ) {
     const trimmedIssue = issue.trim();
     const trimmedCustomerMessage = customerMessageText.trim();
@@ -1630,7 +1626,8 @@ export function CustomerHomePage() {
         language_hint: languageHint,
         limit: isVoiceConversation ? 6 : 2,
         prefer_fast_response: !isVoiceConversation,
-        prefer_qwen_response: true
+        prefer_qwen_response: true,
+        from_choice: fromChoice
       }, {
         onDelta: (text) => {
           streamedAnswer += text;
@@ -1642,10 +1639,13 @@ export function CustomerHomePage() {
         onDone: (assistResponse) => {
           setIsTypingReply(false);
           applyReplyLanguage(assistResponse);
+          focusFromChoices(assistResponse.choices);
 
           setChatMessages((current) =>
             finalizeBotMessage(current, botMessageId, trimmedIssue, {
+              choices: assistResponse.choices,
               feedbackState: undefined,
+              handoffRecommended: assistResponse.handoff_recommended,
               isAutomated: true,
               relatedArticles: [],
               showHelpfulPrompt: false,
@@ -1680,14 +1680,18 @@ export function CustomerHomePage() {
           language_hint: languageHint,
           limit: isVoiceConversation ? 6 : 2,
           prefer_fast_response: !isVoiceConversation,
-          prefer_qwen_response: true
+          prefer_qwen_response: true,
+          from_choice: fromChoice
         });
 
         setIsTypingReply(false);
         applyReplyLanguage(assistResponse);
+        focusFromChoices(assistResponse.choices);
         setChatMessages((current) =>
           finalizeBotMessage(current, botMessageId, trimmedIssue, {
+            choices: assistResponse.choices,
             feedbackState: undefined,
+            handoffRecommended: assistResponse.handoff_recommended,
             isAutomated: true,
             relatedArticles: [],
             showHelpfulPrompt: false,
@@ -1722,7 +1726,6 @@ export function CustomerHomePage() {
     const customerMessageId = Date.now();
     setStorefrontError("");
     setIsTypingReply(true);
-    setIsSiteVisitFormVisible(false);
     setChatMessages((current) => [
       ...current,
       {
@@ -1834,14 +1837,28 @@ export function CustomerHomePage() {
   ) {
     const t = FLOW_TEXT[chatLanguageRef.current];
     const contextIssue = `Project ${project.projectName}`;
+    setFocusProject(project.projectName);
     const botMessageId = beginPropertyFlowStep(customerLabel, contextIssue);
     try {
       const response = await getPropertyWings(project.id);
       const wings = response.items;
+      if (!wings.length) {
+        // No homes listed yet: offer the other projects in the same city instead of a dead end.
+        const others = projects.filter((item) => item.id !== project.id);
+        const sameCity = others.filter((item) => item.city && item.city === project.city);
+        finishPropertyFlowStep(botMessageId, contextIssue, t.noWings(project.projectName), {
+          inventory: [],
+          level: "projects",
+          messageId: botMessageId,
+          projects: sameCity.length ? sameCity : others,
+          wings: []
+        });
+        return;
+      }
       finishPropertyFlowStep(
         botMessageId,
         contextIssue,
-        wings.length ? t.chooseWing(project.projectName) : t.noWings(project.projectName),
+        t.chooseWing(project.projectName),
         {
           inventory: [],
           level: "wings",
@@ -2017,81 +2034,24 @@ export function CustomerHomePage() {
     }
   }
 
-  async function openSiteVisitBooking() {
-    setStorefrontError("");
-    let projects = propertyFlow?.projects ?? siteVisitProjects;
-    if (!projects.length) {
-      try {
-        projects = (await getPropertyProjects()).items;
-        setSiteVisitProjects(projects);
-      } catch (error) {
-        setStorefrontError(error instanceof Error ? error.message : "Unable to load projects.");
-        return;
-      }
-    }
-    const selectedProjectName = propertyFlow?.selectedProject?.projectName ?? "";
-    setSiteVisitProjects(projects);
-    setSiteVisitForm((current) => ({
-      ...current,
-      customer_email: current.customer_email || chatEmail,
-      project_name: selectedProjectName || current.project_name
-    }));
-    setIsSiteVisitFormVisible(true);
-    setIsFollowUpFormVisible(false);
+  function openSiteVisitBooking() {
+    // One booking journey: the explorer hands the chosen home to the chat booking flow, which collects
+    // date, time and contact details, confirms, and books (same rules as a typed request).
+    const project = propertyFlow?.selectedProject?.projectName ?? focusProject;
+    const wing = propertyFlow?.selectedWing?.name;
+    const unit = propertyFlow?.selectedUnit?.unitNumber;
+    const details = [project ? `at ${project}` : "", wing ? `wing ${wing}` : "", unit ? `flat ${unit}` : ""]
+      .filter(Boolean)
+      .join(", ");
+    void queueBotResponse(
+      `Book a site visit ${details}`.trim(),
+      undefined,
+      false,
+      FLOW_TEXT[chatLanguageRef.current].bookVisit,
+      true
+    );
   }
 
-  async function submitSiteVisitBooking() {
-    if (
-      !siteVisitForm.customer_name.trim() ||
-      !isValidEmail(siteVisitForm.customer_email) ||
-      !siteVisitForm.customer_phone.trim() ||
-      !siteVisitForm.project_name.trim() ||
-      !siteVisitForm.preferred_date ||
-      !siteVisitForm.preferred_time
-    ) {
-      setStorefrontError("Enter name, valid email, phone, project, preferred date, and preferred time.");
-      return;
-    }
-
-    setIsSubmittingSiteVisit(true);
-    setStorefrontError("");
-    try {
-      const result = await createSiteVisit({
-        ...siteVisitForm,
-        typology_name: propertyFlow?.selectedTypology?.typologyName ?? propertyFlow?.selectedUnit?.typologyName ?? propertyFlow?.selectedUnit?.typologyType ?? "",
-        unit_number: String(propertyFlow?.selectedUnit?.unitNumber ?? ""),
-        wing_name: propertyFlow?.selectedWing?.name ?? ""
-      });
-      const messageId = Date.now();
-      setChatEmail(siteVisitForm.customer_email.trim());
-      setChatMessages((current) => [
-        ...current,
-        {
-          contextIssue: "Site visit booking",
-          id: messageId,
-          relatedArticles: [],
-          sender: "customer",
-          text: "Book a site visit"
-        },
-        {
-          contextIssue: "Site visit booking",
-          id: messageId + 1,
-          isAutomated: true,
-          isComplete: true,
-          relatedArticles: [],
-          sender: "bot",
-          showHelpfulPrompt: false,
-          text: `Your site visit request has been submitted. Ticket ${result.ticket_id} is assigned to ${result.assigned_agent}.`,
-          ticketResult: result
-        }
-      ]);
-      setIsSiteVisitFormVisible(false);
-    } catch (error) {
-      setStorefrontError(error instanceof Error ? error.message : "Unable to submit the site visit.");
-    } finally {
-      setIsSubmittingSiteVisit(false);
-    }
-  }
   function handleChatFlowSelect(flow: SupportFlow) {
     void queueBotResponse(flow.prompt, flow.articleId, true, flow.label);
   }
@@ -3268,6 +3228,7 @@ export function CustomerHomePage() {
       ) : null}
       <div className="store-chat-layer" id="help">
         {isChatOpen ? (
+          <ChatErrorBoundary onReset={resetChatHome}>
           <section
             className="store-chat-panel"
             style={{
@@ -3352,7 +3313,7 @@ export function CustomerHomePage() {
                   <div aria-label="Start a conversation" className="store-chat-home menu-mode conversation-welcome" />
                 )
                 ) : (
-                  <div className="store-chat-conversation">
+                  <div aria-busy={isTypingReply} aria-label="Chat messages" className="store-chat-conversation" role="log">
                     <div className="store-chat-date">{conversationDateLabel}</div>
                     {chatMessages.map((message) => {
                       const isCustomerMessage = message.sender === "customer";
@@ -3398,7 +3359,7 @@ export function CustomerHomePage() {
                                 </div>
                               ) : null}
 
-                              {!isCustomerMessage && message.id === latestCompletedBotMessageId && !isSiteVisitFormVisible ? (
+                              {!isCustomerMessage && message.id === latestCompletedBotMessageId ? (
                                 propertyFlow?.messageId === message.id ? (
                                   <div className="store-chat-guided-grid project-grid">
                                     {propertyFlow.level === "projects"
@@ -3526,7 +3487,30 @@ export function CustomerHomePage() {
                                 </div>
                               ) : null}
 
-                              {message.sender === "bot" && message.feedbackState === "negative" && !message.ticketResult ? (
+                              {message.choices?.some((choice) => !choice.topic) && !isTypingReply && message.id === chatMessages[chatMessages.length - 1]?.id ? (
+                                <div className="store-chat-guided-grid">
+                                  {message.choices.filter((choice) => !choice.topic).map((choice) => (
+                                    <button
+                                      className="store-chat-guided-button"
+                                      key={`${choice.action ?? "send"}:${choice.label}:${choice.value}`}
+                                      onClick={() => {
+                                        if (choice.action === "project") {
+                                          void selectNumberedProject(choice.value, choice.label);
+                                        } else if (choice.action === "handoff") {
+                                          openContactMode(message.contextIssue ?? "");
+                                        } else {
+                                          void queueBotResponse(choice.value, undefined, false, choice.label, true);
+                                        }
+                                      }}
+                                      type="button"
+                                    >
+                                      <span className="store-chat-guided-label">{choiceLabel(choice.label, chatLanguage)}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
+
+                              {message.sender === "bot" && (message.feedbackState === "negative" || message.handoffRecommended) && !message.ticketResult ? (
                                 <div className="store-chat-help-actions single">
                                   <button
                                     className="store-chat-help-button dark"
@@ -3555,106 +3539,8 @@ export function CustomerHomePage() {
                       );
                     })}
 
-                    {isSiteVisitFormVisible ? (
-                      <form
-                        className="store-chat-visit-card"
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          void submitSiteVisitBooking();
-                        }}
-                      >
-                        <div className="store-chat-visit-head">
-                          <span>Site visit</span>
-                          <strong>Book your preferred visit</strong>
-                        </div>
-                        <label className="store-chat-visit-field">
-                          <span>Name *</span>
-                          <input
-                            autoComplete="name"
-                            onChange={(event) => setSiteVisitForm((current) => ({ ...current, customer_name: event.target.value }))}
-                            required
-                            value={siteVisitForm.customer_name}
-                          />
-                        </label>
-                        <label className="store-chat-visit-field">
-                          <span>Email *</span>
-                          <input
-                            autoComplete="email"
-                            onChange={(event) => setSiteVisitForm((current) => ({ ...current, customer_email: event.target.value }))}
-                            required
-                            type="email"
-                            value={siteVisitForm.customer_email}
-                          />
-                        </label>
-                        <label className="store-chat-visit-field">
-                          <span>Phone *</span>
-                          <input
-                            autoComplete="tel"
-                            inputMode="tel"
-                            onChange={(event) => setSiteVisitForm((current) => ({ ...current, customer_phone: event.target.value }))}
-                            required
-                            type="tel"
-                            value={siteVisitForm.customer_phone}
-                          />
-                        </label>
-                        <label className="store-chat-visit-field">
-                          <span>Project *</span>
-                          <select
-                            onChange={(event) => setSiteVisitForm((current) => ({ ...current, project_name: event.target.value }))}
-                            required
-                            value={siteVisitForm.project_name}
-                          >
-                            <option value="">Select a project</option>
-                            {siteVisitProjects.map((project) => (
-                              <option key={project.id} value={project.projectName}>{project.projectName}</option>
-                            ))}
-                          </select>
-                        </label>
-                        <div className="store-chat-visit-row">
-                          <label>
-                            <span>Preferred date *</span>
-                            <input
-                              min={new Date().toISOString().slice(0, 10)}
-                              onChange={(event) => setSiteVisitForm((current) => ({ ...current, preferred_date: event.target.value }))}
-                              required
-                              type="date"
-                              value={siteVisitForm.preferred_date}
-                            />
-                          </label>
-                          <label>
-                            <span>Preferred time *</span>
-                            <input
-                              onChange={(event) => setSiteVisitForm((current) => ({ ...current, preferred_time: event.target.value }))}
-                              required
-                              type="time"
-                              value={siteVisitForm.preferred_time}
-                            />
-                          </label>
-                        </div>
-                        <label className="store-chat-visit-field">
-                          <span>Notes</span>
-                          <textarea
-                            onChange={(event) => setSiteVisitForm((current) => ({ ...current, notes: event.target.value }))}
-                            placeholder="Questions, accessibility needs, or preferred callback details"
-                            rows={3}
-                            value={siteVisitForm.notes}
-                          />
-                        </label>
-                        <button className="store-chat-visit-submit" disabled={isSubmittingSiteVisit} type="submit">
-                          {isSubmittingSiteVisit ? "Submitting..." : "Request site visit"}
-                        </button>
-                        <button
-                          className="store-chat-help-button"
-                          onClick={() => setIsSiteVisitFormVisible(false)}
-                          type="button"
-                        >
-                          Cancel
-                        </button>
-                        <small>Required fields help the site team confirm the correct project and visit slot.</small>
-                      </form>
-                    ) : null}
                     {isTypingReply ? (
-                      <div className="store-chat-typing">
+                      <div aria-label="Assistant is typing" className="store-chat-typing" role="status">
                         <span />
                         <span />
                         <span />
@@ -3666,8 +3552,8 @@ export function CustomerHomePage() {
                         <div className="store-chat-follow-up-head">
                           <strong>Tell us what still needs help</strong>
                           <span>
-                            We will raise a support ticket after the customer enters an email and
-                            message.
+                            Share your email and question. Our team usually replies within one working
+                            day, and your ticket number appears here.
                           </span>
                         </div>
 
@@ -3687,7 +3573,7 @@ export function CustomerHomePage() {
                           <textarea
                             className="store-chat-compose-input"
                             onChange={(event) => setChatDraft(event.target.value)}
-                            placeholder="Add the customer's remaining question here..."
+                            placeholder="Type your question for our team"
                             ref={chatComposeRef}
                             rows={4}
                             value={chatDraft}
@@ -3795,19 +3681,13 @@ export function CustomerHomePage() {
                     return;
                   }
 
-                  if (isProjectBrowseRequest(chatDraft, (propertyFlow?.projects ?? siteVisitProjects).map((project) => project.projectName))) {
+                  if (isProjectBrowseRequest(chatDraft, (propertyFlow?.projects ?? []).map((project) => project.projectName))) {
                     const projectRequest = chatDraft.trim();
                     const location = extractLocationHint(chatDraft);
                     setChatDraft("");
                     void startProjectsFlow(projectRequest, location);
                     return;
                   }
-                  if (isSiteVisitBookingRequest(chatDraft)) {
-                    setChatDraft("");
-                    void openSiteVisitBooking();
-                    return;
-                  }
-
                   if (handleHelpfulReviewFromText(chatDraft)) {
                     return;
                   }
@@ -3819,6 +3699,45 @@ export function CustomerHomePage() {
                   );
                 }}
               >
+                <div aria-label={focusProject ? `Quick actions for ${focusProject}` : "Quick actions"} className="store-chat-project-bar" role="group">
+                  {focusProject ? <span className="store-chat-project-bar-name">{focusProject}</span> : null}
+                  <div className="store-chat-project-bar-chips">
+                    {focusProject
+                      ? PROJECT_BAR_TOPICS.map((topic) => (
+                          <button
+                            className="store-chat-chip"
+                            disabled={isTypingReply}
+                            key={topic.label}
+                            onClick={() => {
+                              if (topic.message) {
+                                void queueBotResponse(topic.message(focusProject), undefined, false, choiceLabel(topic.label, chatLanguage), true);
+                              } else {
+                                void selectNumberedProject(focusProject, focusProject);
+                              }
+                            }}
+                            type="button"
+                          >
+                            {choiceLabel(topic.label, chatLanguage)}
+                          </button>
+                        ))
+                      : null}
+                    <button
+                      className="store-chat-chip ghost"
+                      disabled={isTypingReply}
+                      onClick={() => void startProjectsFlow()}
+                      type="button"
+                    >
+                      {choiceLabel("All projects", chatLanguage)}
+                    </button>
+                    <button
+                      className="store-chat-chip ghost"
+                      onClick={() => openContactMode(focusProject ? `Question about ${focusProject}: ` : "")}
+                      type="button"
+                    >
+                      {choiceLabel("Talk to our team", chatLanguage)}
+                    </button>
+                  </div>
+                </div>
                 <div className="store-chat-compose-inline">
                   <input
                     className="store-chat-message-input"
@@ -3861,6 +3780,7 @@ export function CustomerHomePage() {
               </div>
             ) : null}
           </section>
+          </ChatErrorBoundary>
         ) : null}
 
         <button

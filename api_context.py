@@ -1,4 +1,6 @@
 import base64
+import contextvars
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 import json
 import logging
@@ -22,11 +24,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from graph.workflow import run_workflow
 from services.acrobuild_company_service import (
     get_company_projects,
+    get_project_amenities,
+    get_project_offers,
+    get_project_payment_plans,
+    get_project_typologies,
     get_project_wings,
+    get_sellable_projects,
     get_wing_inventory,
     get_wing_typologies,
     resolve_project_from_text,
     get_cs_api_status,
+    check_cs_api_contract,
 )
 from services.internal_api_log_service import (
     begin_data_api_trace,
@@ -34,6 +42,7 @@ from services.internal_api_log_service import (
     get_current_data_api_logs,
 )
 from services.rag_evaluation_service import evaluate_rag_response
+from services.vocabulary import AMENITY_TERMS, amenity_expansion
 
 from services.database_service import (
     create_knowledge_document,
@@ -179,10 +188,20 @@ def _enforce_live_property_data(response_payload, issue, data_api_calls):
     route = response_payload.get("route")
     if route == "general" or (route != "property" and not is_property_support_message(issue)):
         return response_payload
+    def call_key(call):
+        return call.get("endpoint"), tuple(sorted((call.get("params") or {}).items()))
+
+    succeeded = {call_key(call) for call in data_api_calls
+                 if call.get("provider") == "Acrobuild CS API" and call.get("status") == "completed"}
+    # A failure that a later call to the same endpoint recovered from (e.g. a heuristic that swallowed a
+    # timeout, then the shortcut's own fetch succeeded) did not leave the answer without live data.
     failed_live_calls = [
         call for call in data_api_calls
         if call.get("provider") == "Acrobuild CS API" and call.get("status") == "failed"
+        and call_key(call) not in succeeded
     ]
+    if response_payload.get("unchecked_projects"):
+        failed_live_calls = []  # the answer already names the projects it couldn't load; the rest is live
     non_live_calls = [
         call for call in data_api_calls
         if (call.get("cache_hit") and str((call.get("response_summary") or {}).get("kind")) != "turn_cache")
@@ -453,17 +472,7 @@ class TicketRequest(BaseModel):
     customer_email: str = ""
 
 
-class SiteVisitRequest(BaseModel):
-    customer_name: str
-    customer_email: str
-    customer_phone: str
-    project_name: str
-    preferred_date: str
-    preferred_time: str
-    wing_name: str = ""
-    typology_name: str = ""
-    unit_number: str = ""
-    notes: str = ""
+from services.action_registry import SiteVisitRequest  # noqa: E402,F401 - re-exported for routers
 
 class RefundRequest(BaseModel):
     order_number: str
@@ -639,6 +648,8 @@ class SupportAssistRequest(BaseModel):
     prefer_fast_response: bool = False
     prefer_qwen_response: bool = True
     language_hint: str = Field(default="", max_length=40)
+    # True when `issue` is a quick-reply button's value: the reply keeps the conversation's language.
+    from_choice: bool = False
 
 
 class VoiceSynthesisRequest(BaseModel):
@@ -894,121 +905,487 @@ def build_grounded_site_visit_document_assist(request):
         "used_llm": False,
     }
 
-def build_grounded_project_amenities_assist(request):
+# Customer words for amenities live in services/vocabulary.py (AMENITY_SYNONYMS), shared with routing.
+# Only these words trigger the (one call per project) amenity lookup.
+_AMENITY_HINT_RE = re.compile(
+    r"(?<![\w-])(" + "|".join(re.escape(t) for t in sorted(AMENITY_TERMS, key=len, reverse=True)) + r")(?![\w-])",
+    re.IGNORECASE,
+)
+_AMENITY_FILLER = {"and", "area", "the", "of", "a", "s"}
 
-    issue = str(request.issue or "").strip()
-    cleaned_issue = issue.lower()
-    if not any(
-        term in cleaned_issue
-        for term in ("amenit", "facilit")
-    ):
-        return None
 
-    projects = get_company_projects()
-    customer_history = [str(message.text or "").strip() for message in request.conversation_messages if str(message.sender or "").lower() == "customer" and str(message.text or "").strip()]
-    selected_project = resolve_project_from_text(projects, issue)
-    if selected_project is None:
-        selected_project = next((resolved for text in reversed(customer_history) if (resolved := resolve_project_from_text(projects, text)) is not None), None)
-    if selected_project is None:
-        answer = (
-            "Which project would you like me to check? Share the project name, "
-            "and I'll look up its confirmed amenities in the available project data."
-        )
-        evidence = {
-            "body_text": "\n".join(
-                str(project.get("projectName", "")).strip()
-                for project in projects
-                if str(project.get("projectName", "")).strip()
-            ),
-            "category": "AcroBuild property data",
-            "excerpt": f"{len(projects)} available projects; project selection required",
-            "projects": projects,
-            "record_kind": "company_api",
-            "score": 100.0,
-            "source_key": "acrobuild-cs-projects-amenity-selection",
-            "source_name": "AcroBuild CS API",
-            "title": "Projects available for amenity lookup",
-            "url": "",
-        }
-        return {
-            "agent_mode": "knowledge_retrieval",
-            "answer": answer,
-            "articles": [],
-            "assist_error": "",
-            "confidence_label": "high",
-            "handoff_recommended": False,
-            "knowledge_documents": [],
-            "last_synced_at": None,
-            "matched_chunks": [evidence],
-            "model": "",
-            "retrieval_mode": "live_project_records",
-            "source_label": "Retrieved AcroBuild project data",
-            "source_status": "live_api",
-            "support_base_url": get_support_base_url(),
-            "sync_error": "",
-            "used_llm": False,
-        }
+def _amenity_words(text):
+    words = re.findall(r"[a-z0-9]+", str(text).lower())
+    return {w[:-1] if w.endswith("s") and len(w) > 3 else w for w in words} - _AMENITY_FILLER
 
-    project_name = str(selected_project.get("projectName", "Project")).strip()
-    wings = get_project_wings(selected_project["id"])
-    amenity_values = []
-    for wing in wings:
-        for typology in get_wing_typologies(wing["id"]):
-            value = typology.get("unitAmenities")
-            if isinstance(value, list):
-                amenity_values.extend(
-                    str(item).strip() for item in value if str(item).strip()
-                )
-            elif str(value or "").strip():
-                amenity_values.extend(
-                    item.strip()
-                    for item in re.split(r"[,;|\n]", str(value))
-                    if item.strip()
-                )
-    amenities = list(dict.fromkeys(amenity_values))
-    if amenities:
-        answer = "\n".join([
-            f"The available data lists these amenities for {project_name}:",
-            "",
-            *[f"- {amenity}" for amenity in amenities],
-        ])
-    else:
-        answer = (
-            f"The available project data does not currently list amenities for {project_name}. "
-            "Please contact the sales team for the latest confirmed amenity details."
-        )
 
+def requested_amenities(text, amenity_names):
+    """Amenity names the customer asked for: every meaningful word of the name appears in their message.
+    "swimming pool" matches "Swimming Pool" but not "Baby Swimming Area" or "Pool & Billards"."""
+    from services.text_fuzz import correct_words
+
+    vocabulary = ({w for name in amenity_names for w in re.findall(r"[a-z]+", name.lower())}
+                  | {t for t in AMENITY_TERMS if " " not in t})
+    lowered = correct_words(str(text or "").lower(), vocabulary)  # "swiming pool", "jogin track"
+    expanded = amenity_expansion(lowered)  # "tarantal" -> "swimming pool"
+    words = _amenity_words(expanded)
+    matched = {name for name in amenity_names if _amenity_words(name) and _amenity_words(name) <= words}
+    # Keep the most specific: "power backup" matches "Power Backup Lift", not also plain "Lift".
+    return sorted(name for name in matched
+                  if not any(other != name and _amenity_words(name) < _amenity_words(other) for other in matched))
+
+
+def _live_payload(answer, title, source_key, choices, excerpt=""):
+    """A grounded CS-API answer with quick-reply buttons (the router sets the route)."""
     evidence = {
-        "body_text": answer,
-        "category": "AcroBuild property data",
-        "excerpt": f"Amenity fields checked across {len(wings)} project wings",
-        "project": selected_project,
-        "record_kind": "company_api",
-        "score": 100.0,
-        "source_key": f"acrobuild-cs-project-{selected_project['id']}-amenities",
-        "source_name": "AcroBuild CS API",
-        "title": f"{project_name} amenities",
-        "url": "",
-        "wings_checked": len(wings),
+        "body_text": answer, "category": "AcroBuild property data", "excerpt": excerpt or title,
+        "record_kind": "company_api", "score": 100.0, "source_key": source_key, "source_name": "AcroBuild CS API",
+        "title": title, "url": "",
     }
     return {
-        "agent_mode": "knowledge_retrieval",
-        "answer": answer,
-        "articles": [],
-        "assist_error": "",
-        "confidence_label": "high",
-        "handoff_recommended": False,
-        "knowledge_documents": [],
-        "last_synced_at": None,
-        "matched_chunks": [evidence],
-        "model": "",
-        "retrieval_mode": "live_project_records",
-        "source_label": "Retrieved AcroBuild project data",
-        "source_status": "live_api",
-        "support_base_url": get_support_base_url(),
-        "sync_error": "",
-        "used_llm": False,
+        "agent_mode": "knowledge_retrieval", "answer": answer, "articles": [], "assist_error": "",
+        "choices": choices, "confidence_label": "high", "handoff_recommended": False, "knowledge_documents": [],
+        "last_synced_at": None, "matched_chunks": [evidence], "model": "", "retrieval_mode": "live_project_records",
+        "source_label": "Retrieved AcroBuild project data", "source_status": "live_api",
+        "support_base_url": get_support_base_url(), "sync_error": "", "used_llm": False,
     }
+
+
+_ASK_TEAM = {"label": "Ask our team", "value": "", "action": "handoff"}
+
+
+def _project_from_request(request, projects):
+    """The project named now, else the most recent one the customer named earlier in the chat."""
+    project = resolve_project_from_text(projects, str(request.issue or "").strip())
+    if project is None:
+        history = [str(m.text or "").strip() for m in request.conversation_messages
+                   if str(m.sender or "").lower() == "customer" and str(m.text or "").strip()]
+        project = next((p for text in reversed(history) if (p := resolve_project_from_text(projects, text))), None)
+    return project
+
+
+def _pick_project_payload(question, projects, topic, value_template):
+    names = [str(p.get("projectName", "")).strip() for p in projects if str(p.get("projectName", "")).strip()]
+    return _live_payload(question, f"Project selection for {topic}", f"acrobuild-cs-{topic}-project-selection",
+                         [{"label": n, "value": value_template.format(name=n)} for n in names],
+                         f"{len(names)} projects; project selection required")
+
+
+_BEST_RE = re.compile(r"\b(best|most|good|top|great|better|luxur\w*|premium|max(?:imum)?|accha|achhe|acche|"
+                      r"badhiya|zyada|jyada|sabse)\b", re.IGNORECASE)
+
+
+def build_grounded_project_amenities_assist(request):
+    from services.choice_service import project_choices, single_project_choices
+
+    issue = str(request.issue or "").strip()
+    if not _AMENITY_HINT_RE.search(issue):
+        return None
+    generic = bool(re.search(r"\b(amenit|facilit)", issue, re.IGNORECASE))
+    projects = get_company_projects()
+    named = resolve_project_from_text(projects, issue)
+    catalogue = {str(p.get("projectName", "")).strip(): [a["name"] for a in get_project_amenities(p["id"])]
+                 for p in projects if p.get("id") is not None and str(p.get("projectName", "")).strip()}
+    wanted = requested_amenities(issue, {name for names in catalogue.values() for name in names})
+    if not wanted and not generic:
+        return None  # an amenity-sounding word ("ground floor", "fire NOC") that names no amenity
+    from services import home_finder
+    if not wanted and named is None and (_BEST_RE.search(issue) or home_finder.is_search(issue)
+                                         or re.search(r"\d|\bbhk\b|\brk\b", issue, re.IGNORECASE)):
+        # "3BHK with the best amenities", "flats in Pune with good facilities": a home search, best-equipped first.
+        ranked = build_grounded_home_finder_assist(request, amenities_by_project=catalogue, rank_by_amenities=True)
+        if ranked is not None:
+            return ranked
+    if wanted:
+        label = " and ".join(wanted)
+        having = [project for project, names in catalogue.items() if set(wanted) <= set(names)]
+        if named is not None:
+            name = str(named.get("projectName", "")).strip()
+            source = f"acrobuild-cs-project-{named['id']}-amenities"
+            if name in having:
+                return _live_payload(f"Yes, {name} has {label}.", f"{name} amenities", source,
+                                     single_project_choices(name))
+            others = f" Projects that do: {', '.join(having)}." if having else ""
+            return _live_payload(f"{name} doesn't list {label} in the live project data.{others}",
+                                 f"{name} amenities", source, project_choices(having) + [_ASK_TEAM])
+        if having:
+            # "a property with parking" (plus any BHK / budget / place) is a home search limited to these projects.
+            found = build_grounded_home_finder_assist(request, wanted, catalogue)
+            if found is not None:
+                return found
+            return _live_payload(f"These projects have {label}:\n" + "\n".join(f"- {p}" for p in having),
+                                 f"Projects with {label}", "acrobuild-cs-amenity-filter", project_choices(having),
+                                 f"Amenities checked across {len(catalogue)} projects")
+        return _live_payload(f"None of our projects list {label} in the live project data.",
+                             f"Projects with {label}", "acrobuild-cs-amenity-filter",
+                             project_choices(list(catalogue)) + [_ASK_TEAM])
+    project = named or _project_from_request(request, projects)
+    if project is None:
+        return _pick_project_payload("Which project's amenities would you like to see?", projects, "amenities",
+                                     "What amenities does {name} have?")
+    name = str(project.get("projectName", "")).strip()
+    source = f"acrobuild-cs-project-{project['id']}-amenities"
+    amenities = get_project_amenities(project["id"])
+    if not amenities:
+        return _live_payload(f"The live project data doesn't list amenities for {name} yet. Our team can confirm them.",
+                             f"{name} amenities", source, single_project_choices(name, skip="amenities") + [_ASK_TEAM])
+    names = [a["name"] for a in amenities]
+    choices = single_project_choices(name, skip="amenities")
+    if _FULL_LIST_RE.search(issue) or len(names) <= 8:
+        groups = {}
+        for amenity in amenities:
+            groups.setdefault(amenity["type"], []).append(amenity["name"])
+        answer = f"{name} amenities:\n" + "\n".join(f"{group}: {', '.join(n)}" for group, n in groups.items())
+        return _live_payload(answer, f"{name} amenities", source, choices)
+    top = ([a for a in _HEADLINE_AMENITIES if a in names] + [a for a in names if a not in _HEADLINE_AMENITIES])[:6]
+    answer = f"{name} has {len(names)} amenities, including {', '.join(top)}."
+    more = [{"label": f"All {len(names)} amenities", "value": f"Show all amenities of {name}"}]
+    return _live_payload(answer, f"{name} amenities", source, more + choices)
+
+
+_OFFER_RE = re.compile(r"\b(offers?|discounts?|schemes?|deals?)\b", re.IGNORECASE)
+_PAYMENT_PLAN_RE = re.compile(
+    r"\b(payment (?:plans?|schedules?|terms)|construction linked|milestones?|instal+ments?|booking amount|"
+    r"how (?:do|can|should) i pay|pay(?:ment)? in parts)\b", re.IGNORECASE)
+
+
+def build_grounded_project_offers_assist(request):
+    from services.choice_service import single_project_choices
+
+    if not _OFFER_RE.search(str(request.issue or "")):
+        return None
+    projects = get_company_projects()
+    project = _project_from_request(request, projects)
+    if project is None:
+        return _pick_project_payload("Which project's offers would you like to see?", projects, "offers",
+                                     "What offers are available at {name}?")
+    name = str(project.get("projectName", "")).strip()
+    offers = get_project_offers(project["id"])
+    if not offers:
+        answer = f"There are no running offers listed for {name} right now."
+    else:
+        everyone = {"Loan", "Self-Funding", "Investor"}
+        shown = offers if _FULL_LIST_RE.search(str(request.issue or "")) else offers[:_SHORT_LIST]
+        answer = f"Current offers at {name}:\n" + "\n".join(
+            f"- {o['name']}" + ("" if not o["applies_to"] or set(o["applies_to"]) >= everyone
+                               else f" (for {', '.join(o['applies_to'])} buyers)")
+            for o in shown
+        ) + (f"\n...and {len(offers) - len(shown)} more." if len(shown) < len(offers) else "")
+        answer += "\nOur team confirms which offer applies."
+        if len(shown) < len(offers):
+            more = [{"label": f"All {len(offers)} offers", "value": f"Show all offers at {name}"}]
+            return _live_payload(answer, f"{name} offers", f"acrobuild-cs-project-{project['id']}-offers",
+                                 more + single_project_choices(name, skip="offers"))
+    return _live_payload(answer, f"{name} offers", f"acrobuild-cs-project-{project['id']}-offers",
+                         single_project_choices(name, skip="offers"))
+
+
+def build_grounded_project_payment_plan_assist(request):
+    from services.choice_service import single_project_choices
+
+    if not _PAYMENT_PLAN_RE.search(str(request.issue or "")):
+        return None
+    projects = get_company_projects()
+    project = _project_from_request(request, projects)
+    if project is None:
+        return _pick_project_payload("Which project's payment plan would you like to see?", projects,
+                                     "payment plan", "What is the payment plan at {name}?")
+    name = str(project.get("projectName", "")).strip()
+    plans = [plan for plan in get_project_payment_plans(project["id"]) if plan["milestones"]]
+    choices = single_project_choices(name, skip="payment plan")
+    if not plans:
+        answer = f"The live data doesn't list a payment plan for {name} yet. Our team can share it."
+    else:
+        parts = []
+        for plan in plans:
+            amount = plan["booking_amount"]
+            head = f"{plan['name']} ({plan['type']})" + (
+                f": booking amount INR {amount:,.0f}" if isinstance(amount, (int, float)) else "")
+            parts.append((head, [m["name"] for m in plan["milestones"]]))
+        if _FULL_LIST_RE.search(str(request.issue or "")):
+            answer = f"Payment plans at {name}:\n\n" + "\n\n".join(
+                head + "\n" + "\n".join(f"- {s}" for s in stages) for head, stages in parts)
+        else:  # the API's stage order isn't reliable, so the short answer counts stages instead of quoting a few
+            answer = f"Payment plans at {name}:\n" + "\n".join(
+                f"- {head}, then {len(stages)} stages linked to construction" for head, stages in parts)
+            choices = [{"label": "All payment stages", "value": f"Show all payment plan milestones at {name}"}] + choices
+    return _live_payload(answer, f"{name} payment plans", f"acrobuild-cs-project-{project['id']}-payment-plans",
+                         choices)
+
+
+_PRICE_NOTE = "Approx. prices, before taxes and charges. Our team confirms availability and the final cost."
+# Lists longer than this show the first few and a button for the rest (answer first, details on request).
+_SHORT_LIST = 3
+_FULL_LIST_RE = re.compile(r"\b(all|full|complete|every|saare|sabhi|poori|puri)\b", re.IGNORECASE)
+
+
+def _city_choices(projects):
+    cities = sorted({str(p.get("city") or "").strip() for p in projects if str(p.get("city") or "").strip()})
+    return [{"label": f"Homes in {city}", "value": f"Show homes in {city}"} for city in cities]
+
+
+_CONTACT_SUBJECT_RE = re.compile(r"\b(office|company|your|you|acrobuild|gbk|head ?office|customer care|helpline|"
+                                 r"sales team|support team|builder|developer)\b", re.IGNORECASE)
+_CONTACT_TOPIC_RE = re.compile(r"\b(location|contact|phone|number|call|email|e-mail|mail|reach|website|whatsapp|"
+                               r"visit you|meet you)\b", re.IGNORECASE)
+
+
+def build_grounded_company_contact_assist(request):
+    """ "What is your office address?", "customer care number", "how do I contact you": from the company
+    record. A question about one project's location is left to the project answers."""
+    issue = str(request.issue or "").strip()
+    if not (_CONTACT_SUBJECT_RE.search(issue) and _CONTACT_TOPIC_RE.search(issue)):
+        return None
+    if resolve_project_from_text(get_company_projects(), issue) is not None:
+        return None
+    from services.acrobuild_company_service import _cached_request
+
+    company = _cached_request("/api/cs/company")
+    if not isinstance(company, dict) or not company:
+        return None
+    name = str(company.get("businessName") or company.get("companyName") or "Acrobuild").strip()
+    lines = [f"{name} office:"]
+    for label, key in (("Address", "address"), ("Phone", "phoneNo"), ("Email", "contactEmail"),
+                       ("Website", "websiteUrl")):
+        value = str(company.get(key) or "").strip()
+        if value:
+            lines.append(f"- {label}: {value}")
+    return _live_payload("\n".join(lines), "Company contact details", "acrobuild-cs-company",
+                         [{"label": "Book a site visit", "value": "I want to book a site visit"}, _ASK_TEAM])
+
+
+def _locality_city(place, projects_in_place):
+    """The city a named locality belongs to: from the locality list, else from our projects there.
+    "" when `place` is itself a city or unknown."""
+    from services import home_finder
+
+    if not place or place in home_finder.KNOWN_CITIES:
+        return ""
+    cities = {str(p.get("city") or "").strip().lower() for p in projects_in_place if p.get("city")}
+    return home_finder.LOCALITY_CITY.get(place) or (cities.pop() if len(cities) == 1 else "")
+
+
+def _any_homes(projects):
+    """Whether any of these projects has wings; a project we can't check counts as having homes."""
+    for project in projects:
+        try:
+            if get_project_wings(project["id"]):
+                return True
+        except RuntimeError:
+            return True
+    return False
+
+
+def _project_listing(project):
+    """Live wings, home types (by wing) and listed-flat counts (by (wing id, home type id)) for one project.
+
+    The CS API lists flats under home-type ids their wing doesn't carry (159 flats in Prime wing A), so a
+    flat's home type is found by id anywhere in the project, else by name, and attached to the flat's wing."""
+    wings = get_project_wings(project["id"])
+    typologies_by_wing, available = {}, {}
+    project_typologies = get_project_typologies(project["id"]) if wings else []  # one call; rows carry wingId
+    for typology in project_typologies:
+        typologies_by_wing.setdefault(typology.get("wingId"), []).append(typology)
+    by_id = {t["id"]: t for t in project_typologies}
+    by_name = {(t.get("typologyName") or "").lower(): t for t in project_typologies if t.get("typologyName")}
+    for wing in wings:
+        listed = typologies_by_wing.setdefault(wing["id"], [])
+        listed_ids = {t["id"] for t in listed}
+        for unit in get_wing_inventory(wing["id"], available_only=True):
+            typology = by_id.get(unit.get("typologyId")) or by_name.get((unit.get("typologyName") or "").lower())
+            if typology is None:
+                continue  # no size or rate anywhere for this flat: it can't be described or priced
+            if typology["id"] not in listed_ids:
+                listed.append(typology)
+                listed_ids.add(typology["id"])
+            key = (wing["id"], typology["id"])
+            available[key] = available.get(key, 0) + 1
+    return wings, typologies_by_wing, available
+
+
+# What a family looks for first when comparing projects; the rest are counted, not listed.
+_HEADLINE_AMENITIES = ("Swimming Pool", "Gym", "Community House", "Children's Playing Area", "Jogging Track",
+                       "Park", "Power Backup Lift", "Security Personnel", "Parking", "Party Lawn")
+
+
+def _amenity_highlights(names):
+    if not names:
+        return " · no amenities listed"
+    top = ([a for a in _HEADLINE_AMENITIES if a in names] + sorted(set(names) - set(_HEADLINE_AMENITIES)))[:3]
+    return f" · {len(names)} amenities incl. {', '.join(top)}"
+
+
+def build_grounded_home_finder_assist(request, required_amenities=None, amenities_by_project=None,
+                                      rank_by_amenities=False):
+    """ "2BHK under 50 lakh in Pune", "2000 sqft", "ready to move", "property in Mumbai": matching homes per
+    project with estimated prices and buttons, the closest options when nothing fits, never a dead end.
+    With `required_amenities` ("flat with parking"), only projects listing all of them are searched.
+    With `rank_by_amenities` ("3BHK with the best amenities"), projects with the most amenities come first."""
+    from services import home_finder
+    from services.choice_service import project_choices
+
+    issue = str(request.issue or "").strip()
+    if not required_amenities and not (home_finder.is_search(issue) or re.search(r"\d", issue)):
+        return None  # cheap exit before any CS API call: this also runs on general-chat turns ("hi")
+    projects = [p for p in get_company_projects() if isinstance(p, dict) and p.get("id") is not None]
+    if resolve_project_from_text(projects, issue) is not None:
+        return None  # a question about one named project belongs to the project answers
+    places = {str(p.get(k) or "").strip() for p in projects for k in ("city", "locality") if p.get(k)}
+    criteria = home_finder.parse_criteria(issue, places)
+    # A size, BHK, budget or "ready to move" is a search on its own ("2000sqft best locality"); a bare place
+    # needs a search word ("property in Pune"), so "office address in Pune" is left to other answers.
+    if not (required_amenities or rank_by_amenities or criteria.bhk is not None or criteria.size
+            or criteria.budget_max or criteria.ready or (criteria.place and home_finder.is_search(issue))):
+        return None
+    our_cities = sorted({str(p.get("city") or "").strip() for p in projects if p.get("city")})
+    in_place = [p for p in projects if home_finder.project_in_place(p, criteria.place)]
+    if required_amenities:
+        in_place = [p for p in in_place
+                    if set(required_amenities) <= set((amenities_by_project or {}).get(str(p.get("projectName", "")).strip(), []))]
+        if not in_place:
+            where = f" in {criteria.place.title()}" if criteria.place else ""
+            answer = f"None of our projects{where} list {' and '.join(required_amenities)} in the live project data."
+            return _live_payload(answer, "Amenity search", "acrobuild-cs-home-finder",
+                                 _city_choices(projects) + [_ASK_TEAM])
+    # Area-first: a locality with no homes of ours ("flat in Magarpatta", or Baner where the only project has
+    # no homes listed) falls back to the rest of its city instead of a dead end.
+    fallback_note = ""
+    city = _locality_city(criteria.place, in_place)
+    if city and city in {c.lower() for c in our_cities} and not _any_homes(in_place):
+        fallback_note = (f"We don't have homes listed in {criteria.place.title()} right now. "
+                         f"Here are our homes elsewhere in {city.title()}.\n\n")
+        criteria.place, criteria.places = city, (city,)
+        in_place = [p for p in projects if home_finder.project_in_place(p, city)]
+    if not in_place:
+        answer = (f"We don't have projects in {criteria.place.title()} right now. "
+                  f"Our homes are in {', '.join(our_cities)}. Would you like to see those?")
+        return _live_payload(answer, "Projects by city", "acrobuild-cs-home-finder", _city_choices(projects))
+
+    # Projects load in parallel (a city search touches ~40 endpoints). Each worker runs in a copy of this
+    # turn's context so its calls land in the same data-API trace the live-data guard checks.
+    def load(project):
+        try:
+            return project["id"], _project_listing(project)
+        except RuntimeError:  # one project's data failing to load must not sink the answer for the others
+            return project["id"], None
+
+    with ThreadPoolExecutor(max_workers=4) as pool:  # the CS API stalls under bursts; 4 keeps it responsive
+        loaded = dict(pool.map(lambda job: job[0].run(load, job[1]),
+                               [(contextvars.copy_context(), p) for p in in_place]))
+    unchecked = [str(p.get("projectName", "")).strip() for p in in_place if loaded.get(p["id"]) is None]
+    listings = {pid: listing for pid, listing in loaded.items() if listing is not None}
+    searchable = [p for p in in_place if p["id"] in listings]
+
+    def search(c):
+        found = [home_finder.project_matches(p, *listings[p["id"]], c) for p in searchable]
+        return [m for m in found if m]
+
+    matches, relaxed = search(criteria), ""
+    if not matches:
+        for label, looser in home_finder.relaxations(criteria):
+            matches, relaxed = search(looser), label
+            if matches:
+                break
+    no_homes = [str(p.get("projectName", "")).strip() for p in searchable if not listings[p["id"]][0]]
+    wanted = criteria.describe() + (f" with {' and '.join(required_amenities)}" if required_amenities else "")
+    if not matches:
+        answer = f"I couldn't find {wanted} in our live listings right now."
+        choices = _city_choices(projects)
+    else:
+        if criteria.size and relaxed:
+            matches.sort(key=lambda m: abs((m["area_min"] + m["area_max"]) / 2 - criteria.size))
+        elif relaxed == "budget":
+            matches.sort(key=lambda m: m["price_min"] or 0)
+        amenities = amenities_by_project or {}
+        if rank_by_amenities:
+            matches.sort(key=lambda m: len(amenities.get(m["name"], [])), reverse=True)  # stable: ties keep order
+            wanted += ", best amenities first"
+        head = fallback_note + (f"Nothing matches {wanted} exactly. The closest options ({relaxed} relaxed):"
+                                if relaxed else f"Here are {wanted}:")
+        budget_set = bool(criteria.budget_max) and relaxed != "budget"
+        answer = head + "\n" + "\n".join(
+            f"- {home_finder.describe_match(m, budget_set)}"
+            + (_amenity_highlights(amenities.get(m["name"], [])) if rank_by_amenities else "")
+            for m in matches[:5])
+        answer += "\n\n" + _PRICE_NOTE
+        choices = project_choices([m["name"] for m in matches[:5]])
+    if unchecked:
+        answer += f"\n\nI couldn't load {', '.join(unchecked)} just now; please ask again in a moment."
+    payload = _live_payload(answer, f"Search: {wanted}", "acrobuild-cs-home-finder", choices,
+                            f"{len(searchable)} projects checked")
+    payload["unchecked_projects"] = unchecked  # disclosed above, so the live-data guard may accept the rest
+    return payload
+
+
+_DETAILS_RE = re.compile(
+    r"\b(size|sq\.? ?ft|sqft|square|bhk|rk|configurations?|types?|wing|floors?|storey|storeys|possession|"
+    r"price|availab\w*|flat|how many|details|overview|carpet|about|info|information|rera)\b", re.IGNORECASE)
+
+
+def build_grounded_project_details_assist(request):
+    """One project's sizes, BHK types, wings, floors, possession, prices and availability ("sqft of 2bhk in
+    Prime", "how many wing in Paradise", "price of Myspace"), from live data."""
+    from services import home_finder
+    from services.choice_service import single_project_choices
+
+    issue = str(request.issue or "").strip()
+    if not _DETAILS_RE.search(issue):
+        return None
+    projects = [p for p in get_company_projects() if isinstance(p, dict) and p.get("id") is not None]
+    project = resolve_project_from_text(projects, issue)
+    if project is None:
+        places = {str(p.get(k) or "").strip() for p in projects for k in ("city", "locality") if p.get(k)}
+        if home_finder.parse_criteria(issue, places).place:
+            return None  # "2bhk price in Pune" is a search across projects, not a follow-up
+        project = _project_from_request(request, projects)
+    if project is None:
+        return None
+    name = str(project.get("projectName", "")).strip()
+    bhk = home_finder.parse_criteria(issue, set()).bhks or None
+    wings, typologies_by_wing, available = _project_listing(project)
+    focus = _detail_focus(issue)
+    wing_lines, home_lines = home_finder.project_summary(project, wings, typologies_by_wing, available, bhk,
+                                                         fields=_FOCUS_FIELDS.get(focus, ("size", "price")))
+    place = ", ".join(p for p in (project.get("locality"), project.get("city")) if p)
+    title = f"{name}{f' ({place})' if place else ''}"
+    source = f"acrobuild-cs-project-{project['id']}-details"
+    choices = single_project_choices(name, question=issue)
+    if not wings:
+        answer = f"{title} has no homes listed yet. Our team can share the launch details."
+        return _live_payload(answer, f"{name} details", source, choices + [_ASK_TEAM])
+    rera = str(project.get("reraNo") or "").strip()
+    # Answer what was asked, nothing more; the buttons lead to the rest.
+    if focus == "rera":
+        answer = (f"{name} RERA number: {rera}." if rera
+                  else f"The live data has no RERA number for {name}; our team can share it.")
+        return _live_payload(answer, f"{name} details", source, choices)
+    if focus in ("wing", "possession"):
+        return _live_payload(f"{title} wings:\n" + "\n".join(f"- {w}" for w in wing_lines),
+                             f"{name} details", source, choices)
+    if not home_lines:
+        kinds = " or ".join("1 RK" if k == 0.5 else f"{k:g}BHK" for k in bhk) if bhk else "homes"
+        return _live_payload(f"No {kinds} are listed at {name} right now.", f"{name} details", source, choices)
+    heading = {"price": f"{name} prices:", "size": f"{name} sizes:"}.get(focus, f"{title}:")
+    lines = [heading] + [f"- {line}" for line in home_lines]
+    if focus == "general":
+        lines += ["Wings: " + "; ".join(wing_lines)] + ([f"RERA: {rera}"] if rera else [])
+    if focus != "size":
+        lines += ["", _PRICE_NOTE]
+    return _live_payload("\n".join(lines), f"{name} details", source, choices)
+
+
+# What each kind of question needs from a project's BHK lines.
+_FOCUS_FIELDS = {"price": ("price",), "size": ("size", "carpet"), "general": ("size", "price")}
+_FOCUS_RES = (("rera", r"\brera\b"), ("wing", r"\b(wings?|floors?|storeys?|towers?)\b"),
+              ("possession", r"\b(possession|ready to move|handover)\b"),
+              ("size", r"\b(size|sq\.? ?ft|sqft|square|carpet|area)\b"), ("price", r"\b(price|cost|budget|rate)\b"))
+
+
+def _detail_focus(issue):
+    """The one thing a details question asks about, or "general" for none or several ("details of Prime")."""
+    found = [name for name, pattern in _FOCUS_RES if re.search(pattern, issue, re.IGNORECASE)]
+    return found[0] if len(found) == 1 else "general"
+
 
 def build_grounded_project_location_assist(request):
 

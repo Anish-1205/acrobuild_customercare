@@ -6,6 +6,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
+
+from services import cs_records
 from pathlib import Path
 from threading import Lock
 from time import monotonic, time
@@ -27,12 +29,17 @@ CS_API_BASE_URL = os.getenv(
     "http://10.10.1.23:8081",
 ).rstrip("/")
 CS_API_KEY = os.getenv("ACROBUILD_CS_API_KEY", "").strip()
+# The CS API scopes every route by company: /api/cs/{companyId}/projects, ...
+CS_API_COMPANY_ID = os.getenv("ACROBUILD_CS_API_COMPANY_ID", "").strip()
 CS_API_TIMEOUT_SECONDS = float(
     os.getenv("ACROBUILD_CS_API_TIMEOUT_SECONDS", "2.5")
 )
 CS_API_CACHE_TTL_SECONDS = int(
     os.getenv("ACROBUILD_CS_API_CACHE_TTL_SECONDS", "300")
 )
+# Availability changes fastest: at most 30 s, and never longer than the configured TTL (0 = always live,
+# which the live-data guard requires; a cached hit there makes it reject the whole answer).
+INVENTORY_CACHE_TTL_SECONDS = min(30, CS_API_CACHE_TTL_SECONDS)
 CS_API_LIVE_ONLY = os.getenv("ACROBUILD_CS_API_LIVE_ONLY", "true").strip().lower() not in {
     "0", "false", "no", "off",
 }
@@ -85,6 +92,14 @@ INVENTORY_TERMS = {
     "book", "visit", "site", "shop", "shops", "commercial",
     "size", "sizes", "pricing", "price", "affordable", "budget", "friendly", "recommend", "suggest", "best",
 }
+OFFER_TERMS = {"offer", "offers", "discount", "discounts", "scheme", "schemes", "deal", "deals", "free", "kitchen"}
+PAYMENT_TERMS = {
+    "payment", "payments", "plan", "plans", "schedule", "milestone", "milestones", "installment", "installments",
+    "instalment", "instalments", "booking", "emi", "loan", "pay",
+}
+AMENITY_TERMS = {"amenity", "amenities", "facility", "facilities"}
+PROPERTY_TERMS |= OFFER_TERMS | PAYMENT_TERMS | AMENITY_TERMS
+DETAIL_TERMS |= OFFER_TERMS | PAYMENT_TERMS | AMENITY_TERMS
 
 
 # -----------------------------------
@@ -103,11 +118,31 @@ def _response_summary(value):
     return {"kind": type(value).__name__}
 
 
+def _company_scoped_path(path):
+    """Callers, caches and traces use the logical "/api/cs/projects"; only the wire URL carries the company id."""
+    if CS_API_COMPANY_ID and path.startswith("/api/cs/"):
+        return f"/api/cs/{urllib.parse.quote(CS_API_COMPANY_ID, safe='')}/{path[len('/api/cs/'):]}"
+    return path
+
+
+# Circuit breaker: the CS API stalls in bursts (5 s per call with the retry). After BREAKER_FAILURES network
+# failures in a row, calls fail fast for BREAKER_SECONDS instead of making every customer wait.
+BREAKER_FAILURES = 6
+BREAKER_SECONDS = 10
+_BREAKER = {"failures": 0, "open_until": 0.0}
+
+
+def _trip_breaker():
+    _BREAKER["failures"] += 1
+    if _BREAKER["failures"] >= BREAKER_FAILURES:
+        _BREAKER.update(failures=0, open_until=monotonic() + BREAKER_SECONDS)
+
+
 def _request_json(path, params=None):
     if not CS_API_KEY:
         raise RuntimeError("ACROBUILD_CS_API_KEY is not configured.")
 
-    url = f"{CS_API_BASE_URL}{path}"
+    url = f"{CS_API_BASE_URL}{_company_scoped_path(path)}"
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
 
@@ -122,37 +157,53 @@ def _request_json(path, params=None):
     )
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     started_at = monotonic()
+    if started_at < _BREAKER["open_until"]:
+        message = "CS API paused after repeated timeouts; retrying shortly."
+        log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", error=message)
+        raise RuntimeError(message)
 
-    try:
-        with opener.open(request, timeout=CS_API_TIMEOUT_SECONDS) as response:
-            value = json.loads(response.read().decode("utf-8", errors="replace"))
-            log_data_api_call(
-                provider="Acrobuild CS API", endpoint=path, method="GET", params=params,
-                status="completed", duration_ms=(monotonic() - started_at) * 1000,
-                response_summary=_response_summary(value),
-            )
-            return value
-    except urllib.error.HTTPError as error:
-        body = error.read().decode("utf-8", errors="replace")
+    # One retry for network blips (timeout / unreachable): the CS API occasionally stalls for a few
+    # seconds and answers fine right after. HTTP errors are the server's real answer and are not retried.
+    for attempt in (1, 2):
         try:
-            message = json.loads(body).get("errorMessage", body)
-        except json.JSONDecodeError:
-            message = body
-        message = message or f"CS API request failed with HTTP {error.code}."
-        log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
-        raise RuntimeError(message) from error
-    except urllib.error.URLError as error:
-        message = f"Could not reach the CS API: {error.reason}"
-        log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
-        raise RuntimeError(message) from error
-    except (socket.timeout, TimeoutError) as error:
-        message = "CS API request timed out."
-        log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
-        raise RuntimeError(message) from error
-    except json.JSONDecodeError as error:
-        message = "CS API returned invalid JSON."
-        log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
-        raise RuntimeError(message) from error
+            with opener.open(request, timeout=CS_API_TIMEOUT_SECONDS) as response:
+                value = json.loads(response.read().decode("utf-8", errors="replace"))
+                log_data_api_call(
+                    provider="Acrobuild CS API", endpoint=path, method="GET", params=params,
+                    status="completed", duration_ms=(monotonic() - started_at) * 1000,
+                    response_summary=_response_summary(value),
+                )
+                _BREAKER["failures"] = 0
+                return value
+        except urllib.error.HTTPError as error:
+            body = error.read().decode("utf-8", errors="replace")
+            try:
+                message = json.loads(body).get("errorMessage", body)
+            except json.JSONDecodeError:
+                message = body
+            message = message or f"CS API request failed with HTTP {error.code}."
+            _BREAKER["failures"] = 0  # the server answered: it is up, the request was wrong
+            log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
+            raise RuntimeError(message) from error
+        except urllib.error.URLError as error:
+            if attempt == 1:
+                continue
+            message = f"Could not reach the CS API: {error.reason}"
+            _trip_breaker()
+            log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
+            raise RuntimeError(message) from error
+        except (socket.timeout, TimeoutError) as error:
+            if attempt == 1:
+                continue
+            message = "CS API request timed out."
+            _trip_breaker()
+            log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
+            raise RuntimeError(message) from error
+        except json.JSONDecodeError as error:
+            message = "CS API returned invalid JSON."
+            log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
+            raise RuntimeError(message) from error
+    raise RuntimeError("CS API request failed.")  # unreachable: the second attempt always returns or raises
 
 def _snapshot_json_path():
     return _snapshot_path().with_suffix(".json")
@@ -311,7 +362,7 @@ def _normalized_project_text(value):
     return " ".join(re.findall(r"[a-z0-9]+", str(value or "").lower()))
 
 
-def resolve_project_from_text(projects, text):
+def resolve_project_from_text(projects, text, fuzzy=True):
     """Resolve one explicitly named project, preferring the longest exact name.
 
     Longest-name priority is essential for catalogues that contain both a base
@@ -345,6 +396,15 @@ def resolve_project_from_text(projects, text):
         if distinctive and overlap:
             token_candidates.append((len(overlap), len(distinctive), project))
     if not token_candidates:
+        if fuzzy:
+            # Misspelt names ("vishwajit emipre", "paradice"): correct words against the real project-name
+            # words only, then resolve once more without fuzzing.
+            from services.text_fuzz import correct_words
+            vocabulary = {w for p in projects or [] if isinstance(p, dict)
+                          for w in _normalized_project_text(p.get("projectName", "")).split()}
+            corrected = correct_words(normalized_text, vocabulary)
+            if corrected != normalized_text:
+                return resolve_project_from_text(projects, corrected, fuzzy=False)
         return None
     best_overlap = max(item[0] for item in token_candidates)
     best = [item for item in token_candidates if item[0] == best_overlap]
@@ -391,26 +451,127 @@ def is_cs_api_configured():
 
 def get_company_projects():
     projects = _cached_request("/api/cs/projects")
-    return projects if isinstance(projects, list) else []
+    return cs_records.clean_projects(projects if isinstance(projects, list) else [])
+
+
+_SELLABLE = {"at": 0.0, "items": None}
+SELLABLE_TTL_SECONDS = 60
+
+
+def get_sellable_projects():
+    """Projects with at least one wing, for every customer-facing project list (chat booking buttons and
+    the widget's project explorer alike). The CS API carries empty shells (7 of 16 in the 2026-10-29
+    audit) that can't be explored or visited. A project whose wings can't be checked right now is kept."""
+    if _SELLABLE["items"] is not None and monotonic() - _SELLABLE["at"] < SELLABLE_TTL_SECONDS:
+        return _SELLABLE["items"]
+    keep = []
+    for project in get_company_projects():
+        try:
+            if get_project_wings(project["id"]):
+                keep.append(project)
+        except RuntimeError:  # unknown is not empty
+            keep.append(project)
+    _SELLABLE.update(at=monotonic(), items=keep)
+    return keep
 
 
 def get_project_wings(project_id):
     wings = _cached_request(f"/api/cs/projects/{int(project_id)}/wings")
-    return wings if isinstance(wings, list) else []
+    return cs_records.clean_wings(wings if isinstance(wings, list) else [])
+
+
+def get_project_amenities(project_id):
+    """Project amenities as [{"name", "type"}]; type is "Amenities" or "Facilities" in the CS API."""
+    items = _cached_request(f"/api/cs/projects/{int(project_id)}/amenities")
+    amenities = {}
+    for item in items if isinstance(items, list) else []:
+        name = cs_records.amenity_name(item.get("iconName")) if isinstance(item, dict) else ""
+        if name:
+            amenities.setdefault(name.lower(), {"name": name, "type": str(item.get("type") or "Amenities").strip()})
+    return list(amenities.values())
+
+
+def get_project_offers(project_id, today=None):
+    """Offers running today, one per offer name, with the buyer types they apply to."""
+    items = _cached_request(f"/api/cs/projects/{int(project_id)}/offers")
+    now_ms = datetime.combine(today or datetime.now().date(), datetime.min.time()).timestamp() * 1000
+    offers = {}
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict) or (item.get("startDate") or 0) > now_ms + 86_400_000:
+            continue
+        if item.get("endDate") and item["endDate"] < now_ms:
+            continue
+        name = " ".join(str(item.get("offerName", "")).split())
+        if name:
+            entry = offers.setdefault(name.lower(), {"name": name, "applies_to": []})
+            entry["applies_to"] = sorted(set(entry["applies_to"]) | set(item.get("applicableTos") or []))
+    return list(offers.values())
+
+
+def get_project_payment_plans(project_id):
+    """Payment plans with their milestones; identical schedules (one per wing) collapse into one."""
+    items = _cached_request(f"/api/cs/projects/{int(project_id)}/payment-plans")
+    plans = {}
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict):
+            continue
+        milestones = [
+            {"name": " ".join(str(m.get("name", "")).split()), "percentage": m.get("percentage")}
+            for m in item.get("milestones") or [] if isinstance(m, dict) and str(m.get("name", "")).strip()
+        ]
+        plan = {"name": cs_records.plan_name(item.get("scheduleName"), item.get("scheduleType")),
+                "type": cs_records.text(item.get("scheduleType")),
+                "booking_amount": item.get("bookingAmount"), "milestones": milestones}
+        plans.setdefault((plan["type"], plan["booking_amount"], tuple(m["name"] for m in milestones)), plan)
+    return list(plans.values())
+
+
+def get_unit(unit_id):
+    return _cached_request(f"/api/cs/units/{int(unit_id)}")
+
+
+def get_project_typologies(project_id):
+    typologies = _cached_request(f"/api/cs/projects/{int(project_id)}/typologies")
+    return cs_records.clean_typologies(typologies if isinstance(typologies, list) else [])
 
 
 def get_wing_typologies(wing_id):
     typologies = _cached_request(f"/api/cs/wings/{int(wing_id)}/typologies")
-    return typologies if isinstance(typologies, list) else []
+    return cs_records.clean_typologies(typologies if isinstance(typologies, list) else [])
 
 
 def get_wing_inventory(wing_id, available_only=True):
     inventory = _cached_request(
         f"/api/cs/wings/{int(wing_id)}/inventory",
         params={"availableOnly": str(bool(available_only)).lower()},
-        ttl_seconds=30,
+        ttl_seconds=INVENTORY_CACHE_TTL_SECONDS,
     )
-    return inventory if isinstance(inventory, list) else []
+    return cs_records.clean_inventory(inventory if isinstance(inventory, list) else [])
+
+def _project_extra_lines(project_id, query_words, focused):
+    """Amenities for a focused (few-project) or amenity question; offers and payment plans only when asked."""
+    lines = []
+    amenities = get_project_amenities(project_id) if focused or query_words.intersection(AMENITY_TERMS) else []
+    if amenities:
+        lines.append("Amenities: " + ", ".join(a["name"] for a in amenities))
+    if query_words.intersection(OFFER_TERMS):
+        lines.extend(
+            f"Current offer: {o['name']}" + (f" (for {', '.join(o['applies_to'])} buyers)" if o["applies_to"] else "")
+            for o in get_project_offers(project_id)
+        )
+    if query_words.intersection(PAYMENT_TERMS):
+        for plan in get_project_payment_plans(project_id):
+            stages = "; ".join(
+                m["name"] for m in plan["milestones"][:6]
+            ) + (f"; and {len(plan['milestones']) - 6} more stages" if len(plan["milestones"]) > 6 else "")
+            amount = plan["booking_amount"]
+            lines.append(
+                f"Payment plan: {plan['name']} ({plan['type']})"
+                + (f", booking amount INR {amount:,.0f}" if isinstance(amount, (int, float)) else "")
+                + (f"; stages: {stages}" if stages else "")
+            )
+    return lines
+
 
 def search_company_knowledge(query, max_projects=20):
     if not is_cs_api_configured():
@@ -594,6 +755,7 @@ def search_company_knowledge(query, max_projects=20):
             )
             for typology in typologies
         )
+        detail_lines.extend(_project_extra_lines(project_id, query_words, focused=len(matching_projects) <= 3))
 
         if query_words.intersection(INVENTORY_TERMS):
             for wing in wings:
@@ -603,7 +765,7 @@ def search_company_knowledge(query, max_projects=20):
                 inventory = _cached_request(
                     f"/api/cs/wings/{wing_id}/inventory",
                     params={"availableOnly": "true"},
-                    ttl_seconds=30,
+                    ttl_seconds=INVENTORY_CACHE_TTL_SECONDS,
                 )
                 if not isinstance(inventory, list):
                     continue
@@ -642,6 +804,42 @@ def search_company_knowledge(query, max_projects=20):
         detail_chunk["inventory_loaded"] = bool(query_words.intersection(INVENTORY_TERMS))
         chunks.append(detail_chunk)
     return chunks
+
+
+_CONTRACT_CHECK = {"at": 0.0, "result": None}
+CONTRACT_CHECK_SECONDS = 30
+
+
+def check_cs_api_contract():
+    """One live call to the projects route, cached 30 s, with a hint that names the likely cause. The CS API
+    has changed its routes without notice before (company id moved into the path; old routes 404)."""
+    if _CONTRACT_CHECK["result"] and monotonic() - _CONTRACT_CHECK["at"] < CONTRACT_CHECK_SECONDS:
+        return _CONTRACT_CHECK["result"]
+    if not is_cs_api_configured():
+        result = {"status": "failed", "error": "not configured",
+                  "hint": "Set ACROBUILD_CS_API_BASE_URL and ACROBUILD_CS_API_KEY."}
+    else:
+        try:
+            projects = _request_json("/api/cs/projects")
+            if not isinstance(projects, list):
+                raise RuntimeError(f"expected a list of projects, got {type(projects).__name__}")
+            result = {"status": "ok", "projects": len(projects)}
+        except RuntimeError as error:
+            message = str(error)
+            if "404" in message or "Not Found" in message:
+                hint = ("Projects route not found: the CS API's routes may have changed. Check "
+                        "ACROBUILD_CS_API_COMPANY_ID and ACROBUILD_CS_API_BASE_URL against the current API.")
+            elif "400" in message or "Bad Request" in message:
+                hint = "Request rejected: check the company id in the path and the apiKey header."
+            elif "401" in message or "403" in message:
+                hint = "Not authorised: check ACROBUILD_CS_API_KEY."
+            elif "paused" in message:
+                hint = "Calls are paused after repeated timeouts; they resume automatically."
+            else:
+                hint = "Network problem reaching the CS API host (VPN / office network?)."
+            result = {"status": "failed", "error": message[:200], "hint": hint}
+    _CONTRACT_CHECK.update(at=monotonic(), result=result)
+    return result
 
 
 def get_cs_api_status():
@@ -690,10 +888,14 @@ def export_all_company_data_to_text():
     }
     for project in projects:
         project_id = project.get("id")
-        project_entry = {"project": project, "project_typologies": [], "wings": []}
+        project_entry = {"project": project, "project_typologies": [], "wings": [],
+                         "amenities": [], "offers": [], "payment_plans": []}
         if project_id is not None:
             project_typologies = _cached_request(f"/api/cs/projects/{int(project_id)}/typologies")
             project_entry["project_typologies"] = project_typologies if isinstance(project_typologies, list) else []
+            project_entry["amenities"] = get_project_amenities(project_id)
+            project_entry["offers"] = get_project_offers(project_id)
+            project_entry["payment_plans"] = get_project_payment_plans(project_id)
             for wing in get_project_wings(project_id):
                 wing_id = wing.get("id")
                 wing_entry = {"wing": wing, "typologies": [], "inventory": []}

@@ -8,6 +8,276 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-10-29 21:00 — Minimal answers: only what was asked, the rest behind a button
+
+Problem: answers carried far more than the question asked. "price of prime" returned RERA, wings, carpet areas, flat counts and a two-sentence note. Amenities came as a 40-item list, offers as a 19-item list, and payment plans as raw milestone stages.
+
+Fixes:
+- **Project details** (`build_grounded_project_details_assist` + `_detail_focus`) answer only the topic asked: price, size, wings/possession or RERA.
+  - A general question gets BHK sizes and prices, one wings line and RERA.
+  - `home_finder.project_summary(fields=...)` picks which fields each BHK line shows.
+- **Long lists show the first few, with a button for the rest:**
+  - Offers: 3, then "All N offers".
+  - Amenities: 6 headline amenities, then "All N amenities".
+  - Payment plans: one line per plan (booking amount and stage count), then "All payment stages". Quoting the first stages isn't safe because the API's stage order is unreliable.
+  - Asking for "all"/"full"/"saare" returns the full list.
+- **Price note** cut to one line.
+- **Search results** no longer list projects with nothing listed.
+- **Regression checks:** M2 checks the new amenities wording. The G8/G10 key pattern is now `\bsk-…`, so words like "risk-free" can't match it.
+
+Verified:
+- pytest: 799 passed.
+- Live regression: 50/50 on some runs, 49/50 on others. G10 (prompt injection) fails intermittently. It passed every time on its own, and 9 direct attacks leaked nothing. The failing reply wasn't captured, so the cause is unconfirmed.
+
+## 2026-10-29 20:20 — Several requests in one message; "best amenities" searches
+
+Problems:
+- "show me a 3bhk with best amenities" got "Which project's amenities would you like to see?" plus 16 project buttons. The generic amenities answer ran before the home search and ignored the 3BHK.
+- A message asking two things ("price of Prime and amenities of Paradise") got only one answer.
+
+Fixes:
+- **Ranked search.** A generic amenities word together with a search criterion, or "best/most/good/sabse/badhiya", now runs a home search with `rank_by_amenities`. Homes are sorted by how many amenities their project lists, and each line shows the count and the headline amenities (`_amenity_highlights`). A bare "what amenities do you have" still asks which project.
+- **Splitting.** `services/multi_request.split_requests` splits a message on "?", ";" and newlines. It also splits on "and/also/plus/aur", but only where each side asks a different topic or project.
+  - "price of Prime and Paradise" becomes two price questions.
+  - "price and amenities of Prime" carries the project to both parts.
+  - "2bhk and 3bhk in Pune", "parking and lift" and "3bhk in Pune? with gym" stay whole.
+- **Combining.** `routers/assist._grounded_property_shortcut` answers each part (up to 4) through `_single_shortcut`. `_combine_answers` merges them:
+  - repeated paragraphs, such as the price note, appear once;
+  - all evidence is kept for the live-data guard;
+  - buttons are deduplicated, and an answer about several projects offers a button per project;
+  - parts with no grounded answer are listed with "Ask our team".
+
+Verified:
+- pytest: 797 passed.
+- Live regression: 50/50, including new M1 and M2.
+- Browser: "show me a 3bhk with best amenities" lists 3BHK homes with Prime first (5 amenities incl. Swimming Pool…). "price of prime and amenities of paradise" answers both, with buttons for both projects.
+
+## 2026-10-29 19:40 — Synonyms for all CS API data; amenity searches no longer open the project list; "Show more" removed
+
+Problems:
+- "which projects have swimming pool" showed the 9-project explorer list. The widget's `isProjectBrowseRequest` read it as "list projects", so the backend never saw it.
+- Synonyms only covered a few words.
+- The LLM's English rewrite turned "tarantal" (swimming pool) into "terrace".
+- The user didn't want the "Show more" button.
+
+Fixes:
+- **Widget routing.** `chatLanguage.isProjectBrowseRequest` returns false for any message with a criterion (an amenity, "with", "having", "jisme", offers, possession…). Those messages go to the backend.
+- **Amenity synonyms.** `services/vocabulary.AMENITY_SYNONYMS` covers all 43 live amenity names, with English, Hindi and Marathi words (tarantal, bagicha, bijli backup, watchman, wifi, STP, kachra…).
+  - Matching is longest-phrase-first: "kids pool" means the baby pool, not also the swimming pool.
+  - `api_context.requested_amenities` and the lookup trigger now use this shared table.
+  - "Community house" is protected from the "house" → "flat" rewrite.
+- **Data synonyms.** More words for:
+  - price: rate card, cost sheet, kitne ka, dhara, vilai…
+  - floor: storey, manzil, maala…
+  - RERA: MahaRERA, registration number.
+  - ready to move: ready possession, tayyar…
+  - possession, offers, payment plan and contact.
+- **RERA in details.** Project details now show the RERA number from the API (`reraNo`).
+- **Rewrite check.** `prepare_turn` keeps the customer's own words when they name an amenity and the rewrite names a different one.
+- **"Show more".** The `MessageText` component and its labels are removed.
+
+Verified:
+- pytest: 781 passed, including 43 new synonym cases in `tests/test_vocabulary_synonyms.py`.
+- vitest: 64 passed.
+- Live regression: 48/48.
+- Live queries, all answered correctly:
+  - "tarantal wala flat chahiye" lists Swimming Pool homes.
+  - "gym aur bagicha wala 2bhk" lists homes with Gym and Park.
+  - "prime ka rera number" gives P51700051593.
+
+## 2026-10-29 18:55 — LLM and widget limitations fixed (one journey, safer translation, softer handoff)
+
+Problem: a list of LLM and widget limitations. Explorer and chat had separate booking journeys. Translation could rewrite prices. Angry customers lost their answer. Searches forgot the city. A side answer and the booking resume asked two questions at once. Buttons were English-only. Long answers were walls of text. The widget had no error boundary and no live-region semantics.
+
+Fixes (each based on current best practice):
+- **One journey.** The explorer's "Book a site visit" hands the chosen project, wing and flat to the chat booking flow (`flow_service._explorer_extras`), so confirmation and nonce rules are shared. The explorer and the chat list the same sellable projects (`get_sellable_projects`). The separate form is removed.
+- **Rules before LLM.**
+  - Property words or a fuzzy project name make a turn a property turn (`_has_hard_property_signal`).
+  - Button taps skip the analyzer (`routers/assist._choice_analysis`), saving one LLM call per tap.
+  - An English rewrite that drops a number is rejected (`_faithful_rewrite`).
+- **Placeholder masking for translation.** Names, numbers, ₹ amounts, URLs and emails become `[[n]]` tokens before translation and are restored afterwards. A missing or extra token rejects the translation (`_mask_facts` / `_unmask_facts`).
+- **Sentiment.** Only an explicit request for a person replaces the answer with a handoff. Angry or frustrated customers still get the answer, with an apology and the team offered (`guardrail_gate.is_upset`, `EMPATHY_PREFIX`).
+- **Slot memory.** The last place searched is kept in session state and applied to follow-up searches with no place (`_remember_search`).
+- **Duplicate question.** If a side answer already ends in "?", the booking resume becomes a short note instead of a second question.
+- **Output filtering (OWASP LLM01/02).** Secret env values are redacted. Answers quoting our system prompt are replaced (`guardrail_gate.scrub_output`). New live cases G10 and G11 cover Hindi injection, "repeat the text above", DAN, and an angry customer.
+- **Dead ends.** A property answer with no buttons offers projects plus "Ask our team".
+- **Widget.**
+  - Fixed button labels are localized (`chatLanguage.choiceLabel`); values stay English.
+  - The quick-action bar is always shown, with "All projects" and "Talk to our team", and fades at the edge.
+  - Long answers are shortened with "Show more", and the price caveat always stays visible (`MessageText.previewText`).
+  - The handoff form says what happens next and prefills the question.
+  - `ChatErrorBoundary` wraps the chat panel.
+  - The chat thread has `role="log"`, an accessible name and `aria-busy` while replying.
+
+Not changed:
+- History is still cleared on refresh, as the user asked.
+- The LLM fallback is unchanged.
+- Voice input is still untested.
+
+Verified:
+- pytest: 735 passed. ruff and mypy are clean.
+- Frontend: vitest 62 passed; tsc and the build are clean.
+- Live regression: 48/48.
+- Browser: a Hindi price question kept every ₹ figure, and the bar labels were in Hindi. The Pune list collapsed with its caveat still showing. "Talk to our team" opened a prefilled form.
+
+## 2026-10-29 16:19 — Persistent project bar in the chat widget
+
+**Context:** A project's next-step buttons (Explore homes, Location, Prices,
+Amenities, Offers, Payment plan, Book a site visit) only appeared under the
+reply that produced them, so they vanished after any other message.
+
+**Change:** `services/choice_service.single_project_choices` tags each topic
+button with `topic` (always including the "explore" entry, which names the
+project). The widget (`src/pages/CustomerHomePage.tsx`) keeps that project in
+focus — also when a project is opened in the explorer — and renders its topics
+plus "All projects" as one scrolling row of chips above the message box
+(`.store-chat-project-bar` in `src/styles.css`). Replies no longer repeat those
+topics inline; their other buttons (e.g. "Ask our team") still show. Starting a
+new chat clears the focus.
+
+**Verified:** 705/705 backend and 59/59 frontend tests, tsc, build. In the
+browser: the bar appeared after an NX question, stayed through an unrelated
+question, and its Prices chip returned NX's live price range.
+
+---
+
+## 2026-10-29 15:55 — CS API: company-scoped paths, full endpoint coverage, button-first chat journeys
+
+**Context:** Every CS API call returned 404, so the bot had no live property data.
+Amenities had never actually been read (the client looked at an always-empty
+typology field). Typed questions got plain text with no buttons, and a single
+slow API response could fail an otherwise correct answer.
+
+**Root causes and changes:**
+- **Routes moved under the company id** (`/api/cs/{companyId}/...`). The client
+  inserts `ACROBUILD_CS_API_COMPANY_ID` into the wire URL in one place
+  (`acrobuild_company_service._company_scoped_path`); callers, caches and traces
+  keep the logical `/api/cs/projects`. `.env.example` documents the id and fixes
+  the base URL (9091, not 9092).
+- **Full endpoint coverage.** Probing the API (471 candidate paths) found 12
+  endpoints. Newly used: `/projects/{id}/amenities`, `/projects/{id}/offers`,
+  `/projects/{id}/payment-plans`; helper for `/units/{id}`. `/projects/{id}` adds
+  nothing over the list; `/cost-sheet` is POST-only and deliberately not called.
+  Retrieval (`search_company_knowledge`) adds amenities for focused questions
+  and offers / payment plans when asked; the data snapshot includes all three.
+- **Direct answers** (`api_context`): amenity questions match the real amenity
+  names (so "swimming pool" is not "Pool & Billards" or "Baby Swimming Area"),
+  filter projects by amenity, or list one project's amenities; offers list the
+  running offer names (the API's `amount` field is ambiguous, so no figures);
+  payment plans show booking amount and the first stages.
+- **Button-first journeys** (`services/choice_service.py`): property answers
+  carry quick replies — project buttons that open the widget's existing
+  project→wing→floor→flat explorer, next-step topics for one project (minus the
+  topic just asked), or every project when the bot asks which one. Button taps
+  send `from_choice` and keep the conversation's language.
+- **Reliability:** the client retries once on a timeout / connection error; the
+  live-data guard ignores a failure recovered by a later call to the same
+  endpoint in the same turn; a CS API error inside a direct answer falls back to
+  the normal pipeline instead of failing the request.
+
+**Verified:** 705/705 backend tests (new tests for each change), 59/59 frontend
+tests, tsc, lint and build. Live against the CS API in the browser: Marathi
+project list with project buttons, swimming-pool filter (Prime, Paradise,
+Precious Pearl), amenities / offers / payment plans, button taps staying in
+Marathi, booking prefilled from a button, location answer recovering from a
+transient timeout.
+
+---
+
+## 2026-10-23 18:20 — Dependency audit: bump pypdf, triage new python-jose advisory
+
+**Context:** CI's `pip-audit` step started failing on new advisories (not code
+changes): 14 in `pypdf` 6.18.0 and PYSEC-2026-4298 in `python-jose` 3.5.0.
+
+**Change:** `requirements/core.txt` pins `pypdf==6.21.1` (lowest version fixing
+all 14). PYSEC-2026-4298 has no fix and is not reachable (requires a public key
+and unrestricted `algorithms`; auth uses an HS256 secret and pins
+`algorithms=[ALGORITHM]`), so it is ignored in `.github/workflows/verify.yml`
+with the reasoning in `requirements/SECURITY_ADVISORIES.md`.
+
+**Verified:** CI's exact `pip-audit` command passes locally; 695/695 backend
+tests pass on pypdf 6.21.1.
+
+---
+
+## 2026-10-23 18:02 — DeepEval multi-turn eval; three booking-flow fixes it found
+
+**Context:** Added an offline multi-turn evaluation of the chat booking flow and
+handoff gate using DeepEval, and fixed the bugs it surfaced.
+
+**Eval:** `scripts/deepeval_chat_flows.py` (new) drives the real app in-process
+against a throwaway SQLite DB through 7 scripted conversations (booking,
+side question mid-booking, Hinglish booking, question at the confirm step,
+change then cancel, angry customer, asks for a person). Each gets hard rule
+checks (tickets created, nothing booked before Confirm, confirm step reached,
+handoff flagged) plus DeepEval conversational metrics (Knowledge Retention,
+Role Adherence, Conversation Completeness, Turn Relevancy, and a custom
+ConversationalGEval for safe booking/handoff) judged by the configured Sarvam
+endpoint. Telemetry is off; the script bypasses the per-IP chat rate limit
+in-process only. DeepEval is pinned in `requirements/eval.txt` (not installed
+in CI); `.deepeval/` is gitignored.
+
+**Fixes:**
+- Hinglish booking answered "Booked!" in English: the Confirm button sends
+  `confirm:<nonce>`, which the language analysis read as English.
+  `services/reply_language.py: has_no_language_of_its_own` now treats button
+  values and `confirm`/`cancel`/`change` as language-neutral.
+- "on 26/10 at 11" did not fill the time unless the LLM's English rendering
+  happened to add "AM": `flow_service.parse_time` now accepts "at <hour>".
+- With the CS API down, a project named in the opening message was missed and
+  the next answer (the customer's name) was taken as the project:
+  `flow_service.step` now runs the validated LLM extractor once on the opening
+  message when the catalogue lookup found no project.
+
+**Verified:** 695/695 backend tests pass (new tests for all three fixes).
+Final eval run: 7/7 rule checks pass; 31/35 judge metrics pass. The 4 failures
+are judge errors (correct handoffs scored 0.00 for role adherence; a claimed
+re-ask that did not happen). Sarvam judges its own conversations here, so the
+judge scores are indicative only. CS API (10.10.1.23) unreachable during runs.
+
+---
+
+## 2026-10-23 17:38 — Chat site-visit booking flow, confirm-before-act, early handoff gate
+
+**Context:** The bot answered single questions well but could not complete a
+task across turns. Typed site-visit requests were intercepted client-side and
+opened a static form; the backend never saw them. `handoff_recommended` was
+computed but ignored by the customer widget, and there was no sentiment check.
+
+**Change — two layers run in `routers/assist.py` after `prepare_turn`, before
+the grounded shortcuts and orchestrator (`_pre_answer`):**
+- `services/guardrail_gate.py` (new): hands off on an explicit request for a
+  person, an `angry` message, or a second `frustrated` message.
+  `services/turn_analysis_service.py` now also returns `sentiment` from the
+  same LLM call, with a keyword fallback (`heuristic_sentiment`).
+- `services/flow_service.py` (new): slot-filling site-visit flow (project,
+  date, time, name, phone, email). Deterministic parsers read the customer's
+  words; the LLM is only a fallback extractor and its output is re-validated
+  by the same parsers. Side questions pass through to the normal pipeline and
+  the reply ends with a prompt to resume the booking. Project list is cached
+  60 s, including failures, so a down CS API costs one timeout per minute.
+- `services/action_registry.py` (new): typed actions behind a single-use,
+  10-minute confirmation nonce. `submit_site_visit` is now shared by
+  `POST /api/site-visits` (`routers/properties.py`) and the chat flow;
+  `SiteVisitRequest` moved here and is re-exported from `api_context.py`.
+- Flow state lives in a new `conversation_state` table (migration 4) via
+  `ConversationSession.get_state/set_state`.
+- Responses gain optional `choices` and `flow`; the widget
+  (`src/pages/CustomerHomePage.tsx`) renders choices as quick-reply buttons,
+  shows "Need more help" whenever `handoff_recommended` is set, and no longer
+  intercepts typed site-visit requests.
+- Both layers default on; `SUPPORT_FLOWS=false` / `SUPPORT_GATE=false` turn
+  them off (`.env.example`).
+
+**Verified:** 693/693 backend tests pass with flags on and off (new
+`tests/test_superbot_flows.py`, including a multi-turn stream-endpoint test);
+59/59 frontend tests, build and lint pass. Browser walkthrough with live
+Sarvam: full chat booking created a ticket, side question resumed the flow,
+frustrated/angry messages handed off, cancel worked. Not verified: live
+project choices (CS API at 10.10.1.23 unreachable from the test machine).
+
+---
+
 ## 2026-09-17 13:33 — Multilingual free chat: any Indian language, plus two live-data bugs
 
 **Context:** Free chat replied in the wrong language or fell back to

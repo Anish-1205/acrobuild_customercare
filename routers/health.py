@@ -6,7 +6,7 @@ from api_context import (
     HTTPException,
     Response,
     build_local_product_feed_html,
-    get_cs_api_status,
+    check_cs_api_contract,
     get_llm_provider,
     get_local_product_feed_summary,
     get_workspace_index_state,
@@ -45,8 +45,7 @@ def api_health():
         "status": "ok" if is_llm_available() else "failed",
         "provider": get_llm_provider(),
     }
-    cs_status = get_cs_api_status()
-    checks["cs_api"] = {"status": "ok" if cs_status["configured"] else "failed"}
+    checks["cs_api"] = check_cs_api_contract()
     index_state = get_workspace_index_state()
     checks["knowledge_index"] = {
         "status": "degraded" if index_state["is_dirty"] or index_state["is_building"] else "ok",

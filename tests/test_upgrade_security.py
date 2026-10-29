@@ -27,7 +27,7 @@ def workspace(tmp_path, monkeypatch):
 def test_migrations_idempotent(workspace):
     apply_migrations(workspace)
     with closing(sqlite3.connect(workspace)) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 3
+        assert conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 4
 
 
 def test_cookie_login_csrf_logout_and_revocation(workspace):

@@ -422,12 +422,23 @@ export interface RagEvaluation {
   version: string;
 }
 
+export interface SupportAssistChoice {
+  /** "project" opens the guided project explorer for `value`; "handoff" opens the contact form. */
+  action?: "handoff" | "project";
+  label: string;
+  /** Set on a project's next-step topics; the widget shows those in its persistent project bar. */
+  topic?: string;
+  value: string;
+}
+
 export interface SupportAssistResponse {
   data_api_calls?: DataApiCallTrace[];
-  agent_mode?: "fallback" | "qwen" | "retrieval";
+  agent_mode?: "fallback" | "flow" | "handoff" | "qwen" | "retrieval";
   answer: string;
   articles: SupportArticleMatch[];
   assist_error?: string;
+  choices?: SupportAssistChoice[];
+  flow?: { name: string; step: string } | null;
   confidence_label?: "high" | "low" | "medium";
   handoff_recommended?: boolean;
   knowledge_documents: KnowledgeDocumentMatch[];

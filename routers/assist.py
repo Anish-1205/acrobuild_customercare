@@ -1,7 +1,11 @@
 """Assist HTTP endpoints."""
+import os
+from dataclasses import replace
 from time import monotonic
 
 from fastapi import APIRouter, Request
+from services import flow_service, guardrail_gate
+from services.choice_service import ASK_TEAM as _ASK_TEAM, choices_for_answer, project_choices
 from services.conversation_store_service import COOKIE_NAME, ConversationSession
 
 from services.observability import (
@@ -21,13 +25,19 @@ from api_context import (
     VoiceSynthesisRequest,
     _enforce_live_property_data,
     begin_data_api_trace,
+    build_grounded_company_contact_assist,
+    build_grounded_home_finder_assist,
     build_grounded_project_amenities_assist,
+    build_grounded_project_details_assist,
     build_grounded_project_location_assist,
+    build_grounded_project_offers_assist,
+    build_grounded_project_payment_plan_assist,
     build_grounded_site_visit_document_assist,
     clear_assist_response_cache,
     end_data_api_trace,
     evaluate_rag_response,
     generate_fast_indic_speech,
+    get_company_projects,
     generate_indic_speech,
     get_current_data_api_logs,
     get_support_base_url,
@@ -36,6 +46,7 @@ from api_context import (
     stream_support_orchestration_events,
 )
 from graph.main_orchestrator import localize_response, prepare_turn
+from services.turn_analysis_service import TurnAnalysis
 
 router = APIRouter(tags=["assist"])
 
@@ -100,30 +111,229 @@ def _history(request):
 
 
 def _grounded_property_shortcut(request, turn):
-    """Router-level grounded answers only for property turns, matched on the English
-    rendering so they work for questions asked in any language."""
-    if not turn.analysis.is_property:
+    """A message asking several things ("price of Prime and amenities of Paradise") gets each part answered;
+    one request goes straight to the grounded answers."""
+    from services.acrobuild_company_service import resolve_project_from_text
+    from services.multi_request import split_requests
+
+    try:
+        projects = [p for p in get_company_projects() if isinstance(p, dict)]
+    except Exception:  # the single-request path reports CS API trouble itself
+        projects = []
+
+    def find_project(text):
+        project = resolve_project_from_text(projects, text, fuzzy=False)
+        return str(project.get("projectName", "")).strip() if project else None
+
+    parts = split_requests(turn.property_issue, find_project) if projects else [turn.property_issue]
+    if len(parts) < 2:
+        return _single_shortcut(request, turn)
+    turn_logger.info("turn branch %s", kv(branch="multi_request", parts=len(parts)))
+    answered, missed = [], []
+    for part in parts:
+        part_request = SupportAssistRequest.model_validate({**request.model_dump(), "issue": part})
+        part_turn = replace(turn, property_issue=part, analysis=replace(turn.analysis, intent="property"))
+        payload = _single_shortcut(part_request, part_turn)
+        (answered if payload is not None else missed).append(payload or part)
+    if not answered:
         return None
+    return _combine_answers(answered, missed)
+
+
+def _combine_answers(payloads, missed):
+    """One reply from several grounded answers: each answer once (a shared price note only once), all their
+    evidence for the live-data guard, and every answer's buttons (deduplicated)."""
+    paragraphs, choices, seen = [], [], set()
+    for payload in payloads:
+        for paragraph in str(payload.get("answer", "")).split("\n\n"):
+            if paragraph.strip() and paragraph not in paragraphs:
+                paragraphs.append(paragraph)
+        for choice in payload.get("choices") or []:
+            key = (choice.get("label"), choice.get("value"), choice.get("action"))
+            if key not in seen:
+                seen.add(key)
+                choices.append(choice)
+    explored = [c["value"] for c in choices if c.get("topic") == "explore"]
+    if len(explored) > 1:
+        # Topic buttons follow one focused project; with several, offer each project to explore instead.
+        choices = project_choices(explored) + [c for c in choices if not c.get("topic")
+                                               and c.get("action") != "project"]
+    if missed:
+        paragraphs.append("I couldn't answer this from our live data: " + "; ".join(f'"{m}"' for m in missed)
+                          + ". Our team can help with it.")
+        choices.append(_ASK_TEAM)
+    combined = {**payloads[0], "answer": "\n\n".join(paragraphs), "choices": choices[:10],
+                "matched_chunks": [chunk for p in payloads for chunk in p.get("matched_chunks") or []],
+                "unchecked_projects": [name for p in payloads for name in p.get("unchecked_projects") or []]}
+    return combined
+
+
+def _single_shortcut(request, turn):
+    """Router-level grounded answers only for property turns, matched on the English
+    rendering so they work for questions asked in any language. Company contact questions ("your office
+    address?") are answered whatever the turn's intent: the analyzer often labels them general chat."""
     shortcut_request = request
     if turn.property_issue != str(request.issue or "").strip():
         shortcut_request = SupportAssistRequest.model_validate({**request.model_dump(), "issue": turn.property_issue})
-    payload = (
-        build_grounded_site_visit_document_assist(shortcut_request)
-        or build_grounded_project_amenities_assist(shortcut_request)
-        or build_grounded_project_location_assist(shortcut_request)
-    )
+    if not turn.analysis.is_property:
+        # The analyzer sometimes calls "property in Mumbai" or "I want a swimming pool" general chat. These
+        # answers have strict triggers of their own (a real search criterion, a real amenity name), so they
+        # are a safe deterministic backstop for that misclassification.
+        try:
+            payload = (build_grounded_company_contact_assist(shortcut_request)
+                       or build_grounded_project_amenities_assist(shortcut_request)
+                       or build_grounded_home_finder_assist(shortcut_request))
+        except RuntimeError as error:
+            turn_logger.warning("grounded shortcut failed %s", kv(error=error))
+            return None
+        return {**payload, "route": "property"} if payload is not None else None
+    try:
+        payload = (
+            build_grounded_site_visit_document_assist(shortcut_request)
+            or build_grounded_project_payment_plan_assist(shortcut_request)
+            or build_grounded_project_offers_assist(shortcut_request)
+            or build_grounded_project_amenities_assist(shortcut_request)
+            or build_grounded_project_details_assist(shortcut_request)
+            or build_grounded_company_contact_assist(shortcut_request)
+            or build_grounded_home_finder_assist(shortcut_request)
+            or build_grounded_project_location_assist(shortcut_request)
+        )
+    except RuntimeError as error:  # CS API failure: the normal pipeline answers (and reports live data as unavailable)
+        turn_logger.warning("grounded shortcut failed %s", kv(error=error))
+        return None
     if payload is not None:
         payload = {**payload, "route": "property"}
     return payload
 
 
-def _complete_payload(response_payload, cleaned_issue, turn):
+def _choice_analysis(request, session, issue):
+    """A button tap needs no LLM analysis: its value is our own English text, it is always a property
+    step, and it keeps the conversation's language. Saves one LLM round trip per tap."""
+    if not request.from_choice:
+        return None
+    language = session.get_state().get("language")
+    if not language:
+        return None
+    return TurnAnalysis(intent="property", reply_language=language[0], script=language[1], source="choice",
+                        english=issue)
+
+
+def _project_names():
+    try:
+        return [str(p.get("projectName", "")).strip() for p in get_company_projects() if isinstance(p, dict)]
+    except Exception:  # no buttons is better than a failed answer when the CS API is down
+        return []
+
+
+def _enabled(flag):
+    return os.getenv(flag, "true").strip().lower() not in {"0", "false", "no", "off"}
+
+
+def _flow_payload(reply):
+    payload = {
+        "agent_mode": "handoff" if reply.get("handoff") else "flow",
+        "answer": reply["answer"],
+        "articles": [], "assist_error": "", "confidence_label": "high",
+        "handoff_recommended": bool(reply.get("handoff")), "knowledge_documents": [],
+        "matched_chunks": [], "model": "", "retrieval_mode": "none",
+        # "general" keeps the live-property-data guard off: these are scripted questions, not property claims.
+        "route": "general", "source_label": "Booking assistant", "source_status": "workspace",
+        "support_base_url": get_support_base_url(), "used_llm": False,
+        "choices": reply.get("choices") or [], "flow": reply.get("flow"),
+    }
+    if reply.get("ticket"):
+        payload["ticket"] = reply["ticket"]
+    return payload
+
+
+def _pre_answer(request, turn, cleaned_issue, session):
+    """Handoff gate, then the booking flow, before the normal pipeline runs.
+
+    Returns (payload, resume, turn): payload answers the turn itself; resume is
+    (suffix, choices, flow) to attach to a side-question answer mid-booking; turn
+    may carry the conversation's language over for a button tap.
+    """
+    state = session.get_state()
+    if request.from_choice and state.get("language"):
+        # Button values are English text; the customer didn't switch language by tapping one.
+        language, script = state["language"]
+        turn = replace(turn, analysis=replace(turn.analysis, reply_language=language, script=script))
+    state["language"] = [turn.analysis.reply_language, turn.analysis.script]
+    payload = resume = None
+    if _enabled("SUPPORT_GATE"):
+        reason, state = guardrail_gate.check(cleaned_issue, turn.analysis, state)
+        if reason:
+            turn_logger.info("turn branch %s", kv(branch="handoff_gate", reason=reason))
+            payload = _flow_payload({"answer": guardrail_gate.HANDOFF_ANSWER, "handoff": True})
+    if payload is None and _enabled("SUPPORT_FLOWS"):
+        from qwen import generate_qwen_chat_response
+
+        reply, flow = flow_service.step(
+            state.get("flow"), cleaned_issue, turn.analysis.english,
+            prefill={"name": request.customer_name, "email": request.customer_email},
+            generate=generate_qwen_chat_response,
+        )
+        state["flow"] = flow
+        if reply is not None:
+            turn_logger.info("turn branch %s", kv(branch="flow", step=reply["flow"]["step"]))
+            payload = _flow_payload(reply)
+        elif flow:
+            resume = flow_service.resume_prompt(flow)
+    if payload is None:
+        turn = _remember_search(turn, state)
+    session.set_state({key: value for key, value in state.items() if value})
+    return payload, resume, turn
+
+
+def _remember_search(turn, state):
+    """Slot memory for home searches: after "2BHK in Pune", "anything under 60 lakh?" searches Pune again.
+    The place lives in session state (it expires with the conversation); a new place replaces it."""
+    from services import home_finder
+    from services.acrobuild_company_service import resolve_project_from_text
+
+    issue = turn.property_issue
+    if not (home_finder.is_search(issue) or any(ch.isdigit() for ch in issue)):
+        return turn
+    try:
+        projects = [p for p in get_company_projects() if isinstance(p, dict)]
+    except Exception:  # memory is a convenience; the answer still runs without it
+        return turn
+    places = {str(p.get(k) or "").strip() for p in projects for k in ("city", "locality") if p.get(k)}
+    criteria = home_finder.parse_criteria(issue, places)
+    if criteria.place:
+        state["place"] = criteria.place
+        return turn
+    is_search = (criteria.bhk is not None or criteria.size or criteria.budget_max or criteria.budget_min
+                 or criteria.ready)
+    if state.get("place") and is_search and resolve_project_from_text(projects, issue) is None:
+        turn_logger.info("turn memory %s", kv(place=state["place"]))
+        return replace(turn, property_issue=f"{issue} in {state['place']}")
+    return turn
+
+
+def _complete_payload(response_payload, cleaned_issue, turn, resume=None):
     """Shared post-processing: live-data enforcement, then localization last so any
     replacement text (e.g. the live-data fallback) is in the customer's language.
     The blob-only localize_ai_answer() is not used: it returned garbled boilerplate."""
     data_api_calls = get_current_data_api_logs()
     response_payload = _enforce_live_property_data(response_payload, cleaned_issue, data_api_calls)
+    if resume:
+        # After the live-data guard so the booking question is never mistaken for a property claim.
+        suffix, choices, flow = resume
+        answer = str(response_payload.get("answer", ""))
+        if answer.rstrip().endswith("?"):
+            # The side answer already asks something; a second question would leave two to answer.
+            suffix = "\n\nYour site visit booking is saved: tap a button below to continue it."
+        response_payload = {**response_payload, "answer": answer + suffix, "choices": choices, "flow": flow}
+    elif not response_payload.get("choices") and response_payload.get("route") == "property":
+        # Before localization: project names are matched in the English answer.
+        response_payload = {**response_payload, "choices": choices_for_answer(
+            response_payload, _project_names(), question=f"{cleaned_issue} {turn.property_issue}")}
+    if guardrail_gate.is_upset(turn.analysis) and not response_payload.get("handoff_recommended"):
+        response_payload = {**response_payload, "handoff_recommended": True,
+                            "answer": guardrail_gate.EMPATHY_PREFIX + str(response_payload.get("answer", ""))}
     response_payload = localize_response(response_payload, turn.analysis)
+    response_payload["answer"] = guardrail_gate.scrub_output(response_payload.get("answer", ""))
     response_payload["data_api_calls"] = data_api_calls
     response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
     return response_payload
@@ -145,11 +355,14 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
     clear_assist_response_cache()
     trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
     try:
-        turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
-        response_payload = _grounded_property_shortcut(request, turn)
-        if response_payload is not None:
-            turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
-        else:
+        turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint,
+                                analysis=_choice_analysis(request, session, cleaned_issue))
+        response_payload, resume, turn = _pre_answer(request, turn, cleaned_issue, session)
+        if response_payload is None:
+            response_payload = _grounded_property_shortcut(request, turn)
+            if response_payload is not None:
+                turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
+        if response_payload is None:
             response_payload = run_support_orchestration(
                 issue=cleaned_issue,
                 conversation_id=request.conversation_id,
@@ -165,7 +378,7 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
                 language_hint=request.language_hint,
                 turn=turn,
             )
-        response_payload = _complete_payload(response_payload, cleaned_issue, turn)
+        response_payload = _complete_payload(response_payload, cleaned_issue, turn, resume)
         _log_turn_result("assist", cleaned_issue, response_payload, started)
         session.append(cleaned_issue, response_payload.get("answer"))
         return response_payload
@@ -223,11 +436,15 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
         clear_assist_response_cache()
         trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
         try:
-            turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
-            shortcut_payload = _grounded_property_shortcut(request, turn)
+            turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint,
+                                analysis=_choice_analysis(request, session, cleaned_issue))
+            shortcut_payload, resume, turn = _pre_answer(request, turn, cleaned_issue, session)
+            if shortcut_payload is None:
+                shortcut_payload = _grounded_property_shortcut(request, turn)
+                if shortcut_payload is not None:
+                    turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
             if shortcut_payload is not None:
-                turn_logger.info("turn branch %s", kv(branch="grounded_property_shortcut"))
-                response_payload = _complete_payload(shortcut_payload, cleaned_issue, turn)
+                response_payload = _complete_payload(shortcut_payload, cleaned_issue, turn, resume)
                 session.append(cleaned_issue, response_payload.get("answer"))
                 yield json.dumps({
                     "text": response_payload["answer"], "type": "delta",
@@ -270,7 +487,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
                 elif event_type not in {"done", None}:
                     turn_logger.debug("stream event %s", kv(type=event_type, stage=event.get("stage")))
                 if event_type == "done" and isinstance(event.get("response"), dict):
-                    response_payload = _complete_payload(event["response"], cleaned_issue, turn)
+                    response_payload = _complete_payload(event["response"], cleaned_issue, turn, resume)
                     event["response"] = response_payload
                     session.append(cleaned_issue, response_payload.get("answer"))
                 if property_request:

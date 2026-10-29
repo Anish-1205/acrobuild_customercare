@@ -451,6 +451,7 @@ export async function getSupportAssist(payload: {
   limit?: number;
   prefer_fast_response?: boolean;
   prefer_qwen_response?: boolean;
+  from_choice?: boolean;
 }) {
   const request = {
     article_hint_url: payload.article_hint_url ?? "",
@@ -464,7 +465,8 @@ export async function getSupportAssist(payload: {
     language_hint: payload.language_hint ?? "",
     limit: payload.limit ?? 3,
     prefer_fast_response: payload.prefer_fast_response ?? false,
-    prefer_qwen_response: payload.prefer_qwen_response ?? true
+    prefer_qwen_response: payload.prefer_qwen_response ?? true,
+    from_choice: payload.from_choice ?? false
   };
   const activityId = beginApiActivity({ endpoint: "/api/support/assist", method: "POST", request, transport: "json" });
 
@@ -495,6 +497,7 @@ export async function streamSupportAssist(
     limit?: number;
     prefer_fast_response?: boolean;
     prefer_qwen_response?: boolean;
+    from_choice?: boolean;
   },
   handlers: {
     onDelta?: (text: string) => void;
@@ -513,7 +516,8 @@ export async function streamSupportAssist(
     language_hint: payload.language_hint ?? "",
     limit: payload.limit ?? 3,
     prefer_fast_response: payload.prefer_fast_response ?? false,
-    prefer_qwen_response: payload.prefer_qwen_response ?? true
+    prefer_qwen_response: payload.prefer_qwen_response ?? true,
+    from_choice: payload.from_choice ?? false
   };
   const activityId = beginApiActivity({ endpoint: "/api/support/assist/stream", method: "POST", request, transport: "stream" });
 
