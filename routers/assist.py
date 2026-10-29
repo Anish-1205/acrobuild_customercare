@@ -1,9 +1,11 @@
 """Assist HTTP endpoints."""
 import os
+from dataclasses import replace
 from time import monotonic
 
 from fastapi import APIRouter, Request
 from services import flow_service, guardrail_gate
+from services.choice_service import choices_for_answer
 from services.conversation_store_service import COOKIE_NAME, ConversationSession
 
 from services.observability import (
@@ -25,11 +27,14 @@ from api_context import (
     begin_data_api_trace,
     build_grounded_project_amenities_assist,
     build_grounded_project_location_assist,
+    build_grounded_project_offers_assist,
+    build_grounded_project_payment_plan_assist,
     build_grounded_site_visit_document_assist,
     clear_assist_response_cache,
     end_data_api_trace,
     evaluate_rag_response,
     generate_fast_indic_speech,
+    get_company_projects,
     generate_indic_speech,
     get_current_data_api_logs,
     get_support_base_url,
@@ -109,14 +114,27 @@ def _grounded_property_shortcut(request, turn):
     shortcut_request = request
     if turn.property_issue != str(request.issue or "").strip():
         shortcut_request = SupportAssistRequest.model_validate({**request.model_dump(), "issue": turn.property_issue})
-    payload = (
-        build_grounded_site_visit_document_assist(shortcut_request)
-        or build_grounded_project_amenities_assist(shortcut_request)
-        or build_grounded_project_location_assist(shortcut_request)
-    )
+    try:
+        payload = (
+            build_grounded_site_visit_document_assist(shortcut_request)
+            or build_grounded_project_payment_plan_assist(shortcut_request)
+            or build_grounded_project_offers_assist(shortcut_request)
+            or build_grounded_project_amenities_assist(shortcut_request)
+            or build_grounded_project_location_assist(shortcut_request)
+        )
+    except RuntimeError as error:  # CS API failure: the normal pipeline answers (and reports live data as unavailable)
+        turn_logger.warning("grounded shortcut failed %s", kv(error=error))
+        return None
     if payload is not None:
         payload = {**payload, "route": "property"}
     return payload
+
+
+def _project_names():
+    try:
+        return [str(p.get("projectName", "")).strip() for p in get_company_projects() if isinstance(p, dict)]
+    except Exception:  # no buttons is better than a failed answer when the CS API is down
+        return []
 
 
 def _enabled(flag):
@@ -143,10 +161,16 @@ def _flow_payload(reply):
 def _pre_answer(request, turn, cleaned_issue, session):
     """Handoff gate, then the booking flow, before the normal pipeline runs.
 
-    Returns (payload, resume): payload answers the turn itself; resume is
-    (suffix, choices, flow) to attach to a side-question answer mid-booking.
+    Returns (payload, resume, turn): payload answers the turn itself; resume is
+    (suffix, choices, flow) to attach to a side-question answer mid-booking; turn
+    may carry the conversation's language over for a button tap.
     """
     state = session.get_state()
+    if request.from_choice and state.get("language"):
+        # Button values are English text; the customer didn't switch language by tapping one.
+        language, script = state["language"]
+        turn = replace(turn, analysis=replace(turn.analysis, reply_language=language, script=script))
+    state["language"] = [turn.analysis.reply_language, turn.analysis.script]
     payload = resume = None
     if _enabled("SUPPORT_GATE"):
         reason, state = guardrail_gate.check(cleaned_issue, turn.analysis, state)
@@ -168,7 +192,7 @@ def _pre_answer(request, turn, cleaned_issue, session):
         elif flow:
             resume = flow_service.resume_prompt(flow)
     session.set_state({key: value for key, value in state.items() if value})
-    return payload, resume
+    return payload, resume, turn
 
 
 def _complete_payload(response_payload, cleaned_issue, turn, resume=None):
@@ -182,6 +206,10 @@ def _complete_payload(response_payload, cleaned_issue, turn, resume=None):
         suffix, choices, flow = resume
         response_payload = {**response_payload, "answer": str(response_payload.get("answer", "")) + suffix,
                             "choices": choices, "flow": flow}
+    elif not response_payload.get("choices") and response_payload.get("route") == "property":
+        # Before localization: project names are matched in the English answer.
+        response_payload = {**response_payload, "choices": choices_for_answer(
+            response_payload, _project_names(), question=f"{cleaned_issue} {turn.property_issue}")}
     response_payload = localize_response(response_payload, turn.analysis)
     response_payload["data_api_calls"] = data_api_calls
     response_payload["rag_evaluation"] = evaluate_rag_response(cleaned_issue, response_payload, data_api_calls)
@@ -205,7 +233,7 @@ def get_support_assist(request: SupportAssistRequest, http_request: Request, res
     trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
     try:
         turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
-        response_payload, resume = _pre_answer(request, turn, cleaned_issue, session)
+        response_payload, resume, turn = _pre_answer(request, turn, cleaned_issue, session)
         if response_payload is None:
             response_payload = _grounded_property_shortcut(request, turn)
             if response_payload is not None:
@@ -285,7 +313,7 @@ def stream_support_assist(request: SupportAssistRequest, http_request: Request):
         trace_token = begin_data_api_trace(request.conversation_id, cleaned_issue)
         try:
             turn = prepare_turn(cleaned_issue, request.conversation_id, _history(request), request.language_hint)
-            shortcut_payload, resume = _pre_answer(request, turn, cleaned_issue, session)
+            shortcut_payload, resume, turn = _pre_answer(request, turn, cleaned_issue, session)
             if shortcut_payload is None:
                 shortcut_payload = _grounded_property_shortcut(request, turn)
                 if shortcut_payload is not None:

@@ -423,6 +423,8 @@ export interface RagEvaluation {
 }
 
 export interface SupportAssistChoice {
+  /** "project" opens the guided project explorer for `value`; "handoff" opens the contact form. */
+  action?: "handoff" | "project";
   label: string;
   value: string;
 }

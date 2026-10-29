@@ -216,7 +216,7 @@ def _date_label(value):
 def _choices(slot, today):
     if slot == "project":
         names = [str(p.get("projectName", "")).strip() for p in _projects() if isinstance(p, dict)]
-        return [{"label": name, "value": name} for name in names if name][:6] + [CANCEL_CHOICE]
+        return [{"label": name, "value": name} for name in names if name] + [CANCEL_CHOICE]
     if slot == "date":
         days = [today + timedelta(days=offset) for offset in range(1, 5)]
         return [{"label": day.strftime("%a %d %b"), "value": day.isoformat()} for day in days] + [CANCEL_CHOICE]

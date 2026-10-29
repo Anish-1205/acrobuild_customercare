@@ -8,6 +8,49 @@ Timestamps are local (Asia/Kolkata, +0530).
 
 ---
 
+## 2026-10-29 15:55 — CS API: company-scoped paths, full endpoint coverage, button-first chat journeys
+
+**Context:** Every CS API call returned 404, so the bot had no live property data.
+Amenities had never actually been read (the client looked at an always-empty
+typology field). Typed questions got plain text with no buttons, and a single
+slow API response could fail an otherwise correct answer.
+
+**Root causes and changes:**
+- **Routes moved under the company id** (`/api/cs/{companyId}/...`). The client
+  inserts `ACROBUILD_CS_API_COMPANY_ID` into the wire URL in one place
+  (`acrobuild_company_service._company_scoped_path`); callers, caches and traces
+  keep the logical `/api/cs/projects`. `.env.example` documents the id and fixes
+  the base URL (9091, not 9092).
+- **Full endpoint coverage.** Probing the API (471 candidate paths) found 12
+  endpoints. Newly used: `/projects/{id}/amenities`, `/projects/{id}/offers`,
+  `/projects/{id}/payment-plans`; helper for `/units/{id}`. `/projects/{id}` adds
+  nothing over the list; `/cost-sheet` is POST-only and deliberately not called.
+  Retrieval (`search_company_knowledge`) adds amenities for focused questions
+  and offers / payment plans when asked; the data snapshot includes all three.
+- **Direct answers** (`api_context`): amenity questions match the real amenity
+  names (so "swimming pool" is not "Pool & Billards" or "Baby Swimming Area"),
+  filter projects by amenity, or list one project's amenities; offers list the
+  running offer names (the API's `amount` field is ambiguous, so no figures);
+  payment plans show booking amount and the first stages.
+- **Button-first journeys** (`services/choice_service.py`): property answers
+  carry quick replies — project buttons that open the widget's existing
+  project→wing→floor→flat explorer, next-step topics for one project (minus the
+  topic just asked), or every project when the bot asks which one. Button taps
+  send `from_choice` and keep the conversation's language.
+- **Reliability:** the client retries once on a timeout / connection error; the
+  live-data guard ignores a failure recovered by a later call to the same
+  endpoint in the same turn; a CS API error inside a direct answer falls back to
+  the normal pipeline instead of failing the request.
+
+**Verified:** 705/705 backend tests (new tests for each change), 59/59 frontend
+tests, tsc, lint and build. Live against the CS API in the browser: Marathi
+project list with project buttons, swimming-pool filter (Prime, Paradise,
+Precious Pearl), amenities / offers / payment plans, button taps staying in
+Marathi, booking prefilled from a button, location answer recovering from a
+transient timeout.
+
+---
+
 ## 2026-10-23 18:20 — Dependency audit: bump pypdf, triage new python-jose advisory
 
 **Context:** CI's `pip-audit` step started failing on new advisories (not code

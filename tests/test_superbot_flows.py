@@ -221,5 +221,205 @@ def test_flags_turn_layers_off(workspace, monkeypatch):
     from graph.main_orchestrator import TurnContext
     session = ConversationSession("", "f1")
     turn = TurnContext([], "x", TurnAnalysis("general", "English", "latin", "test", sentiment="angry"), "x")
-    request = type("R", (), {"customer_name": "", "customer_email": ""})()
-    assert assist._pre_answer(request, turn, "book a site visit, talk to a person", session) == (None, None)
+    request = type("R", (), {"customer_name": "", "customer_email": "", "from_choice": False})()
+    assert assist._pre_answer(request, turn, "book a site visit, talk to a person", session)[:2] == (None, None)
+
+
+def test_button_tap_keeps_conversation_language(workspace, monkeypatch):
+    monkeypatch.setenv("SUPPORT_FLOWS", "false")
+    monkeypatch.setenv("SUPPORT_GATE", "false")
+    import routers.assist as assist
+    from graph.main_orchestrator import TurnContext
+    session = ConversationSession("", "lang1")
+    typed = type("R", (), {"customer_name": "", "customer_email": "", "from_choice": False})()
+    tapped = type("R", (), {"customer_name": "", "customer_email": "", "from_choice": True})()
+    marathi = TurnContext([], "x", TurnAnalysis("property", "Marathi", "latin", "test"), "x")
+    english = TurnContext([], "x", TurnAnalysis("property", "English", "latin", "test"), "x")
+    assist._pre_answer(typed, marathi, "tumchya kade projects aahe?", session)
+    turn = assist._pre_answer(tapped, english, "What are the prices at Vishwajeet Empire?", session)[2]
+    assert turn.analysis.reply_language == "Marathi"
+    turn = assist._pre_answer(typed, english, "please answer in English", session)[2]
+    assert turn.analysis.reply_language == "English"  # typing still switches language
+
+
+NAMES = ["Vishwajeet Empire", "Vishwajeet Empire NX", "Vishwajeet Prime"]
+
+
+def test_choices_for_answers():
+    from services.choice_service import choices_for_answer, mentioned_projects
+    assert mentioned_projects("We have Vishwajeet Empire NX and Vishwajeet Prime.", NAMES) == ["Vishwajeet Empire NX", "Vishwajeet Prime"]
+    listing = choices_for_answer({"route": "property", "answer": "1. Vishwajeet Empire\n2. Vishwajeet Prime"}, NAMES)
+    assert [(c["label"], c["action"]) for c in listing] == [("Vishwajeet Empire", "project"), ("Vishwajeet Prime", "project")]
+    single = choices_for_answer({"route": "property", "answer": "Vishwajeet Prime is in Thane."}, NAMES)
+    assert [c["label"] for c in single] == ["Explore homes", "Location", "Prices", "Amenities", "Offers",
+                                            "Payment plan", "Book a site visit"]
+    assert single[-1]["value"] == "Book a site visit at Vishwajeet Prime"
+    after_location = choices_for_answer({"route": "property", "answer": "Vishwajeet Prime is in Thane."}, NAMES,
+                                        question="Vishwajeet Prime kuthe aahe? Where is Vishwajeet Prime?")
+    assert "Location" not in [c["label"] for c in after_location]
+    address = choices_for_answer({"route": "property", "answer": "Vishwajeet Empire NX: Vishwajeet Empire, Pale Village"},
+                                 NAMES, question="Where is Vishwajeet Empire NX located?")
+    assert address[0] == {"label": "Explore homes", "value": "Vishwajeet Empire NX", "action": "project"}
+    ask = choices_for_answer({"route": "property", "answer": "Which of our 10 projects would you like?"}, NAMES)
+    assert [c["label"] for c in ask] == NAMES
+    assert choices_for_answer({"route": "general", "answer": "Vishwajeet Prime"}, NAMES) == []
+    assert choices_for_answer({"route": "property", "answer": "Vishwajeet Prime", "handoff_recommended": True}, NAMES) == []
+
+
+CATALOGUE = {1: [{"name": "Gym", "type": "Amenities"}, {"name": "Pool & Billards", "type": "Amenities"}],
+             2: [{"name": "Swimming Pool", "type": "Amenities"}, {"name": "Lift", "type": "Facilities"}],
+             3: [{"name": "Baby Swimming Area", "type": "Amenities"}]}
+AMENITY_PROJECTS = [{"id": 1, "projectName": "Vishwajeet Heights"}, {"id": 2, "projectName": "Vishwajeet Prime"},
+            {"id": 3, "projectName": "Vishwajeet Town"}]
+
+
+def _request(issue, history=()):
+    from api_context import SupportAssistRequest
+    return SupportAssistRequest(issue=issue, conversation_messages=[{"sender": "customer", "text": t} for t in history])
+
+
+@pytest.fixture
+def live_amenities(monkeypatch):
+    import api_context
+    monkeypatch.setattr(api_context, "get_company_projects", lambda: AMENITY_PROJECTS)
+    monkeypatch.setattr(api_context, "get_project_amenities", lambda pid: CATALOGUE[pid])
+    return api_context
+
+
+def test_amenity_matching_uses_real_names():
+    from api_context import requested_amenities
+    names = {"Swimming Pool", "Baby Swimming Area", "Pool & Billards", "Gym", "Children's Playing Area", "Parking",
+             "Visitor Parking", "Lift", "Power Backup Lift"}
+    assert requested_amenities("I want a swimming pool", names) == ["Swimming Pool"]
+    assert requested_amenities("is there a pool?", names) == ["Swimming Pool"]
+    assert requested_amenities("pool and billiards room", names) == ["Pool & Billards"]
+    assert requested_amenities("kids play area", names) == ["Children's Playing Area"]
+    assert requested_amenities("parking and lift", names) == ["Lift", "Parking"]
+    assert requested_amenities("what is the security deposit?", names) == []
+
+
+def test_amenity_filter_and_project_answers(live_amenities):
+    api = live_amenities
+    pool = api.build_grounded_project_amenities_assist(_request("I want a swimming pool"))
+    assert pool["choices"] == [{"label": "Vishwajeet Prime", "value": "Vishwajeet Prime", "action": "project"}]
+    no = api.build_grounded_project_amenities_assist(_request("does Vishwajeet Heights have a swimming pool?"))
+    assert "doesn't list Swimming Pool" in no["answer"] and "Vishwajeet Prime" in no["answer"]
+    listing = api.build_grounded_project_amenities_assist(_request("amenities", history=["tell me about Vishwajeet Prime"]))
+    assert "Amenities: Swimming Pool" in listing["answer"] and "Facilities: Lift" in listing["answer"]
+    assert "Amenities" not in [c["label"] for c in listing["choices"]]
+    assert api.build_grounded_project_amenities_assist(_request("is it on the ground floor?")) is None
+    pick = api.build_grounded_project_amenities_assist(_request("what amenities do you have?"))
+    assert [c["value"] for c in pick["choices"]][1] == "What amenities does Vishwajeet Prime have?"
+
+
+def test_offers_and_payment_plans(monkeypatch):
+    import api_context as api
+    monkeypatch.setattr(api, "get_company_projects", lambda: AMENITY_PROJECTS)
+    monkeypatch.setattr(api, "get_project_offers", lambda pid: [
+        {"name": "Stamp Duty Free", "applies_to": ["Investor", "Loan", "Self-Funding"]},
+        {"name": "Rate Discount", "applies_to": ["Loan"]}])
+    monkeypatch.setattr(api, "get_project_payment_plans", lambda pid: [
+        {"name": "Prime Schedule", "type": "Construction Linked", "booking_amount": 51000.0,
+         "milestones": [{"name": f"{i}% on slab {i}", "percentage": i} for i in range(1, 8)]},
+        {"name": "Empty", "type": "Freestyle", "booking_amount": 80000.0, "milestones": []}])
+    offers = api.build_grounded_project_offers_assist(_request("any offers at Vishwajeet Prime?"))
+    assert "- Stamp Duty Free\n- Rate Discount (for Loan buyers)" in offers["answer"]
+    assert "Offers" not in [c["label"] for c in offers["choices"]]
+    plan = api.build_grounded_project_payment_plan_assist(_request("payment plan for Vishwajeet Prime"))
+    assert "booking amount INR 51,000" in plan["answer"] and "...and 2 more stages" in plan["answer"]
+    assert "Freestyle" not in plan["answer"]
+    assert api.build_grounded_project_offers_assist(_request("what is the price?")) is None
+
+
+def test_company_service_reads_new_endpoints(monkeypatch):
+    from datetime import date
+    import services.acrobuild_company_service as cs
+    responses = {
+        "/api/cs/projects/7/amenities": [{"iconName": "Gym", "type": "Amenities"}, {"iconName": "gym ", "type": "Amenities"}],
+        "/api/cs/projects/7/offers": [
+            {"offerName": "Stamp Duty Free", "applicableTos": ["Loan"], "startDate": 0, "endDate": None},
+            {"offerName": "Stamp  Duty Free", "applicableTos": ["Investor"], "startDate": 0, "endDate": None},
+            {"offerName": "Future", "applicableTos": ["Loan"], "startDate": 4102444800000, "endDate": None},
+            {"offerName": "Expired", "applicableTos": ["Loan"], "startDate": 0, "endDate": 1}],
+        "/api/cs/projects/7/payment-plans": [
+            {"scheduleName": "A", "scheduleType": "Construction Linked", "bookingAmount": 51000.0,
+             "milestones": [{"name": "10% on plinth", "percentage": 10.0}]},
+            {"scheduleName": "A", "scheduleType": "Construction Linked", "bookingAmount": 51000.0,
+             "milestones": [{"name": "10% on plinth", "percentage": 10.0}]}],
+    }
+    monkeypatch.setattr(cs, "_cached_request", lambda path, params=None, ttl_seconds=None: responses[path])
+    assert cs.get_project_amenities(7) == [{"name": "Gym", "type": "Amenities"}]
+    assert cs.get_project_offers(7, today=date(2026, 10, 29)) == [{"name": "Stamp Duty Free", "applies_to": ["Investor", "Loan"]}]
+    assert len(cs.get_project_payment_plans(7)) == 1
+
+
+def test_cs_api_urls_are_company_scoped(monkeypatch):
+    import services.acrobuild_company_service as cs
+    monkeypatch.setattr(cs, "CS_API_COMPANY_ID", "16")
+    assert cs._company_scoped_path("/api/cs/projects") == "/api/cs/16/projects"
+    assert cs._company_scoped_path("/api/cs/wings/55/inventory") == "/api/cs/16/wings/55/inventory"
+    monkeypatch.setattr(cs, "CS_API_COMPANY_ID", "")
+    assert cs._company_scoped_path("/api/cs/projects") == "/api/cs/projects"
+
+
+class _FakeOpener:
+    def __init__(self, outcomes):
+        self.outcomes, self.calls = list(outcomes), 0
+
+    def open(self, request, timeout=None):
+        import io
+        self.calls += 1
+        outcome = self.outcomes.pop(0)
+        if isinstance(outcome, Exception):
+            raise outcome
+        return io.BytesIO(outcome)
+
+
+def test_cs_client_retries_one_network_blip(monkeypatch):
+    import urllib.error
+    import urllib.request
+    import services.acrobuild_company_service as cs
+    logged = []
+    monkeypatch.setattr(cs, "CS_API_KEY", "k")
+    monkeypatch.setattr(cs, "log_data_api_call", lambda **kw: logged.append(kw["status"]))
+    opener = _FakeOpener([TimeoutError(), b"[1, 2]"])
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *a: opener)
+    assert cs._request_json("/api/cs/projects") == [1, 2]
+    assert opener.calls == 2 and logged == ["completed"]  # the recovered blip is not reported as a failure
+    opener = _FakeOpener([urllib.error.URLError("down"), urllib.error.URLError("down")])
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *a: opener)
+    with pytest.raises(RuntimeError, match="Could not reach"):
+        cs._request_json("/api/cs/projects")
+    import io
+    http_error = urllib.error.HTTPError("u", 404, "Not Found", {}, io.BytesIO(b"{}"))
+    opener = _FakeOpener([http_error, b"[]"])
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *a: opener)
+    with pytest.raises(RuntimeError):
+        cs._request_json("/api/cs/projects")
+    assert opener.calls == 1  # the server's real answer is not retried
+
+
+def test_live_guard_ignores_failures_recovered_in_the_same_turn():
+    from api_context import _enforce_live_property_data
+    chunk = {"record_kind": "company_api"}
+    draft = {"route": "property", "answer": "Vishwajeet Empire NX is in Ambernath.", "matched_chunks": [chunk]}
+    calls = [{"provider": "Acrobuild CS API", "endpoint": "/api/cs/projects", "status": "failed", "params": {}},
+             {"provider": "Acrobuild CS API", "endpoint": "/api/cs/projects", "status": "completed", "params": {}}]
+    assert _enforce_live_property_data(dict(draft), "where is NX", calls)["answer"] == draft["answer"]
+    still_failing = [dict(calls[0], endpoint="/api/cs/projects/56/wings"), calls[1]]
+    assert "unavailable" in _enforce_live_property_data(dict(draft), "where is NX", still_failing)["answer"]
+
+
+def test_shortcut_failure_falls_through(monkeypatch):
+    import routers.assist as assist
+    from graph.main_orchestrator import TurnContext
+
+    def down(request):
+        raise RuntimeError("CS API request timed out.")
+    monkeypatch.setattr(assist, "build_grounded_project_location_assist", down)
+    request = type("R", (), {"issue": "Where is NX?", "model_dump": lambda self: {}})()
+    turn = TurnContext([], "Where is NX?", TurnAnalysis("property", "English", "latin", "test"), "Where is NX?")
+    for name in ("build_grounded_site_visit_document_assist", "build_grounded_project_payment_plan_assist",
+                 "build_grounded_project_offers_assist", "build_grounded_project_amenities_assist"):
+        monkeypatch.setattr(assist, name, lambda request: None)
+    assert assist._grounded_property_shortcut(request, turn) is None

@@ -1541,7 +1541,8 @@ export function CustomerHomePage() {
     issue: string,
     primaryArticleId: number | undefined,
     shouldResetConversation: boolean,
-    customerMessageText = issue
+    customerMessageText = issue,
+    fromChoice = false
   ) {
     const trimmedIssue = issue.trim();
     const trimmedCustomerMessage = customerMessageText.trim();
@@ -1628,7 +1629,8 @@ export function CustomerHomePage() {
         language_hint: languageHint,
         limit: isVoiceConversation ? 6 : 2,
         prefer_fast_response: !isVoiceConversation,
-        prefer_qwen_response: true
+        prefer_qwen_response: true,
+        from_choice: fromChoice
       }, {
         onDelta: (text) => {
           streamedAnswer += text;
@@ -1680,7 +1682,8 @@ export function CustomerHomePage() {
           language_hint: languageHint,
           limit: isVoiceConversation ? 6 : 2,
           prefer_fast_response: !isVoiceConversation,
-          prefer_qwen_response: true
+          prefer_qwen_response: true,
+          from_choice: fromChoice
         });
 
         setIsTypingReply(false);
@@ -3533,8 +3536,16 @@ export function CustomerHomePage() {
                                   {message.choices.map((choice) => (
                                     <button
                                       className="store-chat-guided-button"
-                                      key={choice.value}
-                                      onClick={() => void queueBotResponse(choice.value, undefined, false, choice.label)}
+                                      key={`${choice.action ?? "send"}:${choice.label}:${choice.value}`}
+                                      onClick={() => {
+                                        if (choice.action === "project") {
+                                          void selectNumberedProject(choice.value, choice.label);
+                                        } else if (choice.action === "handoff") {
+                                          openContactMode(message.contextIssue ?? "");
+                                        } else {
+                                          void queueBotResponse(choice.value, undefined, false, choice.label, true);
+                                        }
+                                      }}
                                       type="button"
                                     >
                                       <span className="store-chat-guided-label">{choice.label}</span>

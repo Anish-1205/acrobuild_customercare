@@ -27,6 +27,8 @@ CS_API_BASE_URL = os.getenv(
     "http://10.10.1.23:8081",
 ).rstrip("/")
 CS_API_KEY = os.getenv("ACROBUILD_CS_API_KEY", "").strip()
+# The CS API scopes every route by company: /api/cs/{companyId}/projects, ...
+CS_API_COMPANY_ID = os.getenv("ACROBUILD_CS_API_COMPANY_ID", "").strip()
 CS_API_TIMEOUT_SECONDS = float(
     os.getenv("ACROBUILD_CS_API_TIMEOUT_SECONDS", "2.5")
 )
@@ -85,6 +87,14 @@ INVENTORY_TERMS = {
     "book", "visit", "site", "shop", "shops", "commercial",
     "size", "sizes", "pricing", "price", "affordable", "budget", "friendly", "recommend", "suggest", "best",
 }
+OFFER_TERMS = {"offer", "offers", "discount", "discounts", "scheme", "schemes", "deal", "deals", "free", "kitchen"}
+PAYMENT_TERMS = {
+    "payment", "payments", "plan", "plans", "schedule", "milestone", "milestones", "installment", "installments",
+    "instalment", "instalments", "booking", "emi", "loan", "pay",
+}
+AMENITY_TERMS = {"amenity", "amenities", "facility", "facilities"}
+PROPERTY_TERMS |= OFFER_TERMS | PAYMENT_TERMS | AMENITY_TERMS
+DETAIL_TERMS |= OFFER_TERMS | PAYMENT_TERMS | AMENITY_TERMS
 
 
 # -----------------------------------
@@ -103,11 +113,18 @@ def _response_summary(value):
     return {"kind": type(value).__name__}
 
 
+def _company_scoped_path(path):
+    """Callers, caches and traces use the logical "/api/cs/projects"; only the wire URL carries the company id."""
+    if CS_API_COMPANY_ID and path.startswith("/api/cs/"):
+        return f"/api/cs/{urllib.parse.quote(CS_API_COMPANY_ID, safe='')}/{path[len('/api/cs/'):]}"
+    return path
+
+
 def _request_json(path, params=None):
     if not CS_API_KEY:
         raise RuntimeError("ACROBUILD_CS_API_KEY is not configured.")
 
-    url = f"{CS_API_BASE_URL}{path}"
+    url = f"{CS_API_BASE_URL}{_company_scoped_path(path)}"
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
 
@@ -123,36 +140,44 @@ def _request_json(path, params=None):
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     started_at = monotonic()
 
-    try:
-        with opener.open(request, timeout=CS_API_TIMEOUT_SECONDS) as response:
-            value = json.loads(response.read().decode("utf-8", errors="replace"))
-            log_data_api_call(
-                provider="Acrobuild CS API", endpoint=path, method="GET", params=params,
-                status="completed", duration_ms=(monotonic() - started_at) * 1000,
-                response_summary=_response_summary(value),
-            )
-            return value
-    except urllib.error.HTTPError as error:
-        body = error.read().decode("utf-8", errors="replace")
+    # One retry for network blips (timeout / unreachable): the CS API occasionally stalls for a few
+    # seconds and answers fine right after. HTTP errors are the server's real answer and are not retried.
+    for attempt in (1, 2):
         try:
-            message = json.loads(body).get("errorMessage", body)
-        except json.JSONDecodeError:
-            message = body
-        message = message or f"CS API request failed with HTTP {error.code}."
-        log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
-        raise RuntimeError(message) from error
-    except urllib.error.URLError as error:
-        message = f"Could not reach the CS API: {error.reason}"
-        log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
-        raise RuntimeError(message) from error
-    except (socket.timeout, TimeoutError) as error:
-        message = "CS API request timed out."
-        log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
-        raise RuntimeError(message) from error
-    except json.JSONDecodeError as error:
-        message = "CS API returned invalid JSON."
-        log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
-        raise RuntimeError(message) from error
+            with opener.open(request, timeout=CS_API_TIMEOUT_SECONDS) as response:
+                value = json.loads(response.read().decode("utf-8", errors="replace"))
+                log_data_api_call(
+                    provider="Acrobuild CS API", endpoint=path, method="GET", params=params,
+                    status="completed", duration_ms=(monotonic() - started_at) * 1000,
+                    response_summary=_response_summary(value),
+                )
+                return value
+        except urllib.error.HTTPError as error:
+            body = error.read().decode("utf-8", errors="replace")
+            try:
+                message = json.loads(body).get("errorMessage", body)
+            except json.JSONDecodeError:
+                message = body
+            message = message or f"CS API request failed with HTTP {error.code}."
+            log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
+            raise RuntimeError(message) from error
+        except urllib.error.URLError as error:
+            if attempt == 1:
+                continue
+            message = f"Could not reach the CS API: {error.reason}"
+            log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
+            raise RuntimeError(message) from error
+        except (socket.timeout, TimeoutError) as error:
+            if attempt == 1:
+                continue
+            message = "CS API request timed out."
+            log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
+            raise RuntimeError(message) from error
+        except json.JSONDecodeError as error:
+            message = "CS API returned invalid JSON."
+            log_data_api_call(provider="Acrobuild CS API", endpoint=path, method="GET", params=params, status="failed", duration_ms=(monotonic() - started_at) * 1000, error=message)
+            raise RuntimeError(message) from error
+    raise RuntimeError("CS API request failed.")  # unreachable: the second attempt always returns or raises
 
 def _snapshot_json_path():
     return _snapshot_path().with_suffix(".json")
@@ -399,6 +424,55 @@ def get_project_wings(project_id):
     return wings if isinstance(wings, list) else []
 
 
+def get_project_amenities(project_id):
+    """Project amenities as [{"name", "type"}]; type is "Amenities" or "Facilities" in the CS API."""
+    items = _cached_request(f"/api/cs/projects/{int(project_id)}/amenities")
+    amenities = {}
+    for item in items if isinstance(items, list) else []:
+        name = " ".join(str(item.get("iconName", "")).split()) if isinstance(item, dict) else ""
+        if name:
+            amenities.setdefault(name.lower(), {"name": name, "type": str(item.get("type") or "Amenities").strip()})
+    return list(amenities.values())
+
+
+def get_project_offers(project_id, today=None):
+    """Offers running today, one per offer name, with the buyer types they apply to."""
+    items = _cached_request(f"/api/cs/projects/{int(project_id)}/offers")
+    now_ms = datetime.combine(today or datetime.now().date(), datetime.min.time()).timestamp() * 1000
+    offers = {}
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict) or (item.get("startDate") or 0) > now_ms + 86_400_000:
+            continue
+        if item.get("endDate") and item["endDate"] < now_ms:
+            continue
+        name = " ".join(str(item.get("offerName", "")).split())
+        if name:
+            entry = offers.setdefault(name.lower(), {"name": name, "applies_to": []})
+            entry["applies_to"] = sorted(set(entry["applies_to"]) | set(item.get("applicableTos") or []))
+    return list(offers.values())
+
+
+def get_project_payment_plans(project_id):
+    """Payment plans with their milestones; identical schedules (one per wing) collapse into one."""
+    items = _cached_request(f"/api/cs/projects/{int(project_id)}/payment-plans")
+    plans = {}
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict):
+            continue
+        milestones = [
+            {"name": " ".join(str(m.get("name", "")).split()), "percentage": m.get("percentage")}
+            for m in item.get("milestones") or [] if isinstance(m, dict) and str(m.get("name", "")).strip()
+        ]
+        plan = {"name": " ".join(str(item.get("scheduleName", "")).split()), "type": item.get("scheduleType") or "",
+                "booking_amount": item.get("bookingAmount"), "milestones": milestones}
+        plans.setdefault((plan["type"], plan["booking_amount"], tuple(m["name"] for m in milestones)), plan)
+    return list(plans.values())
+
+
+def get_unit(unit_id):
+    return _cached_request(f"/api/cs/units/{int(unit_id)}")
+
+
 def get_wing_typologies(wing_id):
     typologies = _cached_request(f"/api/cs/wings/{int(wing_id)}/typologies")
     return typologies if isinstance(typologies, list) else []
@@ -411,6 +485,31 @@ def get_wing_inventory(wing_id, available_only=True):
         ttl_seconds=30,
     )
     return inventory if isinstance(inventory, list) else []
+
+def _project_extra_lines(project_id, query_words, focused):
+    """Amenities for a focused (few-project) or amenity question; offers and payment plans only when asked."""
+    lines = []
+    amenities = get_project_amenities(project_id) if focused or query_words.intersection(AMENITY_TERMS) else []
+    if amenities:
+        lines.append("Amenities: " + ", ".join(a["name"] for a in amenities))
+    if query_words.intersection(OFFER_TERMS):
+        lines.extend(
+            f"Current offer: {o['name']}" + (f" (for {', '.join(o['applies_to'])} buyers)" if o["applies_to"] else "")
+            for o in get_project_offers(project_id)
+        )
+    if query_words.intersection(PAYMENT_TERMS):
+        for plan in get_project_payment_plans(project_id):
+            stages = "; ".join(
+                m["name"] for m in plan["milestones"][:6]
+            ) + (f"; and {len(plan['milestones']) - 6} more stages" if len(plan["milestones"]) > 6 else "")
+            amount = plan["booking_amount"]
+            lines.append(
+                f"Payment plan: {plan['name']} ({plan['type']})"
+                + (f", booking amount INR {amount:,.0f}" if isinstance(amount, (int, float)) else "")
+                + (f"; stages: {stages}" if stages else "")
+            )
+    return lines
+
 
 def search_company_knowledge(query, max_projects=20):
     if not is_cs_api_configured():
@@ -594,6 +693,7 @@ def search_company_knowledge(query, max_projects=20):
             )
             for typology in typologies
         )
+        detail_lines.extend(_project_extra_lines(project_id, query_words, focused=len(matching_projects) <= 3))
 
         if query_words.intersection(INVENTORY_TERMS):
             for wing in wings:
@@ -690,10 +790,14 @@ def export_all_company_data_to_text():
     }
     for project in projects:
         project_id = project.get("id")
-        project_entry = {"project": project, "project_typologies": [], "wings": []}
+        project_entry = {"project": project, "project_typologies": [], "wings": [],
+                         "amenities": [], "offers": [], "payment_plans": []}
         if project_id is not None:
             project_typologies = _cached_request(f"/api/cs/projects/{int(project_id)}/typologies")
             project_entry["project_typologies"] = project_typologies if isinstance(project_typologies, list) else []
+            project_entry["amenities"] = get_project_amenities(project_id)
+            project_entry["offers"] = get_project_offers(project_id)
+            project_entry["payment_plans"] = get_project_payment_plans(project_id)
             for wing in get_project_wings(project_id):
                 wing_id = wing.get("id")
                 wing_entry = {"wing": wing, "typologies": [], "inventory": []}
