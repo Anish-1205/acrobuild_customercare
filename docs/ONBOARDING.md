@@ -127,10 +127,9 @@ npm run dev                       # http://127.0.0.1:5173  (Vite)
 |-----|---------|
 | `LLM_PROVIDER` | `qwen` (local, default) or `sarvam` (remote RunPod) |
 | `RUNPOD_BASE_URL`, `RUNPOD_API_KEY`, `MODEL_NAME` | needed only when `LLM_PROVIDER=sarvam` |
-| `QWEN_ENABLE_CPU`, `QWEN_MAX_TOKENS`, `QWEN_MODEL_PATH` | local Qwen tuning |
+| `QWEN_MODEL`, `QWEN_CPU_MODEL`, `QWEN_ENABLE_CPU`, `QWEN_MAX_TOKENS` | local Qwen tuning |
 | CS API base URL + `apiKey` | for `acrobuild_company_service.py` (live property data) |
 | `HF_TOKEN` | one-time, for AI4Bharat translation/TTS models |
-| `DATABASE_PATH` | override SQLite file location |
 
 **Tests**
 ```bash
@@ -279,8 +278,8 @@ flowchart TD
   G --> H["validate_email_access_token -> get_customer(email)"]
 ```
 
-- All state is **process memory** (`OTP_RECORDS`, `ACCESS_TOKENS` dicts) — lost
-  on restart, not shared across workers.
+- State is stored in SQLite (`email_otp_records`, `email_access_tokens`,
+  `otp_request_audit`), so it survives restarts.
 - Guards: 5-minute code TTL, resend cooldown, max attempts.
 - Used by the customer-facing order/project lookup, not by staff.
 
